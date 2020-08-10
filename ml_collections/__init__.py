@@ -19,6 +19,4 @@ from ml_collections.config_dict import ConfigDict
 from ml_collections.config_dict import FieldReference
 from ml_collections.config_dict import FrozenConfigDict
 
-# TODO(mohitreddy): Add __version__?
-
 __all__ = ("ConfigDict", "FieldReference", "FrozenConfigDict")
