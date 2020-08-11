@@ -346,14 +346,6 @@ class _IgnoreFileNotFoundAndCollectErrors(object):
         for attempt, e in self._attempts)
 
 
-def load_config_from_code(name, config_code):  # pylint: disable=g-bad-name
-  """Loads config from code expressed as a string."""
-  config_module = imp.new_module(name)
-  exec(config_code, config_module.__dict__)  # pylint: disable=exec-used
-  sys.modules[name] = config_module
-  return config_module
-
-
 def _LoadConfigModule(name, path):
   """Loads a script from external file specified by path.
 
@@ -372,6 +364,8 @@ def _LoadConfigModule(name, path):
   """
   if not path:
     raise IOError('Path to config file is an empty string.')
+
+  ignoring_errors = _IgnoreFileNotFoundAndCollectErrors()
 
   # Works for relative paths.
   with ignoring_errors.Attempt('Relative path', path):
