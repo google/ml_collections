@@ -18,10 +18,6 @@ py_library(
     ],
     deps = [
         ":tuple_parser",
-        "//pyglib:build_data",
-        "//pyglib:file_util",
-        "//pyglib:gfile",
-        "//pyglib:resources",
         # pip: absl/flags
         # pip: absl/logging
         "//ml_collections",
@@ -35,5 +31,7 @@ py_library(
     srcs = [
         "tuple_parser.py",
     ],
-    deps = ["//third_party/py/absl/flags"],
+    deps = [
+        # pip: absl/flags
+    ],
 )
