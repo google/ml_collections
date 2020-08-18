@@ -23,8 +23,8 @@ python --version
 
 # Install/upgrade setuptools and wheel. >=40.1 is required to use
 # `find_namespace_packages` in setup.py.
-pip install setuptools>=40.1 --upgrade
-pip install wheel --upgrade
+python -m pip install setuptools>=40.1 --upgrade
+python -m pip install wheel --upgrade
 
 # Run setup.py and install python dependencies.
 python -m pip install .
