@@ -35,14 +35,12 @@ setup(
     description='ML Collections is a library of Python collections designed for ML usecases.',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
-    # TODO(mohitreddy): Uncomment once private repo is created.
-    # url='https://github.com/google/ml_collections',
+    url='https://github.com/google/ml_collections',
     license='Apache 2.0',
     # Contained modules and scripts.
     packages=find_namespace_packages(exclude=['*_test.py']),
     install_requires=_parse_requirements('requirements.txt'),
     tests_require=_parse_requirements('requirements-test.txt'),
-    # TODO(mohitreddy): Double check python versions supported.
     python_requires='>=2.6',
     include_package_data=True,
     zip_safe=False,
