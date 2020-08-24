@@ -8,7 +8,6 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -21,21 +20,10 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install bazel
-      run: |
-        sudo apt install curl gnupg
-        curl -fsSL https://bazel.build/bazel-release.pub.gpg | gpg --dearmor > bazel.gpg
-        sudo mv bazel.gpg /etc/apt/trusted.gpg.d/
-        echo "deb [arch=amd64] https://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list
-        
-        sudo apt update && sudo apt install bazel
-        bazel --version
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -v .
-        pip install -r requirements.txt
-        pip install -r requirements-test.txt
-    - name: Test with bazel
+        pip install virtualenv
+    - name: Run tests
       run: |
-        bazel test ml_collections/...
+        bash test.sh
