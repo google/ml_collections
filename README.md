@@ -390,12 +390,11 @@ print(type(cfg.list_containing_dict[0]))  # dict
 
 ### More Examples
 
-TODO(mohitreddy): Add links for examples.
-
-For more examples, take a look at these `ml_collections/config_dict/examples/`.
+For more examples, take a look at
+[`ml_collections/config_dict/examples/`](https://github.com/google/ml_collections/tree/master/ml_collections/config_dict/examples)
 
 For examples and gotchas specifically about initializing a ConfigDict, see
-`ml_collections/config_dict/examples/config_dict_initialization.py`.
+[`ml_collections/config_dict/examples/config_dict_initialization.py`](https://github.com/google/ml_collections/blob/master/ml_collections/config_dict/examples/config_dict_initialization.py).
 
 ## Config Flags
 
@@ -592,3 +591,9 @@ python script.py -- --config=path_to_config.py:lstm \
     (see the example in the [Usage](#usage) section).
 *   The overriding `tuple` object can be of a different size and have different
     types than the original. Nested tuples are also supported.
+
+## Authors
+*   Sergio Gómez Colmenarejo - sergomez@google.com
+*   Wojciech Marian Czarnecki - lejlot@google.com
+*   Nicholas Watters
+*   Mohit Reddy - mohitreddy@google.com
