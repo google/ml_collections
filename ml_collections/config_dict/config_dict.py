@@ -160,27 +160,26 @@ class _Op(collections.namedtuple('_Op', ['fn', 'args'])):
 class FieldReference(object):
   """Reference to a configuration element.
 
-  Typed configuration element that can take a None default value. Example:
+  Typed configuration element that can take a None default value. Example::
 
-      from ml_collections import config_dict
+    from ml_collections import config_dict
 
-      cfg_field = config_dict.FieldReference(0)
-      cfg = config_dict.ConfigDict({
-          'optional': configdict.FieldReference(None, field_type=str)
-          'field': cfg_field,
-          'nested': {'field': cfg_field}
-      })
+    cfg_field = config_dict.FieldReference(0)
+    cfg = config_dict.ConfigDict({
+        'optional': configdict.FieldReference(None, field_type=str)
+        'field': cfg_field,
+        'nested': {'field': cfg_field}
+    })
 
-      with self.assertRaises(TypeError):
-        cfg.optional = 10  # Raises an error because it's defined as an
-                           # intfield.
+    with self.assertRaises(TypeError):
+      cfg.optional = 10  # Raises an error because it's defined as an
+                          # intfield.
 
-      cfg.field = 1  # Changes the value of both cfg.field and cfg.nested.field.
-      print(cfg)
+    cfg.field = 1  # Changes the value of both cfg.field and cfg.nested.field.
+    print(cfg)
 
-  This class also supports lazy computation. Example:
+  This class also supports lazy computation. Example::
 
-    ```python
     ref = config_dict.FieldReference(0)
 
     # Using ref in a standard operation returns another FieldReference. The new
@@ -193,7 +192,6 @@ class FieldReference(object):
 
     ref.set(-2)  # change ref's value again
     print(ref_plus_ten.get())  # Prints 8 because ref's value is -2
-    ```
   """
 
   def __init__(self, default, field_type=None, op=None, required=False):
@@ -558,7 +556,7 @@ class ConfigDict(object):
   - it has dot-based access as well as dict-style key access,
   - it is type safe (once a value is set one cannot change its type).
 
-  Typical usage eaxmple:
+  Typical usage eaxmple::
 
     from ml_collections import config_dict
 
@@ -571,7 +569,7 @@ class ConfigDict(object):
 
     print(cfg)
 
-  Config dictionaries can also be used to pass named arguments to functions:
+  Config dictionaries can also be used to pass named arguments to functions::
 
       from ml_collections import config_dict
 
@@ -602,13 +600,14 @@ class ConfigDict(object):
     Warning: In most cases, this faithfully reproduces the reference structure
     of initial_dictionary, even if initial_dictionary is self-referencing.
     However, unexpected behavior occurs if self-references are contained within
-    list, tuple, or custom types. For example:
-        d = {}
-        d['a'] = d
-        d['b'] = [d]
-        cd = ConfigDict(d)
-        cd.a    # refers to cd, type ConfigDict. Expected behavior.
-        cd.b    # refers to d, type dict. Unexpected behavior.
+    list, tuple, or custom types. For example::
+      
+      d = {}
+      d['a'] = d
+      d['b'] = [d]
+      cd = ConfigDict(d)
+      cd.a    # refers to cd, type ConfigDict. Expected behavior.
+      cd.b    # refers to d, type dict. Unexpected behavior.
 
     Warning: FieldReference values may be changed. If initial_dictionary
     contains a FieldReference with a value of type dict or FrozenConfigDict,
@@ -616,16 +615,19 @@ class ConfigDict(object):
 
     Args:
       initial_dictionary: May be one of the following:
-          1) dict. In this case, all values of initial_dictionary that are
-             dictionaries are also be converted to ConfigDict. However,
-             dictionaries within values of non-dict type are untouched.
-          2) ConfigDict. In this case, all attributes are uncopied, and only the
-             top-level object (self) is re-addressed. This is the same behavior
-             as Python dict, list, and tuple.
-          3) FrozenConfigDict. In this case, initial_dictionary is converted to
-             a ConfigDict version of the initial dictionary for the
-             FrozenConfigDict (reversing any mutability changes FrozenConfigDict
-             made).
+
+        1) dict. In this case, all values of initial_dictionary that are
+        dictionaries are also be converted to ConfigDict. However,
+        dictionaries within values of non-dict type are untouched.
+
+        2) ConfigDict. In this case, all attributes are uncopied, and only the
+        top-level object (self) is re-addressed. This is the same behavior
+        as Python dict, list, and tuple.
+
+        3) FrozenConfigDict. In this case, initial_dictionary is converted to
+        a ConfigDict version of the initial dictionary for the
+        FrozenConfigDict (reversing any mutability changes FrozenConfigDict
+        made).
       type_safe: If set to True, once an attribute value is assigned, its type
           cannot be overridden without .ignore_type() context manager
           (default: True).
@@ -725,19 +727,17 @@ class ConfigDict(object):
   def get_oneway_ref(self, key):
     """Returns a one-way FieldReference.
 
-    Example:
+    Example::
+      
+      cfg = collections.ConfigDict(dict(a=1))
+      cfg.b = cfg.get_oneway_ref('a')
 
-    ```
-    cfg = collections.ConfigDict(dict(a=1))
-    cfg.b = cfg.get_oneway_ref('a')
+      cfg.a = 2
+      print(cfg.b)  # 2
 
-    cfg.a = 2
-    print(cfg.b)  # 2
-
-    cfg.b = 3
-    print(cfg.a)  # 2 (would have been 3 if using get_ref())
-    print(cfg.b)  # 3
-    ```
+      cfg.b = 3
+      print(cfg.a)  # 2 (would have been 3 if using get_ref())
+      print(cfg.b)  # 3
 
     Args:
       key: Key for field we want to reference.
@@ -1294,55 +1294,55 @@ class ConfigDict(object):
   def update_from_flattened_dict(self, flattened_dict, strip_prefix=''):
     """In-place updates values taken from a flattened dict.
 
-    This allows a potentially nested source `ConfigDict` of the following form:
+    This allows a potentially nested source `ConfigDict` of the following form::
 
-    cfg = ConfigDict({
-        'a': 1,
-        'b': {
-            'c': {
-                'd': 2
-            }
-        }
-    })
+      cfg = ConfigDict({
+          'a': 1,
+          'b': {
+              'c': {
+                  'd': 2
+              }
+          }
+      })
 
     to be updated from a dict containing paths navigating to child items, of the
-    following form:
+    following form::
 
-    updates = {
-        'a': 2,
-        'b.c.d': 3
-    }
+      updates = {
+          'a': 2,
+          'b.c.d': 3
+      }
 
     This filters `paths_dict` to only contain paths starting with
     `strip_prefix` and strips the prefix when applying the update.
 
-    For example, consider we have the following values returned as flags:
+    For example, consider we have the following values returned as flags::
 
-    flags = {
-        'flag1': x,
-        'flag2': y,
-        'config': 'some_file.py',
-        'config.a.b': 1,
-        'config.a.c': 2
-    }
+      flags = {
+          'flag1': x,
+          'flag2': y,
+          'config': 'some_file.py',
+          'config.a.b': 1,
+          'config.a.c': 2
+      }
 
-    config = ConfigDict({
-        'a': {
-            'b': 0,
-            'c': 0
-        }
-    })
+      config = ConfigDict({
+          'a': {
+              'b': 0,
+              'c': 0
+          }
+      })
 
-    config.update_from_flattened_dict(flags, 'config.')
+      config.update_from_flattened_dict(flags, 'config.')
 
-    Then we will now have:
+    Then we will now have::
 
-    config = ConfigDict({
-        'a': {
-            'b': 1,
-            'c': 2
-        }
-    })
+      config = ConfigDict({
+          'a': {
+              'b': 1,
+              'c': 2
+          }
+      })
 
     Args:
       flattened_dict: A mapping (key path) -> value.
@@ -1618,13 +1618,17 @@ class FrozenConfigDict(ConfigDict):
 
     Args:
       initial_dictionary: May be one of the following:
-          1) dict. In this case all values of initial_dictionary that are
-             dictionaries are also converted to FrozenConfigDict. If there are
-             dictionaries contained in lists or tuples, an error is raised.
-          2) ConfigDict. In this case all ConfigDict attributes are also
-             converted to FrozenConfigDict.
-          3) FrozenConfigDict. In this case all attributes are uncopied, and
-             only the top-level object (self) is re-addressed.
+
+        1) dict. In this case all values of initial_dictionary that are
+        dictionaries are also converted to FrozenConfigDict. If there are
+        dictionaries contained in lists or tuples, an error is raised.
+
+        2) ConfigDict. In this case all ConfigDict attributes are also
+        converted to FrozenConfigDict.
+
+        3) FrozenConfigDict. In this case all attributes are uncopied, and
+        only the top-level object (self) is re-addressed.
+
       type_safe: See ConfigDict documentation. Note that this only matters
           if the FrozenConfigDict is converted to ConfigDict at some point.
     """
@@ -1836,23 +1840,23 @@ def create(**kwargs):
   """Creates a `ConfigDict` with the given named arguments as key-value pairs.
 
   This allows for simple dictionaries whose elements can be accessed directly
-  using field access:
+  using field access::
 
-      from ml_collections.config_dict import config_dict
-      point = config_dict.create(x=1, y=2)
-      print(point.x, point.y)
+    from ml_collections.config_dict import config_dict
+    point = config_dict.create(x=1, y=2)
+    print(point.x, point.y)
 
-  This is particularly useful for compactly writing nested configurations:
+  This is particularly useful for compactly writing nested configurations::
 
-      config = config_dict.create(
-          data=config_dict.create(
-              game='freeway',
-              frame_size=100),
-          model=config_dict.create(num_hidden=1000))
+    config = config_dict.create(
+      data=config_dict.create(
+        game='freeway',
+        frame_size=100), 
+      model=config_dict.create(num_hidden=1000))
 
   The reason for the existence of this function is that it simplifies the
   code required for the majority of the use cases of `ConfigDict`, compared
-  to using either `ConfigDict` or `namedtuple`s. Examples of such use cases
+  to using either `ConfigDict` or `namedtuple's`. Examples of such use cases
   include training script configuration, and returning multiple named values.
 
   Args:

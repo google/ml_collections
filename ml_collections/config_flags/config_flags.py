@@ -100,95 +100,78 @@ def DEFINE_config_file(  # pylint: disable=g-bad-name
 
   Typical usage example:
 
-  `script.py`:
+  `script.py`::
 
-  ```python
-  ...
-  from absl import flags
-  from ml_collections.config_flags import config_flags
+    from absl import flags
+    from ml_collections.config_flags import config_flags
 
-  FLAGS = flags.FLAGS
-  config_flags.DEFINE_config_file('my_config')
-  ...
+    FLAGS = flags.FLAGS
+    config_flags.DEFINE_config_file('my_config')
 
-  print(FLAGS.my_config)
-  ```
+    print(FLAGS.my_config)
 
-  `config.py`:
+  `config.py`::
 
-  ```python
-  def get_config():
-    return {
-        'field1': 1,
-        'field2': 'tom',
-        'nested': {
-            'field': 2.23,
-        },
-    }
-  ```
+    def get_config():
+      return {
+          'field1': 1,
+          'field2': 'tom',
+          'nested': {
+              'field': 2.23,
+          },
+      }
 
-  The following command:
+  The following command::
 
-  ```
-  python script.py -- --my_config=config.py
-                      --my_config.field1 8
-                      --my_config.nested.field=2.1
-  ```
+    python script.py -- --my_config=config.py
+                        --my_config.field1 8
+                        --my_config.nested.field=2.1
 
-  will print:
+  will print::
 
-  ```
-  {'field1': 8, 'field2': 'tom', 'nested': {'field': 2.1}}
-  ```
+    {'field1': 8, 'field2': 'tom', 'nested': {'field': 2.1}}
 
   It is possible to parameterise the get_config function, allowing it to
   return a differently structured result for different occasions. This is
   particularly useful when setting up hyperparameter sweeps across various
   network architectures.
 
-  `parameterised_config.py`:
+  `parameterised_config.py`::
 
-  ```python
-  def get_config(config_string):
-    possible_configs = {
-        'mlp': {
-            'constructor': 'snt.nets.MLP',
-            'config': {
-                'output_sizes': (128, 128, 1),
-            }
-        },
-        'lstm': {
-            'constructor': 'snt.LSTM',
-            'config': {
-                'hidden_size': 128,
-                'forget_bias': 1.0,
-            }
-        }
-    }
-    return possible_configs[config_string]
-  ```
+    def get_config(config_string):
+      possible_configs = {
+          'mlp': {
+              'constructor': 'snt.nets.MLP',
+              'config': {
+                  'output_sizes': (128, 128, 1),
+              }
+          },
+          'lstm': {
+              'constructor': 'snt.LSTM',
+              'config': {
+                  'hidden_size': 128,
+                  'forget_bias': 1.0,
+              }
+          }
+      }
+      return possible_configs[config_string]
 
   If a colon is present in the command line override for the config file,
   everything to the right of the colon is passed into the get_config function.
-  The following command lines will both function correctly:
+  The following command lines will both function correctly::
 
-  ```
-  python script.py -- --my_config=parameterised_config.py:mlp
-                      --my_config.config.output_sizes="(256,256,1)"
-  ```
+    python script.py -- --my_config=parameterised_config.py:mlp
+                        --my_config.config.output_sizes="(256,256,1)"
 
-  ```
-  python script.py -- --my_config=parameterised_config.py:lstm
-                      --my_config.config.hidden_size=256
-  ```
+  
+    python script.py -- --my_config=parameterised_config.py:lstm
+                        --my_config.config.hidden_size=256
 
   The following will produce an error, as the hidden_size flag does not
-  exist when the "mlp" config_string is provided.
+  exist when the "mlp" config_string is provided::
 
-  ```
-  python script.py -- --my_config=parameterised_config.py:mlp
-                      --my_config.config.hidden_size=256
-  ```
+    python script.py -- --my_config=parameterised_config.py:mlp
+                        --my_config.config.hidden_size=256
 
   Args:
     name: Flag name, optionally including extra config after a colon.
@@ -224,7 +207,7 @@ def DEFINE_config_dict(  # pylint: disable=g-bad-name
     flag_values=FLAGS,
     lock_config=True,
     **kwargs):
-  """Defines flag for inline `ConfigDict`s compatible with absl flags.
+  """Defines flag for inline `ConfigDict's` compatible with absl flags.
 
   Similar to `DEFINE_config_file` except the flag's value should be a
   `ConfigDict` instead of a path to a file containing a `ConfigDict`. After the
@@ -233,46 +216,39 @@ def DEFINE_config_dict(  # pylint: disable=g-bad-name
 
   Typical usage example:
 
-  `script.py`:
+  `script.py`::
 
-  ```python
-  ...
-  from absl import flags
+    from absl import flags
 
-  import ml_collections
-  from ml_collections.config_flags import config_flags
+    import ml_collections
+    from ml_collections.config_flags import config_flags
 
 
-  config = ml_collections.ConfigDict({
-      'field1': 1,
-      'field2': 'tom',
-      'nested': {
-          'field': 2.23,
-      }
-  })
+    config = ml_collections.ConfigDict({
+        'field1': 1,
+        'field2': 'tom',
+        'nested': {
+            'field': 2.23,
+        }
+    })
 
 
-  FLAGS = flags.FLAGS
-  config_flags.DEFINE_config_dict('my_config', config)
-  ...
+    FLAGS = flags.FLAGS
+    config_flags.DEFINE_config_dict('my_config', config)
+    ...
 
-  print(FLAGS.my_config)
-  ```
+    print(FLAGS.my_config)
 
-  The following command:
+  The following command::
 
-  ```
-  python script.py -- --my_config.field1 8
-                      --my_config.nested.field=2.1
-  ```
+    python script.py -- --my_config.field1 8
+                        --my_config.nested.field=2.1
 
-  will print:
+  will print::
 
-  ```
-  field1: 8
-  field2: tom
-  nested: {field: 2.1}
-  ```
+    field1: 8
+    field2: tom
+    nested: {field: 2.1}
 
   Args:
     name: Flag name.
