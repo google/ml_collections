@@ -2,6 +2,8 @@
 
 ML Collections is a library of Python Collections designed for ML use cases.
 
+[![Documentation Status](https://readthedocs.org/projects/ml-collections/badge/?version=latest)](https://ml-collections.readthedocs.io/en/latest/?badge=latest)
+
 ## ConfigDict
 
 The two classes called `ConfigDict` and `FrozenConfigDict` are "dict-like" data
