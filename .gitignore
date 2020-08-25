@@ -1,0 +1,11 @@
+docs/__autosummary
+docs/_build
+docs/make.bat
+dist/
+build/
+*.egg-info
+*.rej
+*~
+\#*\#
+*.pyc
+.DS_Store
