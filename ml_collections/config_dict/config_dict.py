@@ -556,7 +556,7 @@ class ConfigDict(object):
   - it has dot-based access as well as dict-style key access,
   - it is type safe (once a value is set one cannot change its type).
 
-  Typical usage eaxmple::
+  Typical usage example::
 
     from ml_collections import config_dict
 
@@ -571,21 +571,21 @@ class ConfigDict(object):
 
   Config dictionaries can also be used to pass named arguments to functions::
 
-      from ml_collections import config_dict
+    from ml_collections import config_dict
 
-      def print_point(x, y):
-        print "({},{})".format(x, y)
+    def print_point(x, y):
+      print "({},{})".format(x, y)
 
-      point = config_dict.ConfigDict()
-      point.x = 1
-      point.y = 2
-      print_point(**point)
+    point = config_dict.ConfigDict()
+    point.x = 1
+    point.y = 2
+    print_point(**point)
 
   Note that, depending on your use case, it may be easier to use the `create`
-  function in this package to construct a `ConfigDict`:
+  function in this package to construct a `ConfigDict`::
 
-     from ml_collections.config_dict import config_dict
-     point = config_dict.create(x=1, y=2)
+    from ml_collections.config_dict import config_dict
+    point = config_dict.create(x=1, y=2)
 
   Differently from standard `dicts`, `ConfigDicts` also have the nice property
   that iterating over them is deterministic, in a fashion similar to
@@ -601,7 +601,7 @@ class ConfigDict(object):
     of initial_dictionary, even if initial_dictionary is self-referencing.
     However, unexpected behavior occurs if self-references are contained within
     list, tuple, or custom types. For example::
-      
+
       d = {}
       d['a'] = d
       d['b'] = [d]
@@ -728,7 +728,7 @@ class ConfigDict(object):
     """Returns a one-way FieldReference.
 
     Example::
-      
+
       cfg = collections.ConfigDict(dict(a=1))
       cfg.b = cfg.get_oneway_ref('a')
 
@@ -963,11 +963,11 @@ class ConfigDict(object):
     """Type-invariant equals.
 
     This is like `__eq__`, except it does not distinguish `FrozenConfigDict`
-    from `ConfigDict`. For example:
+    from `ConfigDict`. For example::
 
-        cd = ConfigDict()
-        fcd = FrozenConfigDict()
-        fcd.eq_as_configdict(cd)  # Returns True
+      cd = ConfigDict()
+      fcd = FrozenConfigDict()
+      fcd.eq_as_configdict(cd)  # Returns True
 
     Args:
       other: Object to compare self to.
@@ -1851,7 +1851,7 @@ def create(**kwargs):
     config = config_dict.create(
       data=config_dict.create(
         game='freeway',
-        frame_size=100), 
+        frame_size=100),
       model=config_dict.create(num_hidden=1000))
 
   The reason for the existence of this function is that it simplifies the
@@ -1872,11 +1872,11 @@ def create(**kwargs):
 def placeholder(field_type, required=False):
   """Defines an entry in a ConfigDict that has no value yet.
 
-  Example:
+  Example::
 
-      config = configdict.create(
-          batch_size = configdict.placeholder(int),
-          frame_shape = configdict.placeholder(tf.TensorShape))
+    config = configdict.create(
+        batch_size = configdict.placeholder(int),
+        frame_shape = configdict.placeholder(tf.TensorShape))
 
   Args:
     field_type: type of value.
@@ -1892,18 +1892,18 @@ def placeholder(field_type, required=False):
 def required_placeholder(field_type):
   """Defines an entry in a ConfigDict with unknown but required value.
 
-  Example:
+  Example::
 
-      config = configdict.create(
-          batch_size = configdict.required_placeholder(int))
+    config = configdict.create(
+        batch_size = configdict.required_placeholder(int))
 
-      try:
-        print(config.batch_size)
-      except RequiredValueError:
-        pass
+    try:
+      print(config.batch_size)
+    except RequiredValueError:
+      pass
 
-      config.batch_size = 10
-      print(config.batch_size)  # 10
+    config.batch_size = 10
+    print(config.batch_size)  # 10
 
   Args:
     field_type: type of value.
