@@ -3,6 +3,8 @@
 ML Collections is a library of Python Collections designed for ML use cases.
 
 [![Documentation Status](https://readthedocs.org/projects/ml-collections/badge/?version=latest)](https://ml-collections.readthedocs.io/en/latest/?badge=latest)
+[![PyPI version](https://badge.fury.io/py/ml-collections.svg)](https://badge.fury.io/py/ml-collections)
+[![Build Status](https://github.com/google/ml_collections/workflows/Python%20package/badge.svg)](https://github.com/google/ml_collections/actions?query=workflow%3A%22Python+package%22)
 
 ## ConfigDict
 
