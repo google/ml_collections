@@ -4,8 +4,6 @@ package(default_visibility = ["//visibility:private"])
 
 licenses(["notice"])
 
-exports_files(["LICENSE"])
-
 py_test(
     name = "config_dict_test",
     size = "small",
