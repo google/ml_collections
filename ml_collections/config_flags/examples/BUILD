@@ -4,8 +4,6 @@ package(default_visibility = ["//visibility:private"])
 
 licenses(["notice"])
 
-exports_files(["LICENSE"])
-
 py_binary(
     name = "define_config_dict_basic",
     srcs = ["define_config_dict_basic.py"],
