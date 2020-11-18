@@ -132,7 +132,7 @@ class _ConfigFlagTestCase(object):
   def assert_equal_configs(self, config1, config2):
     """Checks if two configs are identical."""
     self.assert_subset_configs(config1, config2)
-    self.assert_subset_configs(config2, config1)
+    self.assert_subset_configs(config2, config1)  # pylint: disable=arguments-out-of-order
 
 
 class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
