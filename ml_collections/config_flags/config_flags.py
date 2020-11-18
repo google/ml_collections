@@ -183,6 +183,9 @@ def DEFINE_config_file(  # pylint: disable=g-bad-name
     lock_config: If set to True, loaded config will be locked through calling
         .lock() method on its instance (if it exists). (default: True)
     **kwargs: Optional keyword arguments passed to Flag constructor.
+
+  Returns:
+    a handle to defined flag.
   """
   parser = _ConfigFileParser(name=name, lock_config=lock_config)
   flag = _ConfigFlag(
@@ -197,7 +200,7 @@ def DEFINE_config_file(  # pylint: disable=g-bad-name
   # Get the module name for the frame at depth 1 in the call stack.
   module_name = sys._getframe(1).f_globals.get('__name__', None)  # pylint: disable=protected-access
   module_name = sys.argv[0] if module_name == '__main__' else module_name
-  flags.DEFINE_flag(flag, flag_values, module_name=module_name)
+  return flags.DEFINE_flag(flag, flag_values, module_name=module_name)
 
 
 def DEFINE_config_dict(  # pylint: disable=g-bad-name
@@ -260,6 +263,9 @@ def DEFINE_config_dict(  # pylint: disable=g-bad-name
     lock_config: If set to True, loaded config will be locked through calling
         .lock() method on its instance (if it exists). (default: True)
     **kwargs: Optional keyword arguments passed to Flag constructor.
+
+  Returns:
+    a handle to defined flag.
   """
   if not isinstance(config, ml_collections.ConfigDict):
     raise TypeError('config should be a ConfigDict')
@@ -276,7 +282,7 @@ def DEFINE_config_dict(  # pylint: disable=g-bad-name
   # Get the module name for the frame at depth 1 in the call stack.
   module_name = sys._getframe(1).f_globals.get('__name__', None)  # pylint: disable=protected-access
   module_name = sys.argv[0] if module_name == '__main__' else module_name
-  flags.DEFINE_flag(flag, flag_values, module_name=module_name)
+  return flags.DEFINE_flag(flag, flag_values, module_name=module_name)
 
 
 class _IgnoreFileNotFoundAndCollectErrors(object):
