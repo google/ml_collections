@@ -695,7 +695,8 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
                               _TEST_CONFIG_FILE, integer_override,
                               dictfloat_override))
 
-    config.update_from_flattened_dict(values['test_config'].override_values)
+    config.update_from_flattened_dict(
+        config_flags.get_override_values(values['test_config']))
     self.assertEqual(config['integer'], integer_override)
     self.assertEqual(config['float'], original_float)
     self.assertEqual(config['dict']['float'], dictfloat_override)
@@ -708,7 +709,8 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
   def testConfigPath(self, config_file):
     """Test access to saved config file path."""
     values = _parse_flags('./program --test_config={}'.format(config_file))
-    self.assertEqual(values['test_config'].config_filename, config_file)
+    self.assertEqual(config_flags.get_config_filename(values['test_config']),
+                     config_file)
 
 
 def _simple_config():

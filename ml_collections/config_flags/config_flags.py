@@ -285,6 +285,34 @@ def DEFINE_config_dict(  # pylint: disable=g-bad-name
   return flags.DEFINE_flag(flag, flag_values, module_name=module_name)
 
 
+def get_config_filename(config_flag):  # pylint: disable=g-bad-name
+  """Returns the path to the config file given the config flag.
+
+  Args:
+    config_flag: The flag instance obtained from FLAGS, e.g. FLAGS['config'].
+
+  Returns:
+    the path to the config file.
+  """
+  if not is_config_flag(config_flag):
+    raise TypeError('expect a config flag, found {}'.format(type(config_flag)))
+  return config_flag.config_filename
+
+
+def get_override_values(config_flag):  # pylint: disable=g-bad-name
+  """Returns a flat dict containing overridden values from the config flag.
+
+  Args:
+    config_flag: The flag instance obtained from FLAGS, e.g. FLAGS['config'].
+
+  Returns:
+    a flat dict containing overridden values from the config flag.
+  """
+  if not is_config_flag(config_flag):
+    raise TypeError('expect a config flag, found {}'.format(type(config_flag)))
+  return config_flag.override_values
+
+
 class _IgnoreFileNotFoundAndCollectErrors(object):
   """Helps recording "file not found" exceptions when loading config.
 

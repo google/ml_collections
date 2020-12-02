@@ -17,5 +17,10 @@
 
 from .config_flags import DEFINE_config_dict
 from .config_flags import DEFINE_config_file
+from .config_flags import get_config_filename
+from .config_flags import get_override_values
 
-__all__ = ("DEFINE_config_dict", "DEFINE_config_file")
+__all__ = ("DEFINE_config_dict",
+           "DEFINE_config_file",
+           "get_config_filename",
+           "get_override_values")
