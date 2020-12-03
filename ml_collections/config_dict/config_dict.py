@@ -385,6 +385,9 @@ class FieldReference(object):
   def identity(self):
     return self._apply_op(lambda x: x)
 
+  def attr(self, attr_name):
+    return self._apply_op(operator.attrgetter(attr_name))
+
   def __add__(self, other):
     return self._apply_op(operator.add, other)
 

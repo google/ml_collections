@@ -534,6 +534,41 @@ class FieldReferenceTest(parameterized.TestCase):
 
   @parameterized.parameters(
       {
+          'initial_value': config_dict.create(attribute=2),
+          'true_value': 2,
+          'new_initial_value': config_dict.create(attribute=3),
+          'new_true_value': 3,
+      },
+      {
+          'initial_value': config_dict.create(attribute={'a': 1}),
+          'true_value': config_dict.create(a=1),
+          'new_initial_value': config_dict.create(attribute={'b': 1}),
+          'new_true_value': config_dict.create(b=1),
+      },
+      {
+          'initial_value':
+              ml_collections.FieldReference(config_dict.create(attribute=2)),
+          'true_value':
+              ml_collections.FieldReference(2),
+          'new_initial_value':
+              config_dict.create(attribute=3),
+          'new_true_value':
+              3,
+      },
+      {
+          'initial_value': config_dict.placeholder(config_dict.ConfigDict),
+          'true_value': None,
+          'new_initial_value': config_dict.create(attribute=3),
+          'new_true_value': 3,
+      },
+  )
+  def testAttr(self, initial_value, true_value, new_initial_value,
+               new_true_value):
+    self._test_unary_operator(initial_value, lambda x: x.attr('attribute'),
+                              true_value, new_initial_value, new_true_value)
+
+  @parameterized.parameters(
+      {
           'initial_value': 3,
           'true_value': 3,
           'new_initial_value': -101,
