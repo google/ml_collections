@@ -596,6 +596,9 @@ class ConfigDict(object):
   """
   # pylint: enable=line-too-long
 
+  # Loosen the static type checking requirements.
+  _HAS_DYNAMIC_ATTRIBUTES = True
+
   def __init__(
       self, initial_dictionary=None, type_safe=True, convert_dict=True):
     """Creates an instance of ConfigDict.
