@@ -20,6 +20,7 @@ import collections as python_collections
 import json
 import pickle
 import sys
+from typing import Mapping
 
 from absl.testing import absltest
 from absl.testing import parameterized
@@ -222,6 +223,11 @@ class ConfigDictTest(parameterized.TestCase):
   def testFromDictConstruction(self):
     """Tests creation of config from existing dictionary."""
     cfg = ml_collections.ConfigDict(_TEST_DICT)
+    self.assertEqualConfigs(cfg, _TEST_DICT)
+
+  def testFromIterableConstruction(self):
+    """Tests creation of config from existing dictionary."""
+    cfg = ml_collections.ConfigDict(_TEST_DICT.items())
     self.assertEqualConfigs(cfg, _TEST_DICT)
 
   def testOverridingValues(self):
@@ -581,6 +587,9 @@ class ConfigDictTest(parameterized.TestCase):
     self.assertFalse(frozen_cfg_1.eq_as_configdict(cfg_self_ref))
     self.assertFalse(frozen_cfg_1.eq_as_configdict(frozen_cfg_2))
     self.assertFalse(cfg_self_ref.eq_as_configdict(cfg_1))
+
+  def testIsInstanceOfMapping(self):
+    self.assertIsInstance(ml_collections.ConfigDict(), Mapping)
 
   def testHash(self):
     some_dict = {'float': 1.23, 'integer': 3}

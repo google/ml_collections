@@ -30,6 +30,7 @@ import inspect
 import json
 import operator
 
+from typing import Iterable
 from absl import logging
 
 import contextlib2
@@ -549,7 +550,7 @@ def _configdict_fill_seed(seed, initial_dictionary, visit_map=None):
     seed.__setattr__(key, value)
 
 
-class ConfigDict(object):
+class ConfigDict(collections.MutableMapping):
   # pylint: disable=line-too-long
   """Base class for configuration objects used in DeepMind.
 
@@ -622,9 +623,11 @@ class ConfigDict(object):
     Args:
       initial_dictionary: May be one of the following:
 
-        1) dict. In this case, all values of initial_dictionary that are
-        dictionaries are also be converted to ConfigDict. However,
-        dictionaries within values of non-dict type are untouched.
+        1) dict, or an object that can be passed to the dict constructor (e.g.
+        an Iterable over (key, value) pairs). In this case, all values of
+        initial_dictionary that are dictionaries are also be converted to
+        ConfigDict. However, dictionaries within values of non-dict type are
+        untouched.
 
         2) ConfigDict. In this case, all attributes are uncopied, and only the
         top-level object (self) is re-addressed. This is the same behavior
@@ -640,6 +643,9 @@ class ConfigDict(object):
       convert_dict: If set to True, all dict used as value in the ConfigDict
           will automatically be converted to ConfigDict (default: True).
     """
+    if (initial_dictionary is not None and
+        not isinstance(initial_dictionary, collections.Mapping)):
+      initial_dictionary = dict(initial_dictionary)
 
     if isinstance(initial_dictionary, FrozenConfigDict):
       initial_dictionary = initial_dictionary.as_configdict()
