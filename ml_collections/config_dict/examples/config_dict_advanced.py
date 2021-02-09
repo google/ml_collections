@@ -122,7 +122,7 @@ def main(_):
   # Note: __repr__ (not __str__) is the recommended representation, as it
   # preserves FieldReferences and placeholders.
   print_section('Loading dictionary from string representation.')
-  dictionary = yaml.load(repr(config))
+  dictionary = yaml.load(repr(config), yaml.UnsafeLoader)
   print('dict["object_reference"]["dict"]["dict"]["float"]={}'.format(
       dictionary['object_reference']['dict']['dict']['float']))
 

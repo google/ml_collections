@@ -675,7 +675,7 @@ class ConfigDictTest(parameterized.TestCase):
   def testDeYaml(self):
     """Tests YAML deserialization."""
     cfg = _get_test_config_dict()
-    deyamled = yaml.load(cfg.to_yaml())
+    deyamled = yaml.load(cfg.to_yaml(), yaml.UnsafeLoader)
     self.assertEqual(cfg, deyamled)
 
   def testJSONConversion(self):
@@ -723,7 +723,7 @@ class ConfigDictTest(parameterized.TestCase):
     cfg_dict.r1 = field
     cfg_dict.r2 = field
 
-    cfg_load = yaml.load(repr(cfg_dict))
+    cfg_load = yaml.load(repr(cfg_dict), yaml.UnsafeLoader)
 
     # Test FieldReferences are preserved
     cfg_load['r1'].set(2)
@@ -1331,7 +1331,7 @@ class ConfigDictUpdateTest(absltest.TestCase):
     This checks backward compatibility of deserialisation.
     """
     cfg = ml_collections.ConfigDict(dict(a=1))
-    self.assertTrue(yaml.load(cfg.to_yaml())._convert_dict)
+    self.assertTrue(yaml.load(cfg.to_yaml(), yaml.UnsafeLoader)._convert_dict)
 
   def testRecursiveRename(self):
     """Test recursive_rename.

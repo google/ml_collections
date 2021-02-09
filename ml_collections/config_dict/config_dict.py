@@ -992,6 +992,23 @@ class ConfigDict(object):
   def to_yaml(self, **kwargs):
     """Returns a YAML representation of the object.
 
+    ConfigDict serializes types of fields as well as the values of fields
+    themselves. Deserializing the YAML representation hence requires using
+    YAML's UnsafeLoader:
+
+    ```
+    yaml.load(cfg.to_yaml(), Loader=yaml.UnsafeLoader)
+    ```
+
+    or equivalently:
+
+    ```
+    yaml.unsafe_load(cfg.to_yaml())
+    ```
+
+    Please see the PyYAML documentation and https://msg.pyyaml.org/load for more
+    details on the consequences of this.
+
     Args:
       **kwargs: Keyword arguments for yaml.dump.
 
