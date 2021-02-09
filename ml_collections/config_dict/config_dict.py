@@ -23,6 +23,7 @@ configurations of experiments and models.
 
 import abc
 import collections
+from collections import abc as collections_abc
 import contextlib
 import difflib
 import functools
@@ -735,7 +736,7 @@ class ConfigDict(object):
 
     Example::
 
-      cfg = collections.ConfigDict(dict(a=1))
+      cfg = ml_collections.ConfigDict(dict(a=1))
       cfg.b = cfg.get_oneway_ref('a')
 
       cfg.a = 2
@@ -1227,9 +1228,9 @@ class ConfigDict(object):
       if isinstance(field, ConfigDict):
         managers.append(field.ignore_type)
       # Recursively add elements in nested collections.
-      elif isinstance(field, collections.Mapping):
+      elif isinstance(field, collections_abc.Mapping):
         fields.extend(six.iteritems(field))
-      elif isinstance(field, (collections.Sequence, collections.Set)):
+      elif isinstance(field, (collections_abc.Sequence, collections_abc.Set)):
         fields.extend(field)
 
     super(ConfigDict, self).__setattr__('_type_safe', False)

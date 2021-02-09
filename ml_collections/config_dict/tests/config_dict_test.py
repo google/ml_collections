@@ -16,7 +16,7 @@
 """Tests for ml_collections.ConfigDict."""
 
 import abc
-import collections as python_collections
+from collections import abc as collections_abc
 import json
 import pickle
 import sys
@@ -589,7 +589,7 @@ class ConfigDictTest(parameterized.TestCase):
       hash(cfg)
 
     # Ensure Python realizes ConfigDict is not hashable.
-    self.assertNotIsInstance(cfg, python_collections.Hashable)
+    self.assertNotIsInstance(cfg, collections_abc.Hashable)
 
   def testDidYouMeanFeature(self):
     """Tests 'did you mean' suggestions."""

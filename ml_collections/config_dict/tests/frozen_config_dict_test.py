@@ -15,7 +15,7 @@
 # Lint as: python3
 """Tests for ml_collections.FrozenConfigDict."""
 
-import collections as python_collections
+from collections import abc as collections_abc
 import copy
 import pickle
 
@@ -357,7 +357,7 @@ class FrozenConfigDictTest(absltest.TestCase):
         hash(ml_collections.FrozenConfigDict(list_to_tuple)))
 
     # Ensure Python realizes FrozenConfigDict is hashable
-    self.assertIsInstance(_test_frozenconfigdict(), python_collections.Hashable)
+    self.assertIsInstance(_test_frozenconfigdict(), collections_abc.Hashable)
 
   def testUnhashableType(self):
     """Ensures __hash__() fails if FrozenConfigDict has unhashable value."""
