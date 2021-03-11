@@ -57,7 +57,7 @@ class _TestClass(six.with_metaclass(abc.ABCMeta, object)):
 _test_object = _TestClass()
 
 
-class _TestClassNoStr():  # pylint: disable=old-style-class
+class _TestClassNoStr():
   pass
 
 
