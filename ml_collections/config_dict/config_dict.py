@@ -412,10 +412,10 @@ class FieldReference:
     return self._apply_op(rmul)
 
   def __div__(self, other):
-    return self._apply_op(operator.div, other)
+    return self._apply_op(operator.truediv, other)
 
   def __rdiv__(self, other):
-    rdiv = functools.partial(operator.div, other)
+    rdiv = functools.partial(operator.truediv, other)
     return self._apply_op(rdiv)
 
   def __truediv__(self, other):
@@ -1289,7 +1289,7 @@ class ConfigDict:
       if isinstance(other, ConfigDict):
         iteritems_kwargs['preserve_field_references'] = True
 
-      for key, value in six.iteritems(other, **iteritems_kwargs):
+      for key, value in six.iteritems(other, **iteritems_kwargs):  # pytype: disable=wrong-keyword-args
         if key not in self:
           self[key] = value
         elif isinstance(self._fields[key], ConfigDict):

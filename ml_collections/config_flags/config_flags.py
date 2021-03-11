@@ -21,7 +21,7 @@ import os
 import re
 import sys
 import traceback
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, MutableMapping, Optional, Tuple
 
 from absl import flags
 from absl import logging
@@ -208,7 +208,7 @@ def DEFINE_config_dict(  # pylint: disable=g-bad-name
     name: str,
     config: ml_collections.ConfigDict,
     help_string: str = 'ConfigDict instance.',
-    flag_values: flags. FlagValues = FLAGS,
+    flag_values: flags.FlagValues = FLAGS,
     lock_config: bool = True,
     **kwargs) -> flags.FlagHolder:
   """Defines flag for inline `ConfigDict's` compatible with absl flags.
@@ -326,7 +326,7 @@ class _IgnoreFileNotFoundAndCollectErrors:
   """
 
   def __init__(self):
-    self._attempts = []  # type: List[Tuple[Tuple[Text, Text], IOError]]
+    self._attempts = []  # type: List[Tuple[Tuple[str, str], IOError]]
 
   def Attempt(self, description, path):
     """Creates a context manager that routes exceptions to this class."""
@@ -542,7 +542,7 @@ class _ConfigFlag(flags.Flag):
     if self._IsConfigSpecified(sys.argv):
       self.default = default
     else:
-      super(_ConfigFlag, self)._set_default(default)
+      super(_ConfigFlag, self)._set_default(default)  # pytype: disable=attribute-error
     self.default_as_str = "'{}'".format(default)
 
   def _parse(self, argument):
@@ -696,7 +696,7 @@ def is_config_flag(flag):  # pylint: disable=g-bad-name
   return isinstance(flag, _ConfigFlag)
 
 
-class _ConfigFieldParser:
+class _ConfigFieldParser(flags.ArgumentParser):
   """Parser with config update after parsing.
 
   This class-based wrapper creates a new object, which uses
@@ -705,7 +705,12 @@ class _ConfigFieldParser:
   the config object.
   """
 
-  def __init__(self, parser, path, config, override_values):
+  def __init__(
+      self,
+      parser: flags.ArgumentParser,
+      path: str,
+      config: ml_collections.ConfigDict,
+      override_values: MutableMapping[str, Any]):
     """Creates new parser with callback, using existing one to perform parsing.
 
     Args:
@@ -729,6 +734,13 @@ class _ConfigFieldParser:
     SetValue(self._path, self._config, value)
     self._override_values[self._path] = value
     return value
+
+  def flag_type(self) -> str:
+    return self._parser.flag_type()
+
+  @property
+  def syntactic_help(self) -> str:
+    return self._parser.syntactic_help
 
 
 def _ExtractIndicesFromStep(step):
