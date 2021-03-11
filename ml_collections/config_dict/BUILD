@@ -15,7 +15,6 @@ py_library(
         # pip: absl/logging
         # pip: contextlib2
         # pip: six
-        # pip: typing
         # pip: yaml
     ],
 )

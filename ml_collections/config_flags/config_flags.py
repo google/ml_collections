@@ -21,6 +21,7 @@ import os
 import re
 import sys
 import traceback
+from typing import Any, Mapping, Optional
 
 from absl import flags
 from absl import logging
@@ -75,12 +76,12 @@ class UnparsedFlagError(flags.Error):
 
 
 def DEFINE_config_file(  # pylint: disable=g-bad-name
-    name,
-    default=None,
-    help_string='path to config file.',
-    flag_values=FLAGS,
-    lock_config=True,
-    **kwargs):
+    name: str,
+    default: Optional[str] = None,
+    help_string: str = 'path to config file.',
+    flag_values: flags.FlagValues = FLAGS,
+    lock_config: bool = True,
+    **kwargs) -> flags.FlagHolder:
   r"""Defines flag for `ConfigDict` files compatible with absl flags.
 
   The flag's value should be a path to a valid python file which contains a
@@ -204,12 +205,12 @@ def DEFINE_config_file(  # pylint: disable=g-bad-name
 
 
 def DEFINE_config_dict(  # pylint: disable=g-bad-name
-    name,
-    config,
-    help_string='ConfigDict instance.',
-    flag_values=FLAGS,
-    lock_config=True,
-    **kwargs):
+    name: str,
+    config: ml_collections.ConfigDict,
+    help_string: str = 'ConfigDict instance.',
+    flag_values: flags. FlagValues = FLAGS,
+    lock_config: bool = True,
+    **kwargs) -> flags.FlagHolder:
   """Defines flag for inline `ConfigDict's` compatible with absl flags.
 
   Similar to `DEFINE_config_file` except the flag's value should be a
@@ -285,7 +286,7 @@ def DEFINE_config_dict(  # pylint: disable=g-bad-name
   return flags.DEFINE_flag(flag, flag_values, module_name=module_name)
 
 
-def get_config_filename(config_flag):  # pylint: disable=g-bad-name
+def get_config_filename(config_flag) -> str:  # pylint: disable=g-bad-name
   """Returns the path to the config file given the config flag.
 
   Args:
@@ -299,7 +300,7 @@ def get_config_filename(config_flag):  # pylint: disable=g-bad-name
   return config_flag.config_filename
 
 
-def get_override_values(config_flag):  # pylint: disable=g-bad-name
+def get_override_values(config_flag) -> Mapping[str, Any]:  # pylint: disable=g-bad-name
   """Returns a flat dict containing overridden values from the config flag.
 
   Args:
@@ -313,7 +314,7 @@ def get_override_values(config_flag):  # pylint: disable=g-bad-name
   return config_flag.override_values
 
 
-class _IgnoreFileNotFoundAndCollectErrors(object):
+class _IgnoreFileNotFoundAndCollectErrors:
   """Helps recording "file not found" exceptions when loading config.
 
   Usage:
@@ -332,7 +333,7 @@ class _IgnoreFileNotFoundAndCollectErrors(object):
     self._current_attempt = (description, path)
     ignore_errors = self
 
-    class _ContextManager(object):
+    class _ContextManager:
 
       def __enter__(self):
         return self
@@ -356,7 +357,7 @@ class _IgnoreFileNotFoundAndCollectErrors(object):
         for attempt, e in self._attempts)
 
 
-def _LoadConfigModule(name, path):
+def _LoadConfigModule(name: str, path: str):
   """Loads a script from external file specified by path.
 
   Unprefixed path is looked for in the current working directory using
@@ -387,7 +388,7 @@ def _LoadConfigModule(name, path):
       name, ignoring_errors.DescribeAttempts()))
 
 
-class _ErrorConfig(object):
+class _ErrorConfig:
   """Dummy ConfigDict that raises an error on any attribute access."""
 
   def __init__(self, error):
@@ -695,7 +696,7 @@ def is_config_flag(flag):  # pylint: disable=g-bad-name
   return isinstance(flag, _ConfigFlag)
 
 
-class _ConfigFieldParser(object):
+class _ConfigFieldParser:
   """Parser with config update after parsing.
 
   This class-based wrapper creates a new object, which uses
@@ -793,7 +794,7 @@ def _TakeStep(current, step):
   return _AccessConfig(current, field, indices)
 
 
-def GetValue(path, config):
+def GetValue(path: str, config: ml_collections.ConfigDict):
   """Gets value of a single field."""
   current = config
   for step in path.split('.'):
@@ -828,7 +829,7 @@ def GetTypes(paths, config):
   return [GetType(path, config) for path in paths]
 
 
-def SetValue(path, config, value):
+def SetValue(path: str, config: ml_collections.ConfigDict, value):
   """Sets value of a single field."""
   current = config
   steps = path.split('.')

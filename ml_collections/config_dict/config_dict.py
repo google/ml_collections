@@ -30,6 +30,7 @@ import functools
 import inspect
 import json
 import operator
+from typing import Any, Mapping, Optional
 
 from absl import logging
 
@@ -158,7 +159,7 @@ class _Op(collections.namedtuple('_Op', ['fn', 'args'])):
 
 
 @functools.total_ordering
-class FieldReference(object):
+class FieldReference:
   """Reference to a configuration element.
 
   Typed configuration element that can take a None default value. Example::
@@ -550,7 +551,7 @@ def _configdict_fill_seed(seed, initial_dictionary, visit_map=None):
     seed.__setattr__(key, value)
 
 
-class ConfigDict(object):
+class ConfigDict:
   # pylint: disable=line-too-long
   """Base class for configuration objects used in DeepMind.
 
@@ -601,7 +602,11 @@ class ConfigDict(object):
   _HAS_DYNAMIC_ATTRIBUTES = True
 
   def __init__(
-      self, initial_dictionary=None, type_safe=True, convert_dict=True):
+      self,
+      initial_dictionary: Optional[Mapping[str, Any]] = None,
+      type_safe: bool = True,
+      convert_dict: bool = True,
+  ):
     """Creates an instance of ConfigDict.
 
     Warning: In most cases, this faithfully reproduces the reference structure
@@ -660,7 +665,7 @@ class ConfigDict(object):
                                           initial_dictionary.is_type_safe)
 
   @property
-  def is_type_safe(self):
+  def is_type_safe(self) -> bool:
     """Returns True if config dict is type safe."""
     return self._type_safe
 
@@ -669,7 +674,7 @@ class ConfigDict(object):
     """Returns True if it is converting dicts to ConfigDict automatically."""
     return self._convert_dict
 
-  def lock(self):
+  def lock(self) -> 'ConfigDict':
     """Locks object, preventing user from adding new fields.
 
     Returns:
@@ -689,11 +694,11 @@ class ConfigDict(object):
     return self
 
   @property
-  def is_locked(self):
+  def is_locked(self) -> bool:
     """Returns True if object is locked."""
     return self._locked
 
-  def unlock(self):
+  def unlock(self) -> 'ConfigDict':
     """Grants user the ability to add new fields to ConfigDict.
 
     In most cases, the unlocked() context manager should be preferred to the
@@ -710,7 +715,7 @@ class ConfigDict(object):
         element.unlock()
     return self
 
-  def get(self, key, default=None):
+  def get(self, key: str, default=None):
     """Returns value if key is present, or a user defined value otherwise."""
     try:
       return self[key]
@@ -862,7 +867,7 @@ class ConfigDict(object):
                                                              request)
     return message
 
-  def __delitem__(self, key):
+  def __delitem__(self, key: str):
     if self.is_locked:
       raise KeyError('This ConfigDict is locked, you have to unlock it before '
                      'trying to delete a field.')
@@ -879,7 +884,7 @@ class ConfigDict(object):
     except KeyError as e:
       raise KeyError(self._generate_did_you_mean_message(key, str(e)))
 
-  def __getitem__(self, key):
+  def __getitem__(self, key: str):
     if '.' in key:
       # As per the check in __setitem__ above, keys cannot contain dots.
       # Hence, we can use dots to do recursive calls.
@@ -895,14 +900,14 @@ class ConfigDict(object):
     except KeyError as e:
       raise KeyError(self._generate_did_you_mean_message(key, str(e)))
 
-  def __contains__(self, key):
+  def __contains__(self, key: str):
     return key in self._fields
 
-  def __repr__(self):
+  def __repr__(self) -> str:
     return yaml.dump(self.to_dict(preserve_field_references=True),
                      default_flow_style=False)
 
-  def __str__(self):
+  def __str__(self) -> str:
     return yaml.dump(self.to_dict())
 
   def keys(self):
