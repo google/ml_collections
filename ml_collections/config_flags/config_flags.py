@@ -21,7 +21,7 @@ import os
 import re
 import sys
 import traceback
-from typing import Any, Mapping, Optional
+from typing import Any, Dict, Optional
 
 from absl import flags
 from absl import logging
@@ -300,7 +300,7 @@ def get_config_filename(config_flag) -> str:  # pylint: disable=g-bad-name
   return config_flag.config_filename
 
 
-def get_override_values(config_flag) -> Mapping[str, Any]:  # pylint: disable=g-bad-name
+def get_override_values(config_flag) -> Dict[str, Any]:  # pylint: disable=g-bad-name
   """Returns a flat dict containing overridden values from the config flag.
 
   Args:
