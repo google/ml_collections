@@ -32,16 +32,14 @@ python define_config_dict_basic.py -- \
 # pylint: enable=line-too-long
 
 from absl import app
-from absl import flags
 
 from ml_collections.config_flags import config_flags
 
-FLAGS = flags.FLAGS
-config_flags.DEFINE_config_file('my_config')
+_CONFIG = config_flags.DEFINE_config_file('my_config')
 
 
 def main(_):
-  print(FLAGS.my_config)
+  print(_CONFIG.value)
 
 
 if __name__ == '__main__':

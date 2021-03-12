@@ -21,14 +21,10 @@ safety, iteration over fields, checking for a particular field, unpacking with
 """
 
 from absl import app
-from absl import flags
 from ml_collections.config_flags import config_flags
 import yaml
 
-
-FLAGS = flags.FLAGS
-
-config_flags.DEFINE_config_file(
+_CONFIG = config_flags.DEFINE_config_file(
     'my_config',
     default='ml_collections/config_dict/examples/config.py')
 
@@ -49,13 +45,13 @@ def print_section(name):
 def main(_):
   # Config is already loaded in FLAGS.my_config due to the logic hidden
   # in app.run().
-  config = FLAGS.my_config
+  config = _CONFIG.value
 
   print_section('Printing config.')
-  print(FLAGS.my_config)
+  print(config)
 
   # Config is of our type ConfigDict.
-  print('Type of the config {}'.format(type(FLAGS.my_config)))
+  print('Type of the config {}'.format(type(config)))
 
   # By default it is locked, thus you cannot add new fields.
   # This prevents you from misspelling your attribute name.
