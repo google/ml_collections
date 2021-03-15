@@ -11,6 +11,7 @@ py_library(
         "__init__.py",
         "config_flags.py",
     ],
+    srcs_version = "PY3",
     visibility = [
         "//visibility:public",
     ],
@@ -18,9 +19,9 @@ py_library(
         ":tuple_parser",
         # pip: absl/flags
         # pip: absl/logging
+        # pip: dataclasses
         "//ml_collections",
         # pip: six
-        # pip: typing
     ],
 )
 
@@ -31,5 +32,6 @@ py_library(
     ],
     deps = [
         # pip: absl/flags
+        # pip: typing
     ],
 )

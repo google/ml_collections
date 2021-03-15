@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Lint as: python 3
-"""Complex configs commmand line parser."""
+"""Configuration commmand line parser."""
 
 import errno
 import imp
@@ -21,10 +21,11 @@ import os
 import re
 import sys
 import traceback
-from typing import Any, Dict, List, MutableMapping, Optional, Tuple
+from typing import Any, Dict, Generic, List, MutableMapping, Optional, Tuple, Type, TypeVar
 
 from absl import flags
 from absl import logging
+import dataclasses
 import ml_collections
 from ml_collections.config_flags import tuple_parser
 import six
@@ -284,6 +285,75 @@ def DEFINE_config_dict(  # pylint: disable=g-bad-name
   module_name = sys._getframe(1).f_globals.get('__name__', None)  # pylint: disable=protected-access
   module_name = sys.argv[0] if module_name == '__main__' else module_name
   return flags.DEFINE_flag(flag, flag_values, module_name=module_name)
+
+
+# Note that we would add a bound to constrain this to be a dataclass, except
+# that dataclasses don't have a specific base class, and structural typing for
+# attributes is currently (2021Q1) not supported in pytype (b/150927776).
+_T = TypeVar('_T')
+
+
+class _TypedFlagHolder(flags.FlagHolder, Generic[_T]):
+  """A typed wrapper for a FlagHolder."""
+
+  def __init__(self, flag: flags.FlagHolder, ctor: Type[_T]):
+    self._flag = flag
+    self._ctor = ctor
+
+  @property
+  def value(self) -> _T:
+    return self._ctor(**self._flag.value)
+
+  @property
+  def default(self) -> _T:
+    return self._ctor(**self._flag.default)
+
+  @property
+  def name(self) -> str:
+    return self._flag.name
+
+
+def DEFINE_config_dataclass(  # pylint: disable=invalid-name
+    name: str,
+    config: _T,
+    help_string: str = 'Configuration object. Must be a dataclass.',
+    flag_values: flags.FlagValues = FLAGS,
+    **kwargs,
+) -> _TypedFlagHolder[_T]:
+  """Defines a typed (dataclass) flag-overrideable configuration.
+
+  Similar to `DEFINE_config_dict` except `config` should be a `dataclass`.
+
+  Args:
+    name: Flag name.
+    config: A user-defined configuration object. Must be built via `dataclass`.
+    help_string: Help string to display when --helpfull is called.
+    flag_values: FlagValues instance used for parsing.
+    **kwargs: Optional keyword arguments passed to Flag constructor.
+  Returns:
+    A handle to the defined flag.
+  """
+
+  if not dataclasses.is_dataclass(config):
+    raise ValueError('Configuration object must be a `dataclass`.')
+
+  # Convert to configdict *without* recursing into leaf node(s).
+  # If our config contains dataclasses (or other types) as fields, we want to
+  # preserve them; dataclasses.asdict recursively turns all fields into dicts.
+  dictionary = {field.name: getattr(config, field.name)
+                for field in dataclasses.fields(config)}
+  config_dict = ml_collections.ConfigDict(initial_dictionary=dictionary)
+
+  # Define the flag.
+  config_flag = DEFINE_config_dict(
+      name,
+      config=config_dict,
+      help_string=help_string,
+      flag_values=flag_values,
+      **kwargs,
+  )
+
+  return _TypedFlagHolder(flag=config_flag, ctor=config.__class__)
 
 
 def get_config_filename(config_flag) -> str:  # pylint: disable=g-bad-name

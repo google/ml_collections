@@ -11,7 +11,7 @@ py_binary(
     srcs_version = "PY3",
     deps = [
         # pip: absl:app
-        "//ml_collections",
+        # pip: dataclasses
         "//ml_collections/config_flags",
     ],
 )
@@ -44,7 +44,7 @@ py_library(
     srcs_version = "PY3",
     deps = [
         # pip: absl:app
-        "//ml_collections",
+        # pip: dataclasses
         "//ml_collections/config_flags",
     ],
 )
@@ -59,5 +59,17 @@ py_test(
         # pip: absl/flags
         # pip: absl/testing:absltest
         # pip: absl/testing:flagsaver
+    ],
+)
+
+py_binary(
+    name = "define_config_dataclass_basic",
+    srcs = ["define_config_dataclass_basic.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    deps = [
+        # pip: absl:app
+        # pip: dataclasses
+        "//ml_collections/config_flags",
     ],
 )

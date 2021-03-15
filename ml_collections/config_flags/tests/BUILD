@@ -32,3 +32,17 @@ py_test(
         # pip: six
     ],
 )
+
+py_test(
+    name = "dataclass_overriding_test",
+    size = "small",
+    srcs = ["dataclass_overriding_test.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    deps = [
+        # pip: absl/flags
+        # pip: absl/testing:absltest
+        # pip: dataclasses
+        "//ml_collections/config_flags",
+    ],
+)
