@@ -904,11 +904,21 @@ class ConfigDict:
     return key in self._fields
 
   def __repr__(self) -> str:
-    return yaml.dump(self.to_dict(preserve_field_references=True),
-                     default_flow_style=False)
+    # We want __repr__ to always run without throwing an exception,
+    # even if the config dict is not YAML serialisable.
+    try:
+      return yaml.dump(self.to_dict(preserve_field_references=True),
+                       default_flow_style=False)
+    except Exception:  # pylint: disable=broad-except
+      return repr(self.to_dict())
 
   def __str__(self) -> str:
-    return yaml.dump(self.to_dict())
+    # We want __str__ to always run without throwing an exception,
+    # even if the config dict is not YAML serialisable.
+    try:
+      return yaml.dump(self.to_dict())
+    except Exception:  # pylint: disable=broad-except
+      return str(self.to_dict())
 
   def keys(self):
     """Returns the sorted list of all the keys defined in a config."""
