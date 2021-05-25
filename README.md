@@ -433,7 +433,7 @@ def main(_):
   print(FLAGS.my_config)
 
 if __name__ == '__main__':
-  app.run()
+  app.run(main)
 ```
 
 `config.py`:
@@ -459,10 +459,10 @@ def get_config():
 Now, after running:
 
 ```bash
-python script.py -- --my_config=config.py \
-                    --my_config.field1=8 \
-                    --my_config.nested.field=2.1 \
-                    --my_config.tuple='(1, 2, (1, 2))'
+python script.py --my_config=config.py \
+                 --my_config.field1=8 \
+                 --my_config.nested.field=2.1 \
+                 --my_config.tuple='(1, 2, (1, 2))'
 ```
 
 we get:
