@@ -1317,21 +1317,6 @@ class ConfigDictUpdateTest(absltest.TestCase):
     self.assertIsInstance(cfg.a, dict)
     self.assertIsInstance(cfg.a['b'], dict)
 
-  def testConvertDictInCopyAndResolveReferences(self):
-    """Test conversion, or not, of dict in copy and resolve references."""
-    cfg = ml_collections.ConfigDict()
-    cfg.a = dict(b=dict(c=0))
-    copied_cfg = cfg.copy_and_resolve_references()
-    self.assertIsInstance(copied_cfg.a, ml_collections.ConfigDict)
-    self.assertIsInstance(copied_cfg.a.b, ml_collections.ConfigDict)
-
-    cfg = ml_collections.ConfigDict(convert_dict=False)
-    cfg.a = dict(b=dict(c=0))
-    copied_cfg = cfg.copy_and_resolve_references()
-    self.assertNotIsInstance(copied_cfg.a, ml_collections.ConfigDict)
-    self.assertIsInstance(copied_cfg.a, dict)
-    self.assertIsInstance(copied_cfg.a['b'], dict)
-
   def testConvertDictTypeCompat(self):
     """Test that automatic conversion to ConfigDict doesn't trigger type errors."""
     cfg = ml_collections.ConfigDict()

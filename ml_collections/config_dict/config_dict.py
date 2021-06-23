@@ -1180,12 +1180,8 @@ class ConfigDict:
     Returns:
       ConfigDict copy with previous FieldReferences replaced by values.
     """
-    if isinstance(self, FrozenConfigDict):
-      config_dict_copy = FrozenConfigDict()
-    else:
-      config_dict_copy = self.__class__(convert_dict=self.convert_dict)
-
     visit_map = visit_map or {}
+    config_dict_copy = self.__class__()
     visit_map[id(self)] = config_dict_copy
 
     for key, value in six.iteritems(self._fields):
