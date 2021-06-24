@@ -1182,6 +1182,8 @@ class ConfigDict:
     """
     visit_map = visit_map or {}
     config_dict_copy = self.__class__()
+    super(ConfigDict, config_dict_copy).__setattr__('_convert_dict',
+                                                    self.convert_dict)
     visit_map[id(self)] = config_dict_copy
 
     for key, value in six.iteritems(self._fields):
