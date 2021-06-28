@@ -64,6 +64,11 @@ class JSONDecodeError(Exception):
 _NoneType = type(None)
 
 
+def _is_callable_type(field_type):
+  """Tries to ensure: `_is_callable_type(type(obj)) == callable(obj)`."""
+  return any('__call__' in c.__dict__ for c in field_type.__mro__)
+
+
 def _is_type_safety_violation(value, field_type):
   """Helper function for type safety exceptions.
 
@@ -80,8 +85,11 @@ def _is_type_safety_violation(value, field_type):
   # Allow None to override and be overridden by any type.
   if value is None or field_type == _NoneType:
     return False
+  elif isinstance(value, field_type):
+    return False
   else:
-    return not isinstance(value, field_type)
+    # A callable can overridde a callable.
+    return not (callable(value) and _is_callable_type(field_type))
 
 
 def _safe_cast(value, field_type, type_safe=False):

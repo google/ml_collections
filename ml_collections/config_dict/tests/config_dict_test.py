@@ -17,6 +17,7 @@
 
 import abc
 from collections import abc as collections_abc
+import functools
 import json
 import pickle
 import sys
@@ -289,6 +290,28 @@ class ConfigDictTest(parameterized.TestCase):
     cfg.long_field = int_value
     self.assertEqual(cfg.long_field, int_value)
     self.assertIsInstance(cfg.long_field, expected)
+
+  def testOverrideCallable(self):
+    """Test that overriding a callable with a callable works."""
+
+    class SomeClass:
+
+      def __init__(self, x, power=1):
+        self.y = x**power
+
+      def factory(self, x):
+        return SomeClass(self.y + x)
+
+    fn1 = SomeClass
+    fn2 = lambda x: SomeClass(x, power=2)
+    fn3 = functools.partial(SomeClass, power=3)
+    fn4 = SomeClass(4.0).factory
+    cfg = ml_collections.ConfigDict()
+    for orig in [fn1, fn2, fn3, fn4]:
+      for new in [fn1, fn2, fn3, fn4]:
+        cfg.fn_field = orig
+        cfg.fn_field = new
+        self.assertEqual(cfg.fn_field, new)
 
   def testOverrideFieldReference(self):
     """Test overriding with FieldReference objects."""
