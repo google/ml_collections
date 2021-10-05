@@ -19,7 +19,6 @@ py_library(
         ":tuple_parser",
         # pip: absl/flags
         # pip: absl/logging
-        # pip: dataclasses
         "//ml_collections",
         # pip: six
     ],

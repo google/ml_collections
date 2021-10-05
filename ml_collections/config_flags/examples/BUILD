@@ -11,7 +11,6 @@ py_binary(
     srcs_version = "PY3",
     deps = [
         # pip: absl:app
-        # pip: dataclasses
         "//ml_collections/config_flags",
     ],
 )
@@ -44,7 +43,6 @@ py_library(
     srcs_version = "PY3",
     deps = [
         # pip: absl:app
-        # pip: dataclasses
         "//ml_collections/config_flags",
     ],
 )
@@ -69,7 +67,6 @@ py_binary(
     srcs_version = "PY3",
     deps = [
         # pip: absl:app
-        # pip: dataclasses
         "//ml_collections/config_flags",
     ],
 )

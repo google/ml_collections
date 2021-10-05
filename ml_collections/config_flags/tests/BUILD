@@ -42,7 +42,6 @@ py_test(
     deps = [
         # pip: absl/flags
         # pip: absl/testing:absltest
-        # pip: dataclasses
         "//ml_collections/config_flags",
     ],
 )
