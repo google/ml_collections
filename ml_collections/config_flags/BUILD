@@ -31,6 +31,5 @@ py_library(
     ],
     deps = [
         # pip: absl/flags
-        # pip: typing
     ],
 )
