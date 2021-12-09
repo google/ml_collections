@@ -146,8 +146,9 @@ def _safe_cast(value, field_type, type_safe=False):
       return value
 
   if type_safe and _is_type_safety_violation(value, field_type):
-    raise TypeError('{} is of type {} but should be of type {}'
-                    .format(value, str(original_value_type), str(field_type)))
+    raise TypeError(
+        '{} is of original type {} and cannot be casted to type {}'
+        .format(value, str(original_value_type), str(field_type)))
   return value
 
 
