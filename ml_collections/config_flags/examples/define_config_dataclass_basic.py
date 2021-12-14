@@ -20,11 +20,10 @@ python define_config_dataclass_basic.py -- --my_config.field1=8 \
   --my_config.nested.field=2.1 --my_config.tuple='(1, 2, (1, 2))'
 """
 
+import dataclasses
 from typing import Any, Mapping, Sequence
 
 from absl import app
-
-import dataclasses
 from ml_collections.config_flags import config_flags
 
 

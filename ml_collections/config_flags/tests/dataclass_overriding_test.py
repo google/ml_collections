@@ -14,13 +14,12 @@
 
 """Tests for config_flags used in conjunction with DEFINE_config_dataclass."""
 
-import shlex
+import dataclasses
 import sys
 from typing import Mapping, Optional, Sequence
 
 from absl import flags
 from absl.testing import absltest
-import dataclasses
 from ml_collections import config_flags
 
 
@@ -51,36 +50,47 @@ _CONFIG = MyConfig(
     ),
 )
 
-# Define the flag.
-_CONFIG_FLAG = config_flags.DEFINE_config_dataclass('config', _CONFIG)
+_TEST_FLAG = config_flags.DEFINE_config_dataclass('test_flag', _CONFIG,
+                                                  'MyConfig data')
+
+
+def test_flags(default, *flag_args):
+  flag_values = flags.FlagValues()
+  # DEFINE_config_dataclass accesses sys.argv to build flag list!
+  old_args = list(sys.argv)
+  sys.argv[:] = ['', *['--test_config' + f for f in flag_args]]
+  result = config_flags.DEFINE_config_dataclass(
+      'test_config', default, flag_values=flag_values)
+  _, *remaining = flag_values(sys.argv)
+  sys.argv[:] = old_args
+  if remaining:
+    raise ValueError(f'{remaining}')
+  # assert not remaining
+  return result.value
 
 
 class TypedConfigFlagsTest(absltest.TestCase):
 
+  def test_types(self):
+    self.assertIsInstance(_TEST_FLAG.value, MyConfig)
+    self.assertEqual(_TEST_FLAG.value, _CONFIG)
+    self.assertIsInstance(flags.FLAGS['test_flag'].value, MyConfig)
+    self.assertIsInstance(flags.FLAGS.test_flag, MyConfig)
+    self.assertEqual(flags.FLAGS['test_flag'].value, _CONFIG)
+    self.assertEqual(flags.FLAGS.find_module_defining_flag('test_flag'),
+                     __name__ if __name__ != '__main__' else sys.argv[0])
+
   def test_instance(self):
-    config = _CONFIG_FLAG.value
+    config = test_flags(_CONFIG)
     self.assertIsInstance(config, MyConfig)
     self.assertEqual(config.my_model, _CONFIG.my_model)
     self.assertEqual(_CONFIG, config)
 
-  def test_flag_overrides(self):
+  def test_flag_config_dataclass(self):
+    result = test_flags(_CONFIG, '.baseline_model.foo=10', '.my_model.foo=7')
+    self.assertEqual(result.baseline_model.foo, 10)
+    self.assertEqual(result.my_model.foo, 7)
 
-    # Set up some flag overrides.
-    old_argv = list(sys.argv)
-    sys.argv = shlex.split(
-        './program foo.py --test_config.baseline_model.foo=99')
-    flag_values = flags.FlagValues()
-
-    # Define a config dataclass flag.
-    test_config = config_flags.DEFINE_config_dataclass(
-        'test_config', _CONFIG, flag_values=flag_values)
-
-    # Inject the flag overrides.
-    flag_values(sys.argv)
-    sys.argv = old_argv
-
-    # Did the value get overridden?
-    self.assertEqual(test_config.value.baseline_model.foo, 99)
 
 if __name__ == '__main__':
   absltest.main()

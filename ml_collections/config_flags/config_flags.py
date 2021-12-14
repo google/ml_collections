@@ -15,6 +15,7 @@
 # Lint as: python 3
 """Configuration commmand line parser."""
 
+import dataclasses
 import errno
 import imp
 import os
@@ -25,13 +26,15 @@ from typing import Any, Dict, Generic, List, MutableMapping, Optional, Tuple, Ty
 
 from absl import flags
 from absl import logging
-import dataclasses
 import ml_collections
 from ml_collections.config_flags import tuple_parser
 import six
 from six import string_types
 
 FLAGS = flags.FLAGS
+
+# Prevent this module being considered for `FLAGS.find_module_defining_flag`.
+flags._helpers.disclaim_module_ids.add(id(sys.modules[__name__]))  # pylint: disable=protected-access
 
 # We need this to work both for Python 2 and 3.
 # The initial code in Python 2 was:
@@ -199,10 +202,7 @@ def DEFINE_config_file(  # pylint: disable=g-bad-name
       flag_values=flag_values,
       **kwargs)
 
-  # Get the module name for the frame at depth 1 in the call stack.
-  module_name = sys._getframe(1).f_globals.get('__name__', None)  # pylint: disable=protected-access
-  module_name = sys.argv[0] if module_name == '__main__' else module_name
-  return flags.DEFINE_flag(flag, flag_values, module_name=module_name)
+  return flags.DEFINE_flag(flag, flag_values)
 
 
 def DEFINE_config_dict(  # pylint: disable=g-bad-name
@@ -296,21 +296,36 @@ _T = TypeVar('_T')
 class _TypedFlagHolder(flags.FlagHolder, Generic[_T]):
   """A typed wrapper for a FlagHolder."""
 
-  def __init__(self, flag: flags.FlagHolder, ctor: Type[_T]):
+  def __init__(self, flag: flags.FlagHolder):
     self._flag = flag
-    self._ctor = ctor
 
   @property
   def value(self) -> _T:
-    return self._ctor(**self._flag.value)
+    return self._flag.value
 
   @property
   def default(self) -> _T:
-    return self._ctor(**self._flag.default)
+    return self._flag.default
 
   @property
   def name(self) -> str:
     return self._flag.name
+
+
+class _DataclassParser(flags.ArgumentParser, Generic[_T]):
+  """Parser for a config defined inline (not from a file)."""
+
+  def __init__(self, name: str, dataclass_type: Type[_T]):
+    self.name = name
+    self.dataclass_type = dataclass_type
+
+  def parse(self, config: Any) -> _T:
+    if not isinstance(config, self.dataclass_type):
+      raise TypeError('Overriding {} is not allowed.'.format(self.name))
+    return config
+
+  def flag_type(self):
+    return 'config_dataclass({})'.format(self.dataclass_type)
 
 
 def DEFINE_config_dataclass(  # pylint: disable=invalid-name
@@ -337,23 +352,18 @@ def DEFINE_config_dataclass(  # pylint: disable=invalid-name
   if not dataclasses.is_dataclass(config):
     raise ValueError('Configuration object must be a `dataclass`.')
 
-  # Convert to configdict *without* recursing into leaf node(s).
-  # If our config contains dataclasses (or other types) as fields, we want to
-  # preserve them; dataclasses.asdict recursively turns all fields into dicts.
-  dictionary = {field.name: getattr(config, field.name)
-                for field in dataclasses.fields(config)}
-  config_dict = ml_collections.ConfigDict(initial_dictionary=dictionary)
-
   # Define the flag.
-  config_flag = DEFINE_config_dict(
-      name,
-      config=config_dict,
-      help_string=help_string,
+  parser = _DataclassParser(name=name, dataclass_type=type(config))
+  flag = _ConfigFlag(
       flag_values=flag_values,
-      **kwargs,
-  )
+      parser=parser,
+      serializer=flags.ArgumentSerializer(),
+      name=name,
+      default=config,
+      help_string=help_string,
+      **kwargs)
 
-  return _TypedFlagHolder(flag=config_flag, ctor=config.__class__)
+  return _TypedFlagHolder(flag=flags.DEFINE_flag(flag, flag_values))
 
 
 def get_config_filename(config_flag) -> str:  # pylint: disable=g-bad-name
