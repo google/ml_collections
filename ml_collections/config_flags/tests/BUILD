@@ -9,6 +9,7 @@ py_test(
     size = "small",
     srcs = [
         "config_overriding_test.py",
+        "config_path_test.py",
         "fieldreference_config.py",
         "mock_config.py",
     ],
@@ -30,7 +31,6 @@ py_test(
         "//ml_collections",
         "//ml_collections/config_dict",
         "//ml_collections/config_flags",
-        # pip: six
     ],
 )
 

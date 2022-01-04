@@ -16,7 +16,7 @@
 
 import dataclasses
 import sys
-from typing import Mapping, Optional, Sequence
+from typing import Mapping, Optional, Sequence, Tuple
 
 from absl import flags
 from absl.testing import absltest
@@ -30,6 +30,7 @@ class MyModelConfig:
   foo: int
   bar: Sequence[str]
   baz: Optional[Mapping[str, str]] = None
+  buz: Optional[Mapping[Tuple[int, int], str]] = None
 
 
 @dataclasses.dataclass
@@ -42,7 +43,8 @@ _CONFIG = MyConfig(
     my_model=MyModelConfig(
         foo=3,
         bar=['a', 'b'],
-        baz={'foo': 'bar'},
+        baz={'foo.b': 'bar'},
+        buz={(0, 0): 'ZeroZero', (0, 1): 'ZeroOne'}
     ),
     baseline_model=MyModelConfig(
         foo=55,
@@ -90,6 +92,14 @@ class TypedConfigFlagsTest(absltest.TestCase):
     result = test_flags(_CONFIG, '.baseline_model.foo=10', '.my_model.foo=7')
     self.assertEqual(result.baseline_model.foo, 10)
     self.assertEqual(result.my_model.foo, 7)
+
+  def test_flag_config_dataclass_string_dict(self):
+    result = test_flags(_CONFIG, '.my_model.baz["foo.b"]=rab')
+    self.assertEqual(result.my_model.baz['foo.b'], 'rab')
+
+  def test_flag_config_dataclass_tuple_dict(self):
+    result = test_flags(_CONFIG, '.my_model.buz[(0,1)]=hello')
+    self.assertEqual(result.my_model.buz[(0, 1)], 'hello')
 
 
 if __name__ == '__main__':

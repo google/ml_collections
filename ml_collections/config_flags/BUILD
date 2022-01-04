@@ -16,11 +16,19 @@ py_library(
         "//visibility:public",
     ],
     deps = [
+        ":config_path",
         ":tuple_parser",
         # pip: absl/flags
         # pip: absl/logging
         "//ml_collections",
-        # pip: six
+    ],
+)
+
+py_library(
+    name = "config_path",
+    srcs = ["config_path.py"],
+    deps = [
+        "//ml_collections",
     ],
 )
 

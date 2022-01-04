@@ -27,40 +27,27 @@ from typing import Any, Dict, Generic, List, MutableMapping, Optional, Tuple, Ty
 from absl import flags
 from absl import logging
 import ml_collections
+from ml_collections.config_flags import config_path
 from ml_collections.config_flags import tuple_parser
-import six
-from six import string_types
 
 FLAGS = flags.FLAGS
+
+# Forward for backwards compatability.
+GetValue = config_path.get_value
+GetType = config_path.get_type
+SetValue = config_path.set_value
 
 # Prevent this module being considered for `FLAGS.find_module_defining_flag`.
 flags._helpers.disclaim_module_ids.add(id(sys.modules[__name__]))  # pylint: disable=protected-access
 
-# We need this to work both for Python 2 and 3.
-# The initial code in Python 2 was:
-# _FIELD_TYPE_TO_PARSER = {
-#     types.IntType: flags.IntegerParser(),
-#     types.FloatType: flags.FloatParser(),         # OK For Python 3
-#     types.BooleanType: flags.BooleanParser(),     # OK For Python 3
-#     types.StringType: flags.ArgumentParser(),
-#     types.TupleType: tuple_parser.TupleParser(),  # OK For Python 3
-# }
-# The possible breaking changes are:
-# - A Python 3 int could be a Python 2 long, which was not previously supported.
-#   We then add support for long.
-# - Only Python 2 str were supported (not unicode). Python 3 will behave the
-#   same with the str semantic change.
 _FIELD_TYPE_TO_PARSER = {
     float: flags.FloatParser(),
     bool: flags.BooleanParser(),
-    # Implementing a custom parser to override `Tuple` arguments.
     tuple: tuple_parser.TupleParser(),
+    int: flags.IntegerParser(),
+    str: flags.ArgumentParser()
 }
-for t in six.integer_types:
-  _FIELD_TYPE_TO_PARSER[t] = flags.IntegerParser()
-for t in six.string_types:
-  _FIELD_TYPE_TO_PARSER[t] = flags.ArgumentParser()
-_FIELD_TYPE_TO_PARSER[str] = flags.ArgumentParser()
+
 _FIELD_TYPE_TO_SERIALIZER = {
     t: flags.ArgumentSerializer()
     for t in _FIELD_TYPE_TO_PARSER
@@ -424,8 +411,7 @@ class _IgnoreFileNotFoundAndCollectErrors:
     return _ContextManager()
 
   def ProcessAttemptException(self, exc_type, exc_value):
-    expected_type = IOError if six.PY2 else FileNotFoundError  # pylint: disable=undefined-variable
-    if exc_type is expected_type and exc_value.errno == errno.ENOENT:
+    if exc_type is FileNotFoundError and exc_value.errno == errno.ENOENT:
       self._attempts.append((self._current_attempt, exc_value))
       # Returning a true value suppresses exceptions:
       # https://docs.python.org/2/reference/datamodel.html#object.__exit__
@@ -631,12 +617,11 @@ class _ConfigFlag(flags.Flag):
 
     # Get list or overrides
     overrides = self._GetOverrides(sys.argv)
-    # Attach types definitions
-    overrides_types = GetTypes(overrides, config)
 
     # Iterate over overridden fields and create valid parsers
     self._override_values = {}
-    for field_path, field_type in zip(overrides, overrides_types):
+    for field_path in overrides:
+      field_type = config_path.get_type(field_path, config)
       field_help = 'An override of {}\'s field {}'.format(self.name, field_path)
       field_name = '{}.{}'.format(self.name, field_path)
 
@@ -646,7 +631,7 @@ class _ConfigFlag(flags.Flag):
         flags.DEFINE(
             parser,
             field_name,
-            GetValue(field_path, config),
+            config_path.get_value(field_path, config),
             field_help,
             flag_values=self.flag_values,
             serializer=_FIELD_TYPE_TO_SERIALIZER[field_type])
@@ -811,7 +796,7 @@ class _ConfigFieldParser(flags.ArgumentParser):
 
   def parse(self, argument):  # pylint: disable=invalid-name
     value = self._parser.parse(argument)
-    SetValue(self._path, self._config, value)
+    config_path.set_value(self._path, self._config, value)
     self._override_values[self._path] = value
     return value
 
@@ -822,129 +807,3 @@ class _ConfigFieldParser(flags.ArgumentParser):
   def syntactic_help(self) -> str:
     return self._parser.syntactic_help
 
-
-def _ExtractIndicesFromStep(step):
-  """Separates identifier from indexes. Example: id[1][10] -> 'id', [1, 10]."""
-  # Map returns an iterable in Python 3, thus the additional `list`.
-  return step.split('[', 1)[0], list(map(int, re.findall(r'\[(\d+)\]', step)))
-
-
-def _AccessConfig(current, field, indices):
-  """Returns member of the current config.
-
-  The field in `current` specified by the `field` parameter is indexed using the
-  values in the `indices` indices.
-
-  Example:
-
-  ```python
-  current = {'first': [0], 'second': [[1]]}
-  _AccessConfig(current, 'first', [0]) # Returns 0
-  _AccessConfig(current, 'second', [0, 0]) # Returns 1
-
-  ```
-
-  Args:
-    current: Current config.
-    field: Field to access (string).
-    indices: List of indices.
-
-  Returns:
-    Member of the config.
-
-  Raises:
-    IndexError: if indices are invalid.
-    KeyError: if the field is not found.
-  """
-  if isinstance(field, string_types) and hasattr(current, field):
-    current = getattr(current, field)
-  elif hasattr(current, '__getitem__'):
-    current = current[field]
-  else:
-    raise KeyError(field)
-
-  for i, index in enumerate(indices):
-    try:
-      current = current[index]
-    except TypeError:
-      msg = 'Could not index config {}'.format(field)
-      if i > 0:
-        msg += '[{}]'.format(']['.join(map(str, indices[:i])))
-      raise IndexError(msg)
-    except IndexError:
-      msg = 'Index [{}] not found in config {}'.format(
-          ']['.join(map(str, indices[i:])), field)
-      if i > 0:
-        msg += '[{}]'.format(']['.join(map(str, indices[:i])))
-      raise IndexError(msg)
-
-  return current
-
-
-def _TakeStep(current, step):
-  field, indices = _ExtractIndicesFromStep(step)
-  return _AccessConfig(current, field, indices)
-
-
-def GetValue(path: str, config: ml_collections.ConfigDict):
-  """Gets value of a single field."""
-  current = config
-  for step in path.split('.'):
-    current = _TakeStep(current, step)
-  return current
-
-
-def GetType(path, config):
-  """Gets type of field in config described by a dotted delimited path."""
-  steps = path.split('.')
-  current = config
-  for step in steps[:-1]:
-    current = _TakeStep(current, step)
-
-  # We need to check if there is list-type indexing in the last step.
-  field, indices = _ExtractIndicesFromStep(steps[-1])
-  if indices:
-    return type(_AccessConfig(current, field, indices))
-  else:
-    # Check if current is a DM collection and hence has attribute get_type()
-    is_dm_collection = isinstance(current,
-                                  ml_collections.ConfigDict) or isinstance(
-                                      current, ml_collections.FieldReference)
-    if is_dm_collection:
-      return current.get_type(steps[-1])
-    else:
-      return type(_TakeStep(current, steps[-1]))
-
-
-def GetTypes(paths, config):
-  """Gets types of fields in config described by dotted delimited paths."""
-  return [GetType(path, config) for path in paths]
-
-
-def SetValue(path: str, config: ml_collections.ConfigDict, value):
-  """Sets value of a single field."""
-  current = config
-  steps = path.split('.')
-
-  if not steps or not path:
-    raise ValueError('Path cannot be empty')
-
-  for step in steps[:-1]:
-    current = _TakeStep(current, step)
-
-  field, indices = _ExtractIndicesFromStep(steps[-1])
-  if indices:
-    current = _AccessConfig(current, field, indices[:-1])
-    try:
-      current[indices[-1]] = value
-    except:
-      raise UnsupportedOperationError(
-          'Config does not have a setter for {}'.format(path))
-  else:
-    if hasattr(current, '__setitem__') and field in current:
-      current[field] = value
-    elif hasattr(current, field):
-      setattr(current, field, value)
-    else:
-      raise UnsupportedOperationError(
-          'Config does not have a setter for {}'.format(path))

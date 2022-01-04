@@ -25,13 +25,10 @@ from absl.testing import flagsaver
 from absl.testing import parameterized
 import ml_collections
 from ml_collections.config_flags import config_flags
-from ml_collections.config_flags.tests import fieldreference_config
 from ml_collections.config_flags.tests import mock_config
-import six
 
 
-_CHECK_TYPES = tuple(
-    list(six.integer_types) + list(six.string_types) + [float, bool])
+_CHECK_TYPES = (int, str, float, bool)
 
 _TEST_DIRECTORY = 'ml_collections/config_flags/tests'
 _TEST_CONFIG_FILE = '{}/mock_config.py'.format(_TEST_DIRECTORY)
@@ -98,7 +95,7 @@ def _parse_flags(command,
 
 def _get_override_flags(overrides, override_format):
   return ' '.join([override_format.format(path, value)
-                   for path, value in six.iteritems(overrides)])
+                   for path, value in overrides.items()])
 
 
 class _ConfigFlagTestCase(object):
@@ -345,48 +342,6 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
       _parse_flags('./program {} '
                    '--test_config.list=[1]'.format(config_flag))
 
-  def testReadingNonExistingKey(self):
-    """Tests reading non existing key from config."""
-
-    test_config = mock_config.get_config()
-    with self.assertRaises(config_flags.UnsupportedOperationError):
-      config_flags.SetValue('dict.not_existing_key', test_config, 1)
-
-  def testReadingSettingExistingKeyInDict(self):
-    """Tests setting non existing key from dict inside config."""
-
-    test_config = mock_config.get_config()
-    with self.assertRaises(KeyError):
-      config_flags.SetValue('dict.not_existing_key.key', test_config, 1)
-
-  def testEmptyKey(self):
-    """Tests calling an empty key update."""
-
-    test_config = mock_config.get_config()
-    with self.assertRaises(ValueError):
-      config_flags.SetValue('', test_config, None)
-
-  def testListExtraIndex(self):
-    """Tries to index a non-indexable list element."""
-
-    test_config = mock_config.get_config()
-    with self.assertRaises(IndexError):
-      config_flags.GetValue('dict.list[0][0]', test_config)
-
-  def testListOutOfRangeGet(self):
-    """Tries to access out-of-range value in list."""
-
-    test_config = mock_config.get_config()
-    with self.assertRaises(IndexError):
-      config_flags.GetValue('dict.list[2][1]', test_config)
-
-  def testListOutOfRangeSet(self):
-    """Tries to override out-of-range value in list."""
-
-    test_config = mock_config.get_config()
-    with self.assertRaises(config_flags.UnsupportedOperationError):
-      config_flags.SetValue('dict.list[2][1]', test_config, -1)
-
   def testParserWrapping(self):
     """Tests callback based Parser wrapping."""
 
@@ -412,96 +367,6 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
 
     parser = config_flags._ConfigFileParser('test_config')
     self.assertEqual(parser.flag_type(), 'config object')
-
-    test_config = mock_config.get_config()
-
-    paths = (
-        'float',
-        'integer',
-        'string',
-        'bool',
-        'dict',
-        'dict.float',
-        'dict.list',
-        'list',
-        'list[0]',
-
-        'object.float',
-        'object.integer',
-        'object.string',
-        'object.bool',
-        'object.dict',
-        'object.dict.float',
-        'object.dict.list',
-        'object.list',
-        'object.list[0]',
-        'object.tuple',
-
-        'object_reference.float',
-        'object_reference.integer',
-        'object_reference.string',
-        'object_reference.bool',
-        'object_reference.dict',
-        'object_reference.dict.float',
-
-        'object_copy.float',
-        'object_copy.integer',
-        'object_copy.string',
-        'object_copy.bool',
-        'object_copy.dict',
-        'object_copy.dict.float'
-    )
-
-    paths_types = [
-        float,
-        int,
-        str,
-        bool,
-        dict,
-        float,
-        list,
-        list,
-        int,
-
-        float,
-        int,
-        str,
-        bool,
-        dict,
-        float,
-        list,
-        list,
-        int,
-        tuple,
-
-        float,
-        int,
-        str,
-        bool,
-        dict,
-        float,
-
-        float,
-        int,
-        str,
-        bool,
-        dict,
-        float,
-    ]
-
-    config_types = config_flags.GetTypes(paths, test_config)
-
-    self.assertEqual(paths_types, config_types)
-
-  def testFieldReferenceTypes(self):
-    """Tests whether types of FieldReference fields are valid."""
-    test_config = fieldreference_config.get_config()
-
-    paths = ['ref_nodefault', 'ref']
-    paths_types = [int, int]
-
-    config_types = config_flags.GetTypes(paths, test_config)
-    self.assertEqual(paths_types, config_types)
 
   @parameterized.named_parameters(
       ('WithTwoDashesAndEqual', '--test_config=config.py'),
@@ -576,8 +441,7 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
 
     values = _parse_flags('./program {}/mini_config.py'.format(config_flag),
                           lock_config=False)
-    self.assertTrue(
-        config_flags.GetValue('entry_with_collision', values.test_config))
+    self.assertTrue(values.test_config.entry_with_collision)
 
   @parameterized.named_parameters(
       ('TypeAEnabled', ':type_a', {'thing_a': 23, 'thing_b': 42}, ['thing_c']),
@@ -589,7 +453,7 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
         './program --test_config={}/parameterised_config.py{}'.format(
             _TEST_DIRECTORY, flag_override))
     # Ensure that the values exist in the ConfigDict, with desired values.
-    for subfield_name, expected_value in six.iteritems(should_exist):
+    for subfield_name, expected_value in should_exist.items():
       self.assertEqual(values.test_config[subfield_name], expected_value)
 
     # Ensure the values which should not be part of the ConfigDict are really
@@ -778,9 +642,7 @@ class ConfigDictFlagTest(_ConfigFlagTestCase, absltest.TestCase):
         ' --test_config.type_str=str_commandline'
         ' --test_config.type_tuple="(\'tuple_str\', 10)"'
         )
-    if six.PY3:
-      # Not supported in py2; type_bytes is never supported.
-      command_line += ' --test_config.type_ustr=ustr_commandline'
+    command_line += ' --test_config.type_ustr=ustr_commandline'
     values = _parse_flags(command_line, config=copy.copy(all_types_config))
 
     # Check we get the expected values (ie the ones defined above not the ones
@@ -820,13 +682,13 @@ class ConfigDictFlagTest(_ConfigFlagTestCase, absltest.TestCase):
                                        values.test_config.type_str))
 
     with self.subTest('ustr'):
-      if six.PY3:
-        self.assertNotEqual(values.test_config.type_ustr,
-                            all_types_config['type_ustr'])
-        self.assertEqual(values.test_config.type_ustr, u'ustr_commandline')
-        self.assertEqual(values.test_config.type_ustr,
-                         serialize_parse('test_config.type_ustr',
-                                         values.test_config.type_ustr))
+      self.assertNotEqual(values.test_config.type_ustr,
+                          all_types_config['type_ustr'])
+      self.assertEqual(values.test_config.type_ustr, u'ustr_commandline')
+      self.assertEqual(
+          values.test_config.type_ustr,
+          serialize_parse('test_config.type_ustr',
+                          values.test_config.type_ustr))
     with self.subTest('tuple'):
       self.assertNotEqual(values.test_config.type_tuple,
                           all_types_config['type_tuple'])
