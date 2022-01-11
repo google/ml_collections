@@ -836,9 +836,10 @@ class ConfigDict:
 
     if self.is_locked and key not in self._fields:
       error_msg = ('Key "{}" does not exist and cannot be added since the '
-                   'config is locked')
+                   'config is locked. Other fields present: "{}"')
       raise KeyError(
-          self._generate_did_you_mean_message(key, error_msg.format(key)))
+          self._generate_did_you_mean_message(
+              key, error_msg.format(key, self._fields)))
 
     if key in self._fields:
       field = self._fields[key]
