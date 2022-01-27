@@ -24,7 +24,7 @@ def _parse_requirements(requirements_txt_path):
     return fp.read().splitlines()
 
 
-_VERSION = '0.1.0'
+_VERSION = '0.1.1'
 
 
 setup(
