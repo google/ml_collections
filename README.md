@@ -600,4 +600,4 @@ python script.py -- --config=path_to_config.py:lstm \
 *   Sergio Gómez Colmenarejo - sergomez@google.com
 *   Wojciech Marian Czarnecki - lejlot@google.com
 *   Nicholas Watters
-*   Mohit Reddy - mohitreddy@google.com
+*   Mohit Reddy - mohitreddy@google.com, mohitreddy1996@gmail.com
