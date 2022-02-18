@@ -23,7 +23,7 @@ python define_config_dict_basic.py -- --my_config_dict.field1=8 \
 from absl import app
 
 import ml_collections
-from ml_collections.config_flags import config_flags
+from ml_collections import config_flags
 
 config = ml_collections.ConfigDict()
 config.field1 = 1

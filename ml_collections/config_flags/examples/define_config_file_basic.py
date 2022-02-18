@@ -33,7 +33,7 @@ python define_config_dict_basic.py -- \
 
 from absl import app
 
-from ml_collections.config_flags import config_flags
+from ml_collections import config_flags
 
 _CONFIG = config_flags.DEFINE_config_file('my_config')
 

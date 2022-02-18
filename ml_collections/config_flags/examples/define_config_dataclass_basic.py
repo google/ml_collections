@@ -24,7 +24,7 @@ import dataclasses
 from typing import Any, Mapping, Sequence
 
 from absl import app
-from ml_collections.config_flags import config_flags
+from ml_collections import config_flags
 
 
 @dataclasses.dataclass
