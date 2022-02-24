@@ -426,11 +426,12 @@ from absl import flags
 
 from ml_collections.config_flags import config_flags
 
-FLAGS = flags.FLAGS
-config_flags.DEFINE_config_file('my_config')
+_CONFIG = config_flags.DEFINE_config_file('my_config')
+_MY_FLAG = flags.DEFINE_integer('my_flag', None)
 
 def main(_):
-  print(FLAGS.my_config)
+  print(_CONFIG.value)
+  print(_MY_FLAG.value)
 
 if __name__ == '__main__':
   app.run(main)
@@ -488,7 +489,6 @@ separate file.
 
 ```python
 from absl import app
-from absl import flags
 
 import ml_collections
 from ml_collections.config_flags import config_flags
@@ -500,11 +500,10 @@ config.nested = ml_collections.ConfigDict()
 config.nested.field = 2.23
 config.tuple = (1, 2, 3)
 
-FLAGS = flags.FLAGS
-config_flags.DEFINE_config_dict('my_config', config)
+_CONFIG = config_flags.DEFINE_config_dict('my_config', config)
 
 def main(_):
-  print(FLAGS.my_config)
+  print(_CONFIG.value)
 
 if __name__ == '__main__':
   app.run()

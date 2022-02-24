@@ -94,13 +94,11 @@ def DEFINE_config_file(  # pylint: disable=g-bad-name
 
   `script.py`::
 
-    from absl import flags
     from ml_collections.config_flags import config_flags
 
-    FLAGS = flags.FLAGS
-    config_flags.DEFINE_config_file('my_config')
+    _CONFIG = config_flags.DEFINE_config_file('my_config')
 
-    print(FLAGS.my_config)
+    print(_CONFIG.value)
 
   `config.py`::
 
@@ -210,8 +208,6 @@ def DEFINE_config_dict(  # pylint: disable=g-bad-name
 
   `script.py`::
 
-    from absl import flags
-
     import ml_collections
     from ml_collections.config_flags import config_flags
 
@@ -225,11 +221,10 @@ def DEFINE_config_dict(  # pylint: disable=g-bad-name
     })
 
 
-    FLAGS = flags.FLAGS
-    config_flags.DEFINE_config_dict('my_config', config)
+    _CONFIG = config_flags.DEFINE_config_dict('my_config', config)
     ...
 
-    print(FLAGS.my_config)
+    print(_CONFIG.value)
 
   The following command::
 
@@ -657,17 +652,15 @@ class _ConfigFlag(flags.Flag):
 
     ```python
     ...
-    from absl import flags
     from ml_collections.config_flags import config_flags
 
-    FLAGS = flags.FLAGS
-    config_flags.DEFINE_config_file(
+    _CONFIG = config_flags.DEFINE_config_file(
       name='my_config',
       default='ml_collections/config_flags/tests/configdict_config.py',
       help_string='config file')
     ...
 
-    FLAGS['my_config'].config_filename
+    _CONFIG.value.config_filename
 
     will output
     'ml_collections/config_flags/tests/configdict_config.py'
@@ -708,7 +701,7 @@ class _ConfigFlag(flags.Flag):
     --config.a=10 --config.nested.b=20
     ```
 
-    Then `FLAGS['config'].override_values` will return:
+    Then `_CONFIG.value.override_values` will return:
 
     ```python
     {
@@ -728,7 +721,7 @@ class _ConfigFlag(flags.Flag):
             'b': 456
         }
     }
-    config.update_from_flattened_dict(FLAGS['config'].override_values)
+    config.update_from_flattened_dict(_CONFIG.value.override_values)
     print(config.a)  # Prints `10`.
     print(config.nested.b)  # Prints `20`.
     ```
