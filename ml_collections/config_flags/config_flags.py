@@ -406,8 +406,8 @@ class _IgnoreFileNotFoundAndCollectErrors:
     return _ContextManager()
 
   def ProcessAttemptException(self, exc_type, exc_value):
-    if exc_type is FileNotFoundError and exc_value.errno == errno.ENOENT:
-      self._attempts.append((self._current_attempt, exc_value))
+    if exc_type is FileNotFoundError and exc_value.errno == errno.ENOENT:  # pytype: disable=attribute-error  # trace-all-classes
+      self._attempts.append((self._current_attempt, exc_value))  # pytype: disable=container-type-mismatch  # trace-all-classes
       # Returning a true value suppresses exceptions:
       # https://docs.python.org/2/reference/datamodel.html#object.__exit__
       return True
