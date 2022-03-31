@@ -22,7 +22,7 @@ import os
 import re
 import sys
 import traceback
-from typing import Any, Dict, Generic, List, MutableMapping, Optional, Tuple, Type, TypeVar
+from typing import Any, Callable, Dict, Generic, List, MutableMapping, Optional, Tuple, Type, TypeVar
 
 from absl import flags
 from absl import logging
@@ -294,17 +294,21 @@ class _TypedFlagHolder(flags.FlagHolder, Generic[_T]):
     return self._flag.name
 
 
-class _DataclassParser(flags.ArgumentParser, Generic[_T]):
+class  _DataclassParser(flags.ArgumentParser, Generic[_T]):
   """Parser for a config defined inline (not from a file)."""
 
-  def __init__(self, name: str, dataclass_type: Type[_T]):
+  def __init__(self, name: str, dataclass_type: Type[_T],
+               parse_fn: Optional[Callable[[Any], _T]] = None):
     self.name = name
     self.dataclass_type = dataclass_type
+    self.parse_fn = parse_fn
 
   def parse(self, config: Any) -> _T:
-    if not isinstance(config, self.dataclass_type):
-      raise TypeError('Overriding {} is not allowed.'.format(self.name))
-    return config
+    if isinstance(config, self.dataclass_type):
+      return config
+    if self.parse_fn:
+      return self.parse_fn(config)
+    raise TypeError('Overriding {} is not allowed.'.format(self.name))
 
   def flag_type(self):
     return 'config_dataclass({})'.format(self.dataclass_type)
@@ -315,6 +319,7 @@ def DEFINE_config_dataclass(  # pylint: disable=invalid-name
     config: _T,
     help_string: str = 'Configuration object. Must be a dataclass.',
     flag_values: flags.FlagValues = FLAGS,
+    parse_fn: Optional[Callable[[Any], _T]] = None,
     **kwargs,
 ) -> _TypedFlagHolder[_T]:
   """Defines a typed (dataclass) flag-overrideable configuration.
@@ -326,6 +331,9 @@ def DEFINE_config_dataclass(  # pylint: disable=invalid-name
     config: A user-defined configuration object. Must be built via `dataclass`.
     help_string: Help string to display when --helpfull is called.
     flag_values: FlagValues instance used for parsing.
+    parse_fn: Function that can parse provided flag value, when assigned
+    via flag.value, or passed on command line. Default is to only allow
+    to assign instances of this class.
     **kwargs: Optional keyword arguments passed to Flag constructor.
   Returns:
     A handle to the defined flag.
@@ -335,7 +343,8 @@ def DEFINE_config_dataclass(  # pylint: disable=invalid-name
     raise ValueError('Configuration object must be a `dataclass`.')
 
   # Define the flag.
-  parser = _DataclassParser(name=name, dataclass_type=type(config))
+  parser = _DataclassParser(name=name, dataclass_type=type(config),
+                            parse_fn=parse_fn)
   flag = _ConfigFlag(
       flag_values=flag_values,
       parser=parser,

@@ -21,6 +21,7 @@ from typing import Mapping, Optional, Sequence, Tuple
 from absl import flags
 from absl.testing import absltest
 from ml_collections import config_flags
+from ml_collections.config_flags import config_flags as config_flag_lib
 
 
 #####
@@ -56,19 +57,26 @@ _TEST_FLAG = config_flags.DEFINE_config_dataclass('test_flag', _CONFIG,
                                                   'MyConfig data')
 
 
-def test_flags(default, *flag_args):
+def test_flags(default, *flag_args, parse_fn=None):
   flag_values = flags.FlagValues()
   # DEFINE_config_dataclass accesses sys.argv to build flag list!
   old_args = list(sys.argv)
   sys.argv[:] = ['', *['--test_config' + f for f in flag_args]]
-  result = config_flags.DEFINE_config_dataclass(
-      'test_config', default, flag_values=flag_values)
-  _, *remaining = flag_values(sys.argv)
-  sys.argv[:] = old_args
-  if remaining:
-    raise ValueError(f'{remaining}')
-  # assert not remaining
-  return result.value
+  try:
+    result = config_flags.DEFINE_config_dataclass(
+        'test_config', default, flag_values=flag_values, parse_fn=parse_fn)
+    _, *remaining = flag_values(sys.argv)
+    if remaining:
+      raise ValueError(f'{remaining}')
+    # assert not remaining
+    return result.value
+  finally:
+    sys.argv[:] = old_args
+
+
+def parse_config_flag(value):
+  return dataclasses.replace(
+      _CONFIG, my_model=dataclasses.replace(_CONFIG.my_model, foo=int(value)))
 
 
 class TypedConfigFlagsTest(absltest.TestCase):
@@ -79,8 +87,9 @@ class TypedConfigFlagsTest(absltest.TestCase):
     self.assertIsInstance(flags.FLAGS['test_flag'].value, MyConfig)
     self.assertIsInstance(flags.FLAGS.test_flag, MyConfig)
     self.assertEqual(flags.FLAGS['test_flag'].value, _CONFIG)
-    self.assertEqual(flags.FLAGS.find_module_defining_flag('test_flag'),
-                     __name__ if __name__ != '__main__' else sys.argv[0])
+    module_name = __name__ if __name__ != '__main__' else sys.argv[0]
+    self.assertEqual(
+        flags.FLAGS.find_module_defining_flag('test_flag'), module_name)
 
   def test_instance(self):
     config = test_flags(_CONFIG)
@@ -101,6 +110,49 @@ class TypedConfigFlagsTest(absltest.TestCase):
     result = test_flags(_CONFIG, '.my_model.buz[(0,1)]=hello')
     self.assertEqual(result.my_model.buz[(0, 1)], 'hello')
 
+
+class DataClassParseFnTest(absltest.TestCase):
+
+  def test_parse_no_custom_value(self):
+    result = test_flags(
+        _CONFIG, '.baseline_model.foo=10', parse_fn=parse_config_flag)
+    self.assertEqual(result.my_model.foo, 3)
+    self.assertEqual(result.baseline_model.foo, 10)
+
+  def test_parse_custom_value_applied(self):
+    result = test_flags(
+        _CONFIG, '=75', '.baseline_model.foo=10', parse_fn=parse_config_flag)
+    self.assertEqual(result.my_model.foo, 75)
+    self.assertEqual(result.baseline_model.foo, 10)
+
+  def test_parse_out_of_order(self):
+    with self.assertRaises(config_flag_lib.FlagOrderError):
+      _ = test_flags(
+          _CONFIG, '.baseline_model.foo=10', '=75', parse_fn=parse_config_flag)
+    # Note: If this is ever supported, add verification that overrides are
+    # applied correctly.
+
+  def test_parse_assign_dataclass(self):
+    flag_values = flags.FlagValues()
+
+    def always_fail(v):
+      raise ValueError()
+
+    result = config_flags.DEFINE_config_dataclass(
+        'test_config', _CONFIG, flag_values=flag_values, parse_fn=always_fail)
+    flag_values(['program'])
+    flag_values['test_config'].value = parse_config_flag('12')
+    self.assertEqual(result.value.my_model.foo, 12)
+
+  def test_parse_invalid_custom_value(self):
+    with self.assertRaises(flags.IllegalFlagValueError):
+      _ = test_flags(
+          _CONFIG, '=?', '.baseline_model.foo=10', parse_fn=parse_config_flag)
+
+  def test_parse_overrides_applied(self):
+    result = test_flags(
+        _CONFIG, '=34', '.my_model.foo=10', parse_fn=parse_config_flag)
+    self.assertEqual(result.my_model.foo, 10)
 
 if __name__ == '__main__':
   absltest.main()
