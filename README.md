@@ -424,7 +424,7 @@ example:
 from absl import app
 from absl import flags
 
-from ml_collections.config_flags import config_flags
+from ml_collections import config_flags
 
 _CONFIG = config_flags.DEFINE_config_file('my_config')
 _MY_FLAG = flags.DEFINE_integer('my_flag', None)
@@ -491,7 +491,7 @@ separate file.
 from absl import app
 
 import ml_collections
-from ml_collections.config_flags import config_flags
+from ml_collections import config_flags
 
 config = ml_collections.ConfigDict()
 config.field1 = 1

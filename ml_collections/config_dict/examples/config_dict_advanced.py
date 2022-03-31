@@ -21,7 +21,7 @@ safety, iteration over fields, checking for a particular field, unpacking with
 """
 
 from absl import app
-from ml_collections.config_flags import config_flags
+from ml_collections import config_flags
 import yaml
 
 _CONFIG = config_flags.DEFINE_config_file(

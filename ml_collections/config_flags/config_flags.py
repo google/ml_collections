@@ -94,7 +94,7 @@ def DEFINE_config_file(  # pylint: disable=g-bad-name
 
   `script.py`::
 
-    from ml_collections.config_flags import config_flags
+    from ml_collections import config_flags
 
     _CONFIG = config_flags.DEFINE_config_file('my_config')
 
@@ -209,7 +209,7 @@ def DEFINE_config_dict(  # pylint: disable=g-bad-name
   `script.py`::
 
     import ml_collections
-    from ml_collections.config_flags import config_flags
+    from ml_collections import config_flags
 
 
     config = ml_collections.ConfigDict({
@@ -652,7 +652,7 @@ class _ConfigFlag(flags.Flag):
 
     ```python
     ...
-    from ml_collections.config_flags import config_flags
+    from ml_collections import config_flags
 
     _CONFIG = config_flags.DEFINE_config_file(
       name='my_config',
