@@ -23,7 +23,7 @@ from absl import flags
 from absl.testing import absltest
 from absl.testing import flagsaver
 from absl.testing import parameterized
-import ml_collections
+from ml_collections import config_dict
 from ml_collections.config_flags import config_flags
 from ml_collections.config_flags.tests import mock_config
 
@@ -545,7 +545,7 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
 
     original_float = -1.0
     original_dictfloat = -2.0
-    config = ml_collections.ConfigDict({
+    config = config_dict.ConfigDict({
         'integer': -1,
         'float': original_float,
         'dict': {
@@ -578,7 +578,7 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
 
 
 def _simple_config():
-  config = ml_collections.ConfigDict()
+  config = config_dict.ConfigDict()
   config.foo = 3
   return config
 
@@ -625,7 +625,7 @@ class ConfigDictFlagTest(_ConfigFlagTestCase, absltest.TestCase):
       _parse_flags('./program --test_config=bad_input', config=_simple_config())
 
   def testOverridesSerialize(self):
-    all_types_config = ml_collections.ConfigDict()
+    all_types_config = config_dict.ConfigDict()
     all_types_config.type_bool = False
     all_types_config.type_bytes = b'bytes'
     all_types_config.type_float = 1.0

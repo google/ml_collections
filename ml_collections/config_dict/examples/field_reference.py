@@ -19,13 +19,12 @@ This shows how to use FieldReferences for lazy computation.
 """
 
 from absl import app
-import ml_collections
-from ml_collections.config_dict import config_dict
+from ml_collections import config_dict
 
 
 def lazy_computation():
   """Simple example of lazy computation with `configdict.FieldReference`."""
-  ref = ml_collections.FieldReference(1)
+  ref = config_dict.FieldReference(1)
   print(ref.get())  # Prints 1
 
   add_ten = ref.get() + 10  # ref.get() is an integer and so is add_ten
@@ -43,7 +42,7 @@ def lazy_computation():
 
 def change_lazy_computation():
   """Overriding lazily computed values."""
-  config = ml_collections.ConfigDict()
+  config = config_dict.ConfigDict()
   config.reference = 1
   config.reference_0 = config.get_ref('reference') + 10
   config.reference_1 = config.get_ref('reference') + 20
@@ -64,7 +63,7 @@ def change_lazy_computation():
 
 def create_cycle():
   """Creates a cycle within a ConfigDict."""
-  config = ml_collections.ConfigDict()
+  config = config_dict.ConfigDict()
   config.integer_field = 1
   config.bigger_integer_field = config.get_ref('integer_field') + 10
 
@@ -78,8 +77,8 @@ def create_cycle():
 
 def lazy_configdict():
   """Example usage of lazy computation with ConfigDict."""
-  config = ml_collections.ConfigDict()
-  config.reference_field = ml_collections.FieldReference(1)
+  config = config_dict.ConfigDict()
+  config.reference_field = config_dict.FieldReference(1)
   config.integer_field = 2
   config.float_field = 2.5
 
@@ -109,7 +108,7 @@ def lazy_configdict():
 def lazy_configdict_advanced():
   """Advanced lazy computation with ConfigDict."""
   # FieldReferences can be used with ConfigDict as well
-  config = ml_collections.ConfigDict()
+  config = config_dict.ConfigDict()
   config.float_field = 12.6
   config.integer_field = 123
   config.list_field = [0, 1, 2]

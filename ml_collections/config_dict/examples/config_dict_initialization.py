@@ -19,7 +19,7 @@
 import copy
 
 from absl import app
-import ml_collections
+from ml_collections import config_dict
 
 
 def print_section(name):
@@ -40,14 +40,14 @@ def main(_):
       'list': [1, 2],
       'set': {1, 2},
       'tuple': (1, 2),
-      'ref': ml_collections.FieldReference({'int': 0}),
+      'ref': config_dict.FieldReference({'int': 0}),
       'inner_dict_1': inner_dict,
       'inner_dict_2': inner_dict
   }
 
   print_section('Initializing on dictionary.')
   # ConfigDict can be initialized on example_dict
-  example_cd = ml_collections.ConfigDict(example_dict)
+  example_cd = config_dict.ConfigDict(example_dict)
 
   # Dictionary fields are also converted to ConfigDict
   print(type(example_cd.inner_dict_1))
@@ -58,7 +58,7 @@ def main(_):
   print_section('Initializing on ConfigDict.')
 
   # ConfigDict can also be initialized on a ConfigDict
-  example_cd_cd = ml_collections.ConfigDict(example_cd)
+  example_cd_cd = config_dict.ConfigDict(example_cd)
 
   # Yielding the same result:
   print(example_cd == example_cd_cd)
@@ -78,7 +78,7 @@ def main(_):
   # Initialization works on a self-referencing dict
   self_ref_dict = copy.deepcopy(example_dict)
   self_ref_dict['self'] = self_ref_dict
-  self_ref_cd = ml_collections.ConfigDict(self_ref_dict)
+  self_ref_cd = config_dict.ConfigDict(self_ref_dict)
 
   # And the reference structure is replicated
   print(id(self_ref_cd) == id(self_ref_cd.self))
@@ -88,13 +88,13 @@ def main(_):
   # ConfigDict initialization doesn't look inside lists, so doesn't convert a
   # dict in a list to ConfigDict
   dict_in_list_in_dict = {'list': [{'troublemaker': 0}]}
-  dict_in_list_in_dict_cd = ml_collections.ConfigDict(dict_in_list_in_dict)
+  dict_in_list_in_dict_cd = config_dict.ConfigDict(dict_in_list_in_dict)
   print(type(dict_in_list_in_dict_cd.list[0]))
 
   # This can cause the reference structure to not be replicated
   referred_dict = {'key': 'value'}
   bad_reference = {'referred_dict': referred_dict, 'list': [referred_dict]}
-  bad_reference_cd = ml_collections.ConfigDict(bad_reference)
+  bad_reference_cd = config_dict.ConfigDict(bad_reference)
   print(id(bad_reference_cd.referred_dict) == id(bad_reference_cd.list[0]))
 
 

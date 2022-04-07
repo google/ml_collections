@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Lint as: python3
-"""Tests for ml_collections.ConfigDict."""
+"""Tests for config_dict.ConfigDict."""
 
 import abc
 from collections import abc as collections_abc
@@ -24,8 +24,8 @@ import sys
 
 from absl.testing import absltest
 from absl.testing import parameterized
-import ml_collections
-from ml_collections.config_dict import config_dict
+
+from ml_collections import config_dict
 import mock
 import six
 import yaml
@@ -87,7 +87,7 @@ _TEST_DICT_CHANGE_FLOAT_NAME = {
 
 def _get_test_dict():
   test_dict = dict(_TEST_DICT)
-  field = ml_collections.FieldReference(_TEST_FIELD)
+  field = config_dict.FieldReference(_TEST_FIELD)
   test_dict['ref'] = field
   test_dict['ref2'] = field
   return test_dict
@@ -95,18 +95,18 @@ def _get_test_dict():
 
 def _get_test_dict_best_effort():
   test_dict = dict(_TEST_DICT_BEST_EFFORT)
-  field = ml_collections.FieldReference(_TEST_FIELD)
+  field = config_dict.FieldReference(_TEST_FIELD)
   test_dict['ref'] = field
   test_dict['ref2'] = field
   return test_dict
 
 
 def _get_test_config_dict():
-  return ml_collections.ConfigDict(_get_test_dict())
+  return config_dict.ConfigDict(_get_test_dict())
 
 
 def _get_test_config_dict_best_effort():
-  return ml_collections.ConfigDict(_get_test_dict_best_effort())
+  return config_dict.ConfigDict(_get_test_dict_best_effort())
 
 
 _JSON_TEST_DICT = ('{"dict": {"float": -1.23, "int": 23},'
@@ -209,25 +209,25 @@ class ConfigDictTest(parameterized.TestCase):
 
   def testCreating(self):
     """Tests basic config creation."""
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
     cfg.field = 2.34
     self.assertEqual(cfg.field, 2.34)
 
   def testDir(self):
     """Test that dir() works correctly on config."""
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
     cfg.field = 2.34
     self.assertIn('field', dir(cfg))
     self.assertIn('lock', dir(cfg))
 
   def testFromDictConstruction(self):
     """Tests creation of config from existing dictionary."""
-    cfg = ml_collections.ConfigDict(_TEST_DICT)
+    cfg = config_dict.ConfigDict(_TEST_DICT)
     self.assertEqualConfigs(cfg, _TEST_DICT)
 
   def testOverridingValues(self):
     """Tests basic values overriding."""
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
     cfg.field = 2.34
     self.assertEqual(cfg.field, 2.34)
     cfg.field = -2.34
@@ -235,15 +235,15 @@ class ConfigDictTest(parameterized.TestCase):
 
   def testDictAttributeTurnsIntoConfigDict(self):
     """Tests that dicts in a ConfigDict turn to ConfigDicts (recursively)."""
-    cfg = ml_collections.ConfigDict(_TEST_DICT)
+    cfg = config_dict.ConfigDict(_TEST_DICT)
     # Test conversion to dict on creation.
-    self.assertIsInstance(cfg.dict, ml_collections.ConfigDict)
+    self.assertIsInstance(cfg.dict, config_dict.ConfigDict)
 
     # Test conversion to dict on setting attribute.
     new_dict = {'inside_dict': {'inside_key': 0}}
     cfg.new_dict = new_dict
-    self.assertIsInstance(cfg.new_dict, ml_collections.ConfigDict)
-    self.assertIsInstance(cfg.new_dict.inside_dict, ml_collections.ConfigDict)
+    self.assertIsInstance(cfg.new_dict, config_dict.ConfigDict)
+    self.assertIsInstance(cfg.new_dict.inside_dict, config_dict.ConfigDict)
     self.assertEqual(cfg.new_dict.to_dict(), new_dict)
 
   def testOverrideExceptions(self):
@@ -253,7 +253,7 @@ class ConfigDictTest(parameterized.TestCase):
     that `int` values can be stored to fields of type `float`. And secondly,
     all string types can be  stored in fields of type `str` or `unicode`.
     """
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
     # Test that overriding 'float' fields with int works.
     cfg.float_field = 2.34
     cfg.float_field = 2
@@ -306,7 +306,7 @@ class ConfigDictTest(parameterized.TestCase):
     fn2 = lambda x: SomeClass(x, power=2)
     fn3 = functools.partial(SomeClass, power=3)
     fn4 = SomeClass(4.0).factory
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
     for orig in [fn1, fn2, fn3, fn4]:
       for new in [fn1, fn2, fn3, fn4]:
         cfg.fn_field = orig
@@ -315,24 +315,24 @@ class ConfigDictTest(parameterized.TestCase):
 
   def testOverrideFieldReference(self):
     """Test overriding with FieldReference objects."""
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
     cfg.field_1 = 'field_1'
     cfg.field_2 = 'field_2'
     # Override using a FieldReference.
-    cfg.field_1 = ml_collections.FieldReference('override_1')
+    cfg.field_1 = config_dict.FieldReference('override_1')
     # Override FieldReference field using another FieldReference.
-    cfg.field_1 = ml_collections.FieldReference('override_2')
+    cfg.field_1 = config_dict.FieldReference('override_2')
     # Override using empty FieldReference.
-    cfg.field_2 = ml_collections.FieldReference(None, field_type=str)
+    cfg.field_2 = config_dict.FieldReference(None, field_type=str)
     # Override FieldReference field using string.
     cfg.field_2 = 'field_2'
 
     # Check a TypeError is raised when using FieldReference's with wrong type.
     with self.assertRaises(TypeError):
-      cfg.field_2 = ml_collections.FieldReference(1)
+      cfg.field_2 = config_dict.FieldReference(1)
 
     with self.assertRaises(TypeError):
-      cfg.field_2 = ml_collections.FieldReference(None, field_type=int)
+      cfg.field_2 = config_dict.FieldReference(None, field_type=int)
 
   def testTypeSafe(self):
     """Tests type safe checking."""
@@ -356,11 +356,11 @@ class ConfigDictTest(parameterized.TestCase):
     cfg.string = 'tom'
 
   def testIgnoreType(self):
-    cfg = ml_collections.ConfigDict({
+    cfg = config_dict.ConfigDict({
         'string': 'This is a string',
         'float': 3.0,
-        'list': [ml_collections.ConfigDict({'float': 1.0})],
-        'tuple': [ml_collections.ConfigDict({'float': 1.0})],
+        'list': [config_dict.ConfigDict({'float': 1.0})],
+        'tuple': [config_dict.ConfigDict({'float': 1.0})],
         'dict': {
             'float': 1.0
         }
@@ -375,18 +375,18 @@ class ConfigDictTest(parameterized.TestCase):
 
   def testTypeUnsafe(self):
     """Tests lack of type safe checking."""
-    cfg = ml_collections.ConfigDict(_get_test_dict(), type_safe=False)
+    cfg = config_dict.ConfigDict(_get_test_dict(), type_safe=False)
     cfg.float = 'tom'
     cfg.string = -123
     cfg.int = 12.8
 
   def testLocking(self):
     """Tests lock mechanism."""
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
     cfg.field = 2
     cfg.dict_field = {'float': 1.23, 'integer': 3}
-    cfg.ref = ml_collections.FieldReference(
-        ml_collections.ConfigDict({'integer': 0}))
+    cfg.ref = config_dict.FieldReference(
+        config_dict.ConfigDict({'integer': 0}))
     cfg.lock()
 
     cfg.field = -4
@@ -405,10 +405,10 @@ class ConfigDictTest(parameterized.TestCase):
 
   def testUnlocking(self):
     """Tests unlock mechanism."""
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
     cfg.dict_field = {'float': 1.23, 'integer': 3}
-    cfg.ref = ml_collections.FieldReference(
-        ml_collections.ConfigDict({'integer': 0}))
+    cfg.ref = config_dict.FieldReference(
+        config_dict.ConfigDict({'integer': 0}))
     cfg.lock()
     with cfg.unlocked():
       cfg.new_field = 2
@@ -431,14 +431,14 @@ class ConfigDictTest(parameterized.TestCase):
     self.assertEqual(len(items), len(_get_test_dict()))
     for entry in _TEST_DICT.items():
       if isinstance(entry[1], dict):
-        entry = (entry[0], ml_collections.ConfigDict(entry[1]))
+        entry = (entry[0], config_dict.ConfigDict(entry[1]))
       self.assertIn(entry, items)
     self.assertIn(('ref', cfg.ref), items)
     self.assertIn(('ref2', cfg.ref2), items)
     ind_ref = items.index(('ref', cfg.ref))
     ind_ref2 = items.index(('ref2', cfg.ref2))
     self.assertIs(items[ind_ref][1], items[ind_ref2][1])
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
     self.assertEqual(dict(**cfg), dict(cfg.items()))
     # Test that items are sorted
     self.assertEqual(sorted(dict(**cfg).items()), cfg.items())
@@ -453,13 +453,13 @@ class ConfigDictTest(parameterized.TestCase):
     """Tests iteritems method."""
     cfg = _get_test_config_dict()
     self.assertEqual(dict(**cfg), dict(cfg.iteritems()))
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
     self.assertEqual(dict(**cfg), dict(cfg.iteritems()))
 
   def testIterKeysMethod(self):
     """Tests iterkeys method."""
     some_dict = {'x1': 32, 'x2': 5.2, 'x3': 'str'}
-    cfg = ml_collections.ConfigDict(some_dict)
+    cfg = config_dict.ConfigDict(some_dict)
     self.assertEqual(set(six.iterkeys(some_dict)), set(six.iterkeys(cfg)))
     # Test that keys are sorted
     for k_ref, k in zip(sorted(six.iterkeys(cfg)), six.iterkeys(cfg)):
@@ -468,7 +468,7 @@ class ConfigDictTest(parameterized.TestCase):
   def testKeysMethod(self):
     """Tests keys method."""
     some_dict = {'x1': 32, 'x2': 5.2, 'x3': 'str'}
-    cfg = ml_collections.ConfigDict(some_dict)
+    cfg = config_dict.ConfigDict(some_dict)
     self.assertEqual(set(some_dict.keys()), set(cfg.keys()))
     # Test that keys are sorted
     for k_ref, k in zip(sorted(cfg.keys()), cfg.keys()):
@@ -477,13 +477,13 @@ class ConfigDictTest(parameterized.TestCase):
   def testLenMethod(self):
     """Tests keys method."""
     some_dict = {'x1': 32, 'x2': 5.2, 'x3': 'str'}
-    cfg = ml_collections.ConfigDict(some_dict)
+    cfg = config_dict.ConfigDict(some_dict)
     self.assertLen(cfg, len(some_dict))
 
   def testIterValuesMethod(self):
     """Tests itervalues method."""
     some_dict = {'x1': 32, 'x2': 5.2, 'x3': 'str'}
-    cfg = ml_collections.ConfigDict(some_dict)
+    cfg = config_dict.ConfigDict(some_dict)
     self.assertEqual(set(six.itervalues(some_dict)), set(six.itervalues(cfg)))
     # Test that items are sorted
     for k_ref, v in zip(sorted(six.iterkeys(cfg)), six.itervalues(cfg)):
@@ -492,7 +492,7 @@ class ConfigDictTest(parameterized.TestCase):
   def testValuesMethod(self):
     """Tests values method."""
     some_dict = {'x1': 32, 'x2': 5.2, 'x3': 'str'}
-    cfg = ml_collections.ConfigDict(some_dict)
+    cfg = config_dict.ConfigDict(some_dict)
     self.assertEqual(set(some_dict.values()), set(cfg.values()))
     # Test that items are sorted
     for k_ref, v in zip(sorted(cfg.keys()), cfg.values()):
@@ -500,38 +500,38 @@ class ConfigDictTest(parameterized.TestCase):
 
   def testIterValuesResolvesReferences(self):
     """Tests itervalues FieldReference resolution."""
-    cfg = ml_collections.ConfigDict({'x1': 32, 'x2': 5.2, 'x3': 'str'})
-    ref = ml_collections.FieldReference(0)
+    cfg = config_dict.ConfigDict({'x1': 32, 'x2': 5.2, 'x3': 'str'})
+    ref = config_dict.FieldReference(0)
     cfg['x4'] = ref
     for v in cfg.itervalues():
-      self.assertNotIsInstance(v, ml_collections.FieldReference)
+      self.assertNotIsInstance(v, config_dict.FieldReference)
     self.assertIn(ref, cfg.itervalues(preserve_field_references=True))
 
   def testValuesResolvesReferences(self):
     """Tests values FieldReference resolution."""
-    cfg = ml_collections.ConfigDict({'x1': 32, 'x2': 5.2, 'x3': 'str'})
-    ref = ml_collections.FieldReference(0)
+    cfg = config_dict.ConfigDict({'x1': 32, 'x2': 5.2, 'x3': 'str'})
+    ref = config_dict.FieldReference(0)
     cfg['x4'] = ref
     for v in cfg.values():
-      self.assertNotIsInstance(v, ml_collections.FieldReference)
+      self.assertNotIsInstance(v, config_dict.FieldReference)
     self.assertIn(ref, cfg.values(preserve_field_references=True))
 
   def testIterItemsResolvesReferences(self):
     """Tests iteritems FieldReference resolution."""
-    cfg = ml_collections.ConfigDict({'x1': 32, 'x2': 5.2, 'x3': 'str'})
-    ref = ml_collections.FieldReference(0)
+    cfg = config_dict.ConfigDict({'x1': 32, 'x2': 5.2, 'x3': 'str'})
+    ref = config_dict.FieldReference(0)
     cfg['x4'] = ref
     for _, v in cfg.iteritems():
-      self.assertNotIsInstance(v, ml_collections.FieldReference)
+      self.assertNotIsInstance(v, config_dict.FieldReference)
     self.assertIn(('x4', ref), cfg.iteritems(preserve_field_references=True))
 
   def testItemsResolvesReferences(self):
     """Tests items FieldReference resolution."""
-    cfg = ml_collections.ConfigDict({'x1': 32, 'x2': 5.2, 'x3': 'str'})
-    ref = ml_collections.FieldReference(0)
+    cfg = config_dict.ConfigDict({'x1': 32, 'x2': 5.2, 'x3': 'str'})
+    ref = config_dict.FieldReference(0)
     cfg['x4'] = ref
     for _, v in cfg.items():
-      self.assertNotIsInstance(v, ml_collections.FieldReference)
+      self.assertNotIsInstance(v, config_dict.FieldReference)
     self.assertIn(('x4', ref), cfg.items(preserve_field_references=True))
 
   def testEquals(self):
@@ -545,10 +545,10 @@ class ConfigDictTest(parameterized.TestCase):
             'b': 'string'
         }
     }
-    cfg = ml_collections.ConfigDict(some_dict)
-    cfg_other = ml_collections.ConfigDict(some_dict)
+    cfg = config_dict.ConfigDict(some_dict)
+    cfg_other = config_dict.ConfigDict(some_dict)
     self.assertEqual(cfg, cfg_other)
-    self.assertEqual(ml_collections.ConfigDict(cfg), cfg_other)
+    self.assertEqual(config_dict.ConfigDict(cfg), cfg_other)
     cfg_other.float = 3
     self.assertNotEqual(cfg, cfg_other)
     cfg_other.float = cfg.float
@@ -558,21 +558,21 @@ class ConfigDictTest(parameterized.TestCase):
     cfg_other.lock()
     self.assertNotEqual(cfg, cfg_other)
     cfg_other.unlock()
-    cfg_other = ml_collections.ConfigDict(some_dict, type_safe=False)
+    cfg_other = config_dict.ConfigDict(some_dict, type_safe=False)
     self.assertNotEqual(cfg, cfg_other)
-    cfg = ml_collections.ConfigDict(some_dict)
+    cfg = config_dict.ConfigDict(some_dict)
 
     # References that have the same id should be equal (even if self-references)
-    cfg_other = ml_collections.ConfigDict(some_dict)
+    cfg_other = config_dict.ConfigDict(some_dict)
     cfg_other.me = cfg
     cfg.me = cfg
     self.assertEqual(cfg, cfg_other)
-    cfg = ml_collections.ConfigDict(some_dict)
+    cfg = config_dict.ConfigDict(some_dict)
     cfg.me = cfg
     self.assertEqual(cfg, cfg)
 
     # Self-references that do not have the same id loop infinitely
-    cfg_other = ml_collections.ConfigDict(some_dict)
+    cfg_other = config_dict.ConfigDict(some_dict)
     cfg_other.me = cfg_other
 
     # Temporarily disable coverage trace while testing runtime is exceeded
@@ -591,8 +591,8 @@ class ConfigDictTest(parameterized.TestCase):
     cfg_2.added_field = 3.14159
     cfg_self_ref = _get_test_config_dict()
     cfg_self_ref.self_ref = cfg_self_ref
-    frozen_cfg_1 = ml_collections.FrozenConfigDict(cfg_1)
-    frozen_cfg_2 = ml_collections.FrozenConfigDict(cfg_2)
+    frozen_cfg_1 = config_dict.FrozenConfigDict(cfg_1)
+    frozen_cfg_2 = config_dict.FrozenConfigDict(cfg_2)
 
     self.assertTrue(cfg_1.eq_as_configdict(cfg_1))
     self.assertTrue(cfg_1.eq_as_configdict(frozen_cfg_1))
@@ -607,7 +607,7 @@ class ConfigDictTest(parameterized.TestCase):
 
   def testHash(self):
     some_dict = {'float': 1.23, 'integer': 3}
-    cfg = ml_collections.ConfigDict(some_dict)
+    cfg = config_dict.ConfigDict(some_dict)
     with self.assertRaisesRegex(TypeError, 'unhashable type'):
       hash(cfg)
 
@@ -616,7 +616,7 @@ class ConfigDictTest(parameterized.TestCase):
 
   def testDidYouMeanFeature(self):
     """Tests 'did you mean' suggestions."""
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
     cfg.learning_rate = 0.01
     cfg.lock()
 
@@ -651,7 +651,7 @@ class ConfigDictTest(parameterized.TestCase):
     self.assertIs(cfg.get_ref('ref'), cfg.get_ref('ref2'))
 
     # Create a copy from the original
-    cfg2 = ml_collections.ConfigDict(cfg)
+    cfg2 = config_dict.ConfigDict(cfg)
     # If the refs had not been preserved, get_ref would create a new
     # reference for each call
     self.assertIs(cfg2.get_ref('ref'), cfg2.get_ref('ref2'))
@@ -659,7 +659,7 @@ class ConfigDictTest(parameterized.TestCase):
 
   def testUnpacking(self):
     """Tests ability to pass ConfigDict instance with ** operator."""
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
     cfg.x = 2
 
     def foo(x):
@@ -669,8 +669,8 @@ class ConfigDictTest(parameterized.TestCase):
 
   def testUnpackingWithFieldReference(self):
     """Tests ability to pass ConfigDict instance with ** operator."""
-    cfg = ml_collections.ConfigDict()
-    cfg.x = ml_collections.FieldReference(2)
+    cfg = config_dict.ConfigDict()
+    cfg.x = config_dict.FieldReference(2)
 
     def foo(x):
       return x + 3
@@ -679,7 +679,7 @@ class ConfigDictTest(parameterized.TestCase):
 
   def testReadingIncorrectField(self):
     """Tests whether accessing non-existing fields raises an exception."""
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
     with self.assertRaises(AttributeError):
       _ = cfg.non_existing_field
 
@@ -688,7 +688,7 @@ class ConfigDictTest(parameterized.TestCase):
 
   def testIteration(self):
     """Tests whether one can iterate over ConfigDict."""
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
     for i in range(10):
       cfg['field{}'.format(i)] = 'field{}'.format(i)
 
@@ -741,8 +741,8 @@ class ConfigDictTest(parameterized.TestCase):
     self.assertEqual(repr(cfg).strip(), _REPR_TEST_DICT.strip())
 
   def testLoadFromRepr(self):
-    cfg_dict = ml_collections.ConfigDict()
-    field = ml_collections.FieldReference(1)
+    cfg_dict = config_dict.ConfigDict()
+    field = config_dict.FieldReference(1)
     cfg_dict.r1 = field
     cfg_dict.r2 = field
 
@@ -772,7 +772,7 @@ class ConfigDictTest(parameterized.TestCase):
         },
         'nested_list': [1, 2, [3, 44, 5], 6],
     }
-    cfg_2 = ml_collections.ConfigDict(test_dict_2)
+    cfg_2 = config_dict.ConfigDict(test_dict_2)
     # Demonstrate that dot-access works.
     cfg_2.nested_dict.nested_dict.non_nested_dict.int = 23
     cfg_2.nested_dict.nested_list[2][1] = 4
@@ -781,16 +781,16 @@ class ConfigDictTest(parameterized.TestCase):
 
   def testDotInField(self):
     """Tests trying to create a dot containing field."""
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
 
     with self.assertRaises(ValueError):
       cfg['invalid.name'] = 2.3
 
   def testToDictConversion(self):
     """Tests whether references are correctly handled when calling to_dict."""
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
 
-    field = ml_collections.FieldReference('a string')
+    field = config_dict.FieldReference('a string')
     cfg.dict = {
         'float': 2.3,
         'integer': 1,
@@ -811,9 +811,9 @@ class ConfigDictTest(parameterized.TestCase):
 
     # Ensure FieldReferences are not preserved, by default.
     self.assertNotIsInstance(pure_dict['dict']['field_ref1'],
-                             ml_collections.FieldReference)
+                             config_dict.FieldReference)
     self.assertNotIsInstance(pure_dict['dict']['field_ref2'],
-                             ml_collections.FieldReference)
+                             config_dict.FieldReference)
     self.assertEqual(pure_dict['dict']['field_ref1'], field.get())
     self.assertEqual(pure_dict['dict']['field_ref2'], field.get())
 
@@ -821,9 +821,9 @@ class ConfigDictTest(parameterized.TestCase):
     self.assertEqual(type(pure_dict_with_refs), dict)
     self.assertEqual(type(pure_dict_with_refs['dict']), dict)
     self.assertIsInstance(pure_dict_with_refs['dict']['field_ref1'],
-                          ml_collections.FieldReference)
+                          config_dict.FieldReference)
     self.assertIsInstance(pure_dict_with_refs['dict']['field_ref2'],
-                          ml_collections.FieldReference)
+                          config_dict.FieldReference)
     self.assertIs(pure_dict_with_refs['dict']['field_ref1'],
                   pure_dict_with_refs['dict']['field_ref2'])
 
@@ -834,8 +834,8 @@ class ConfigDictTest(parameterized.TestCase):
 
   def testToDictTypeUnsafe(self):
     """Tests interaction between ignore_type() and to_dict()."""
-    cfg = ml_collections.ConfigDict()
-    cfg.string = ml_collections.FieldReference(None, field_type=str)
+    cfg = config_dict.ConfigDict()
+    cfg.string = config_dict.FieldReference(None, field_type=str)
 
     with cfg.ignore_type():
       cfg.string = 1
@@ -843,10 +843,10 @@ class ConfigDictTest(parameterized.TestCase):
 
   def testCopyAndResolveReferences(self):
     """Tests the .copy_and_resolve_references() method."""
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
 
-    field = ml_collections.FieldReference('a string')
-    int_field = ml_collections.FieldReference(5)
+    field = config_dict.FieldReference('a string')
+    int_field = config_dict.FieldReference(5)
     cfg.dict = {
         'float': 2.3,
         'integer': 1,
@@ -855,7 +855,7 @@ class ConfigDictTest(parameterized.TestCase):
         'field_ref_int1': int_field,
         'field_ref_int2': int_field + 5,
         'placeholder': config_dict.placeholder(str),
-        'cfg': ml_collections.ConfigDict({
+        'cfg': config_dict.ConfigDict({
             'integer': 1,
             'int_field': int_field
         })
@@ -877,8 +877,8 @@ class ConfigDictTest(parameterized.TestCase):
 
   def testCopyAndResolveReferencesConfigTypes(self):
     """Tests that .copy_and_resolve_references() handles special types."""
-    cfg_type_safe = ml_collections.ConfigDict()
-    int_field = ml_collections.FieldReference(5)
+    cfg_type_safe = config_dict.ConfigDict()
+    int_field = config_dict.FieldReference(5)
     cfg_type_safe.field_ref1 = int_field
     cfg_type_safe.field_ref2 = int_field + 5
 
@@ -887,7 +887,7 @@ class ConfigDictTest(parameterized.TestCase):
     self.assertTrue(cfg_type_safe_locked_resolved.is_locked)
     self.assertTrue(cfg_type_safe_locked_resolved.is_type_safe)
 
-    cfg = ml_collections.ConfigDict(type_safe=False)
+    cfg = config_dict.ConfigDict(type_safe=False)
     cfg.field_ref1 = int_field
     cfg.field_ref2 = int_field + 5
 
@@ -906,31 +906,31 @@ class ConfigDictTest(parameterized.TestCase):
       self.assertEqual(resolved.field_ref1, 5)
       self.assertEqual(resolved.field_ref2, 10)
 
-    frozen_cfg = ml_collections.FrozenConfigDict(cfg_type_safe)
+    frozen_cfg = config_dict.FrozenConfigDict(cfg_type_safe)
     frozen_cfg_resolved = frozen_cfg.copy_and_resolve_references()
 
     for resolved in [frozen_cfg, frozen_cfg_resolved]:
       self.assertEqual(resolved.field_ref1, 5)
       self.assertEqual(resolved.field_ref2, 10)
-      self.assertIsInstance(resolved, ml_collections.FrozenConfigDict)
+      self.assertIsInstance(resolved, config_dict.FrozenConfigDict)
 
   def testInitConfigDict(self):
     """Tests initializing a ConfigDict on a ConfigDict."""
     cfg = _get_test_config_dict()
-    cfg_2 = ml_collections.ConfigDict(cfg)
+    cfg_2 = config_dict.ConfigDict(cfg)
     self.assertIsNot(cfg_2, cfg)
     self.assertIs(cfg_2.float, cfg.float)
     self.assertIs(cfg_2.dict, cfg.dict)
 
     # Ensure ConfigDict fields are initialized as is
     dict_with_cfg_field = {'cfg': cfg}
-    cfg_3 = ml_collections.ConfigDict(dict_with_cfg_field)
+    cfg_3 = config_dict.ConfigDict(dict_with_cfg_field)
     self.assertIs(cfg_3.cfg, cfg)
 
     # Now ensure it works with locking and type_safe
-    cfg_4 = ml_collections.ConfigDict(cfg, type_safe=False)
+    cfg_4 = config_dict.ConfigDict(cfg, type_safe=False)
     cfg_4.lock()
-    self.assertEqual(cfg_4, ml_collections.ConfigDict(cfg_4))
+    self.assertEqual(cfg_4, config_dict.ConfigDict(cfg_4))
 
   def testInitReferenceStructure(self):
     """Ensures initialization preserves reference structure."""
@@ -942,9 +942,9 @@ class ConfigDictTest(parameterized.TestCase):
         'list': x
     }
     self_ref_dict['self'] = self_ref_dict
-    self_ref_dict['self_fr'] = ml_collections.FieldReference(self_ref_dict)
+    self_ref_dict['self_fr'] = config_dict.FieldReference(self_ref_dict)
 
-    self_ref_cd = ml_collections.ConfigDict(self_ref_dict)
+    self_ref_cd = config_dict.ConfigDict(self_ref_dict)
     self.assertIs(self_ref_cd.test_dict_1, self_ref_cd.test_dict_2)
     self.assertIs(self_ref_cd, self_ref_cd.self)
     self.assertIs(self_ref_cd, self_ref_cd.self_fr)
@@ -954,7 +954,7 @@ class ConfigDictTest(parameterized.TestCase):
     self_ref_cd.self.int = 1
     self.assertEqual(self_ref_cd.int, 1)
 
-    self_ref_cd_2 = ml_collections.ConfigDict(self_ref_cd)
+    self_ref_cd_2 = config_dict.ConfigDict(self_ref_cd)
     self.assertIsNot(self_ref_cd_2, self_ref_cd)
     self.assertIs(self_ref_cd_2.self, self_ref_cd_2)
     self.assertIs(self_ref_cd_2.test_dict_1, self_ref_cd.test_dict_1)
@@ -964,17 +964,17 @@ class ConfigDictTest(parameterized.TestCase):
     test_dict = dict(x=1, y=1)
 
     # Reference to a dict.
-    reference = ml_collections.FieldReference(test_dict)
-    cfg = ml_collections.ConfigDict()
+    reference = config_dict.FieldReference(test_dict)
+    cfg = config_dict.ConfigDict()
     cfg.reference = reference
-    self.assertIsInstance(cfg.reference, ml_collections.ConfigDict)
+    self.assertIsInstance(cfg.reference, config_dict.ConfigDict)
     self.assertEqual(test_dict['x'], cfg.reference.x)
     self.assertEqual(test_dict['y'], cfg.reference.y)
 
     # Reference to a ConfigDict.
-    test_configdict = ml_collections.ConfigDict(test_dict)
-    reference = ml_collections.FieldReference(test_configdict)
-    cfg = ml_collections.ConfigDict()
+    test_configdict = config_dict.ConfigDict(test_dict)
+    reference = config_dict.FieldReference(test_configdict)
+    cfg = config_dict.ConfigDict()
     cfg.reference = reference
 
     test_configdict.x = 2
@@ -982,9 +982,9 @@ class ConfigDictTest(parameterized.TestCase):
     self.assertEqual(test_configdict.y, cfg.reference.y)
 
     # Reference to a reference.
-    reference_int = ml_collections.FieldReference(0)
-    reference = ml_collections.FieldReference(reference_int)
-    cfg = ml_collections.ConfigDict()
+    reference_int = config_dict.FieldReference(0)
+    reference = config_dict.FieldReference(reference_int)
+    cfg = config_dict.ConfigDict()
     cfg.reference = reference
 
     reference_int.set(1)
@@ -992,7 +992,7 @@ class ConfigDictTest(parameterized.TestCase):
 
   def testDeletingFields(self):
     """Tests whether it is possible to delete fields."""
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
 
     cfg.field1 = 123
     cfg.field2 = 123
@@ -1017,7 +1017,7 @@ class ConfigDictTest(parameterized.TestCase):
   def testDeletingNestedFields(self):
     """Tests whether it is possible to delete nested fields."""
 
-    cfg = ml_collections.ConfigDict({
+    cfg = config_dict.ConfigDict({
         'a': {
             'aa': [1, 2],
         },
@@ -1058,7 +1058,7 @@ class ConfigDictTest(parameterized.TestCase):
 
   def testSetAttr(self):
     """Tests whether it is possible to override an attribute."""
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
     with self.assertRaises(AttributeError):
       cfg.__setattr__('__class__', 'abc')
 
@@ -1068,13 +1068,13 @@ class ConfigDictTest(parameterized.TestCase):
     cfg.lock()
     pickle_cfg = pickle.loads(pickle.dumps(cfg))
     self.assertTrue(pickle_cfg.is_locked)
-    self.assertIsInstance(pickle_cfg, ml_collections.ConfigDict)
+    self.assertIsInstance(pickle_cfg, config_dict.ConfigDict)
     self.assertEqual(str(cfg), str(pickle_cfg))
 
   def testPlaceholder(self):
     """Tests whether FieldReference works correctly as a placeholder."""
-    cfg_element = ml_collections.FieldReference(0)
-    cfg = ml_collections.ConfigDict({
+    cfg_element = config_dict.FieldReference(0)
+    cfg = config_dict.ConfigDict({
         'element': cfg_element,
         'nested': {
             'element': cfg_element
@@ -1092,14 +1092,14 @@ class ConfigDictTest(parameterized.TestCase):
     """Tests whether FieldReference works correctly as an optional field."""
     # Type mismatch at construction.
     with self.assertRaises(TypeError):
-      ml_collections.FieldReference(0, field_type=str)
+      config_dict.FieldReference(0, field_type=str)
 
     # None default and field_type.
     with self.assertRaises(ValueError):
-      ml_collections.FieldReference(None)
+      config_dict.FieldReference(None)
 
-    cfg = ml_collections.ConfigDict({
-        'default': ml_collections.FieldReference(0),
+    cfg = config_dict.ConfigDict({
+        'default': config_dict.FieldReference(0),
     })
 
     cfg.default = 1
@@ -1107,8 +1107,8 @@ class ConfigDictTest(parameterized.TestCase):
 
   def testOptionalNoDefault(self):
     """Tests optional field with no default value."""
-    cfg = ml_collections.ConfigDict({
-        'nodefault': ml_collections.FieldReference(None, field_type=str),
+    cfg = config_dict.ConfigDict({
+        'nodefault': config_dict.FieldReference(None, field_type=str),
     })
 
     # Type mismatch with field with no default value.
@@ -1120,10 +1120,10 @@ class ConfigDictTest(parameterized.TestCase):
 
   def testGetType(self):
     """Tests whether types are correct for FieldReference fields."""
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
     cfg.integer = 123
-    cfg.ref = ml_collections.FieldReference(123)
-    cfg.ref_nodefault = ml_collections.FieldReference(None, field_type=int)
+    cfg.ref = config_dict.FieldReference(123)
+    cfg.ref_nodefault = config_dict.FieldReference(None, field_type=int)
 
     self.assertEqual(cfg.get_type('integer'), int)
     self.assertEqual(cfg.get_type('ref'), int)
@@ -1141,11 +1141,11 @@ class ConfigDictUpdateTest(absltest.TestCase):
 
   def testUpdateSimple(self):
     """Tests updating from one ConfigDict to another."""
-    first = ml_collections.ConfigDict()
+    first = config_dict.ConfigDict()
     first.x = 5
     first.y = 'truman'
     first.q = 2.0
-    second = ml_collections.ConfigDict()
+    second = config_dict.ConfigDict()
     second.x = 9
     second.y = 'wilson'
     second.z = 'washington'
@@ -1158,7 +1158,7 @@ class ConfigDictUpdateTest(absltest.TestCase):
 
   def testUpdateNothing(self):
     """Tests updating a ConfigDict with no arguments."""
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
     cfg.x = 5
     cfg.y = 9
     cfg.update()
@@ -1168,7 +1168,7 @@ class ConfigDictUpdateTest(absltest.TestCase):
 
   def testUpdateFromDict(self):
     """Tests updating a ConfigDict from a dict."""
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
     cfg.x = 5
     cfg.y = 9
     cfg.update({'x': 6, 'z': 2})
@@ -1178,7 +1178,7 @@ class ConfigDictUpdateTest(absltest.TestCase):
 
   def testUpdateFromKwargs(self):
     """Tests updating a ConfigDict from kwargs."""
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
     cfg.x = 5
     cfg.y = 9
     cfg.update(x=6, z=2)
@@ -1188,7 +1188,7 @@ class ConfigDictUpdateTest(absltest.TestCase):
 
   def testUpdateFromDictAndKwargs(self):
     """Tests updating a ConfigDict from a dict and kwargs."""
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
     cfg.x = 5
     cfg.y = 9
     cfg.update({'x': 4, 'z': 2}, x=6)
@@ -1198,7 +1198,7 @@ class ConfigDictUpdateTest(absltest.TestCase):
 
   def testUpdateFromMultipleDictTypeError(self):
     """Tests that updating a ConfigDict from two dicts raises a TypeError."""
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
     cfg.x = 5
     cfg.y = 9
     with self.assertRaisesRegex(TypeError,
@@ -1207,8 +1207,8 @@ class ConfigDictUpdateTest(absltest.TestCase):
 
   def testUpdateNested(self):
     """Tests updating a ConfigDict from a nested dict."""
-    cfg = ml_collections.ConfigDict()
-    cfg.subcfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
+    cfg.subcfg = config_dict.ConfigDict()
     cfg.p = 5
     cfg.q = 6
     cfg.subcfg.y = 9
@@ -1229,67 +1229,67 @@ class ConfigDictUpdateTest(absltest.TestCase):
   def testUpdateFieldReference(self):
     """Tests updating to/from FieldReference fields."""
     # Updating FieldReference...
-    ref = ml_collections.FieldReference(1)
-    cfg = ml_collections.ConfigDict(dict(a=ref, b=ref))
+    ref = config_dict.FieldReference(1)
+    cfg = config_dict.ConfigDict(dict(a=ref, b=ref))
     # from value.
-    cfg.update(ml_collections.ConfigDict(dict(a=2)))
+    cfg.update(config_dict.ConfigDict(dict(a=2)))
     self.assertEqual(cfg.a, 2)
     self.assertEqual(cfg.b, 2)
     # from FieldReference.
     error_message = 'Cannot update a FieldReference from another FieldReference'
     with self.assertRaisesRegex(TypeError, error_message):
       cfg.update(
-          ml_collections.ConfigDict(dict(a=ml_collections.FieldReference(2))))
+          config_dict.ConfigDict(dict(a=config_dict.FieldReference(2))))
     with self.assertRaisesRegex(TypeError, error_message):
       cfg.update(
-          ml_collections.ConfigDict(dict(b=ml_collections.FieldReference(2))))
+          config_dict.ConfigDict(dict(b=config_dict.FieldReference(2))))
 
     # Updating empty ConfigDict with FieldReferences.
-    ref = ml_collections.FieldReference(1)
-    cfg_from = ml_collections.ConfigDict(dict(a=ref, b=ref))
-    cfg = ml_collections.ConfigDict()
+    ref = config_dict.FieldReference(1)
+    cfg_from = config_dict.ConfigDict(dict(a=ref, b=ref))
+    cfg = config_dict.ConfigDict()
     cfg.update(cfg_from)
     self._assert_associated(cfg, cfg_from, 'a')
     self._assert_associated(cfg, cfg_from, 'b')
 
     # Updating values with FieldReferences.
-    ref = ml_collections.FieldReference(1)
-    cfg_from = ml_collections.ConfigDict(dict(a=ref, b=ref))
-    cfg = ml_collections.ConfigDict(dict(a=2, b=3))
+    ref = config_dict.FieldReference(1)
+    cfg_from = config_dict.ConfigDict(dict(a=ref, b=ref))
+    cfg = config_dict.ConfigDict(dict(a=2, b=3))
     cfg.update(cfg_from)
     self._assert_associated(cfg, cfg_from, 'a')
     self._assert_associated(cfg, cfg_from, 'b')
 
   def testUpdateFromFlattened(self):
-    cfg = ml_collections.ConfigDict({'a': 1, 'b': {'c': {'d': 2}}})
+    cfg = config_dict.ConfigDict({'a': 1, 'b': {'c': {'d': 2}}})
     updates = {'a': 2, 'b.c.d': 3}
     cfg.update_from_flattened_dict(updates)
     self.assertEqual(cfg.a, 2)
     self.assertEqual(cfg.b.c.d, 3)
 
   def testUpdateFromFlattenedWithPrefix(self):
-    cfg = ml_collections.ConfigDict({'a': 1, 'b': {'c': {'d': 2}}})
+    cfg = config_dict.ConfigDict({'a': 1, 'b': {'c': {'d': 2}}})
     updates = {'a': 2, 'b.c.d': 3}
     cfg.b.update_from_flattened_dict(updates, 'b.')
     self.assertEqual(cfg.a, 1)
     self.assertEqual(cfg.b.c.d, 3)
 
   def testUpdateFromFlattenedNotFound(self):
-    cfg = ml_collections.ConfigDict({'a': 1, 'b': {'c': {'d': 2}}})
+    cfg = config_dict.ConfigDict({'a': 1, 'b': {'c': {'d': 2}}})
     updates = {'a': 2, 'b.d.e': 3}
     with self.assertRaisesRegex(
         KeyError, 'Key "b.d.e" cannot be set as "b.d" was not found.'):
       cfg.update_from_flattened_dict(updates)
 
   def testUpdateFromFlattenedWrongType(self):
-    cfg = ml_collections.ConfigDict({'a': 1, 'b': {'c': {'d': 2}}})
+    cfg = config_dict.ConfigDict({'a': 1, 'b': {'c': {'d': 2}}})
     updates = {'a.b.c': 2}
     with self.assertRaisesRegex(
         KeyError, 'Key "a.b.c" cannot be updated as "a" is not a ConfigDict.'):
       cfg.update_from_flattened_dict(updates)
 
   def testUpdateFromFlattenedTupleListConversion(self):
-    cfg = ml_collections.ConfigDict({
+    cfg = config_dict.ConfigDict({
         'a': 1,
         'b': {
             'c': {
@@ -1306,7 +1306,7 @@ class ConfigDictUpdateTest(absltest.TestCase):
 
   def testDecodeError(self):
     # ConfigDict containing two strings with incompatible encodings.
-    cfg = ml_collections.ConfigDict({
+    cfg = config_dict.ConfigDict({
         'dill': pickle.dumps(_test_function, protocol=pickle.HIGHEST_PROTOCOL),
         'unicode': u'unicode string'
     })
@@ -1317,49 +1317,49 @@ class ConfigDictUpdateTest(absltest.TestCase):
 
   def testConvertDict(self):
     """Test automatic conversion, or not, of dict to ConfigDict."""
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
     cfg.a = dict(b=dict(c=0))
-    self.assertIsInstance(cfg.a, ml_collections.ConfigDict)
-    self.assertIsInstance(cfg.a.b, ml_collections.ConfigDict)
+    self.assertIsInstance(cfg.a, config_dict.ConfigDict)
+    self.assertIsInstance(cfg.a.b, config_dict.ConfigDict)
 
-    cfg = ml_collections.ConfigDict(convert_dict=False)
+    cfg = config_dict.ConfigDict(convert_dict=False)
     cfg.a = dict(b=dict(c=0))
-    self.assertNotIsInstance(cfg.a, ml_collections.ConfigDict)
+    self.assertNotIsInstance(cfg.a, config_dict.ConfigDict)
     self.assertIsInstance(cfg.a, dict)
     self.assertIsInstance(cfg.a['b'], dict)
 
   def testConvertDictInInitialValue(self):
     """Test automatic conversion, or not, of dict to ConfigDict."""
     initial_dict = dict(a=dict(b=dict(c=0)))
-    cfg = ml_collections.ConfigDict(initial_dict)
-    self.assertIsInstance(cfg.a, ml_collections.ConfigDict)
-    self.assertIsInstance(cfg.a.b, ml_collections.ConfigDict)
+    cfg = config_dict.ConfigDict(initial_dict)
+    self.assertIsInstance(cfg.a, config_dict.ConfigDict)
+    self.assertIsInstance(cfg.a.b, config_dict.ConfigDict)
 
-    cfg = ml_collections.ConfigDict(initial_dict, convert_dict=False)
-    self.assertNotIsInstance(cfg.a, ml_collections.ConfigDict)
+    cfg = config_dict.ConfigDict(initial_dict, convert_dict=False)
+    self.assertNotIsInstance(cfg.a, config_dict.ConfigDict)
     self.assertIsInstance(cfg.a, dict)
     self.assertIsInstance(cfg.a['b'], dict)
 
   def testConvertDictInCopyAndResolveReferences(self):
     """Test conversion, or not, of dict in copy and resolve references."""
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
     cfg.a = dict(b=dict(c=0))
     copied_cfg = cfg.copy_and_resolve_references()
-    self.assertIsInstance(copied_cfg.a, ml_collections.ConfigDict)
-    self.assertIsInstance(copied_cfg.a.b, ml_collections.ConfigDict)
+    self.assertIsInstance(copied_cfg.a, config_dict.ConfigDict)
+    self.assertIsInstance(copied_cfg.a.b, config_dict.ConfigDict)
 
-    cfg = ml_collections.ConfigDict(convert_dict=False)
+    cfg = config_dict.ConfigDict(convert_dict=False)
     cfg.a = dict(b=dict(c=0))
     copied_cfg = cfg.copy_and_resolve_references()
-    self.assertNotIsInstance(copied_cfg.a, ml_collections.ConfigDict)
+    self.assertNotIsInstance(copied_cfg.a, config_dict.ConfigDict)
     self.assertIsInstance(copied_cfg.a, dict)
     self.assertIsInstance(copied_cfg.a['b'], dict)
 
   def testConvertDictTypeCompat(self):
     """Test that automatic conversion to ConfigDict doesn't trigger type errors."""
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
     cfg.a = {}
-    self.assertIsInstance(cfg.a, ml_collections.ConfigDict)
+    self.assertIsInstance(cfg.a, config_dict.ConfigDict)
     # This checks that dict to configdict casting doesn't produce type mismatch.
     cfg.a = {}
 
@@ -1368,7 +1368,7 @@ class ConfigDictUpdateTest(absltest.TestCase):
 
     This checks backward compatibility of deserialisation.
     """
-    cfg = ml_collections.ConfigDict(dict(a=1))
+    cfg = config_dict.ConfigDict(dict(a=1))
     self.assertTrue(yaml.load(cfg.to_yaml(), yaml.UnsafeLoader)._convert_dict)
 
   def testRecursiveRename(self):
@@ -1376,7 +1376,7 @@ class ConfigDictUpdateTest(absltest.TestCase):
 
     The dictionary should be the same but with the specified name changed.
     """
-    cfg = ml_collections.ConfigDict(_TEST_DICT)
+    cfg = config_dict.ConfigDict(_TEST_DICT)
     new_cfg = config_dict.recursive_rename(cfg, 'float', 'double')
     # Check that the new config has float changed to double as we expect
     self.assertEqual(new_cfg.to_dict(), _TEST_DICT_CHANGE_FLOAT_NAME)
@@ -1452,7 +1452,7 @@ class PlaceholderTest(absltest.TestCase):
     test_dict = {'field': 10}
     config = config_dict.create(
         a=config_dict.required_placeholder(dict),
-        b=ml_collections.FieldReference(test_dict.copy()))
+        b=config_dict.FieldReference(test_dict.copy()))
     # ConfigDict initialization converts dict to ConfigDict.
     self.assertEqual(test_dict, config.b.to_dict())
     config.a = test_dict

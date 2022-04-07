@@ -28,9 +28,9 @@ py_test(
         # pip: absl/testing:absltest
         # pip: absl/testing:flagsaver
         # pip: absl/testing:parameterized
-        "//ml_collections",
         "//ml_collections/config_dict",
         "//ml_collections/config_flags",
+        "//ml_collections/config_flags:config_path",
     ],
 )
 

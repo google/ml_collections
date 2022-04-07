@@ -21,7 +21,7 @@ converting between the two.
 """
 
 from absl import app
-import ml_collections
+from ml_collections import config_dict
 
 
 def print_section(name):
@@ -35,7 +35,7 @@ def print_section(name):
 
 def main(_):
   print_section('Attribute Types.')
-  cfg = ml_collections.ConfigDict()
+  cfg = config_dict.ConfigDict()
   cfg.int = 1
   cfg.list = [1, 2, 3]
   cfg.tuple = (1, 2, 3)
@@ -53,14 +53,14 @@ def main(_):
   print('nested_list: ', type(cfg.dict.nested_list))  # List
   print('nested_tuple[0]: ', type(cfg.dict.nested_tuple[0]))  # List
 
-  frozen_cfg = ml_collections.FrozenConfigDict(cfg)
+  frozen_cfg = config_dict.FrozenConfigDict(cfg)
   print('\nTypes of FrozenConfigDict(cfg) fields:')
   print('list: ', type(frozen_cfg.list))  # Tuple
   print('set: ', type(frozen_cfg.set))  # Frozenset
   print('nested_list: ', type(frozen_cfg.dict.nested_list))  # Tuple
   print('nested_tuple[0]: ', type(frozen_cfg.dict.nested_tuple[0]))  # Tuple
 
-  cfg_from_frozen = ml_collections.ConfigDict(frozen_cfg)
+  cfg_from_frozen = config_dict.ConfigDict(frozen_cfg)
   print('\nTypes of ConfigDict(FrozenConfigDict(cfg)) fields:')
   print('list: ', type(cfg_from_frozen.list))  # List
   print('set: ', type(cfg_from_frozen.set))  # Set

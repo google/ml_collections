@@ -574,11 +574,11 @@ class ConfigDict:
 
     from ml_collections import config_dict
 
-    cfg = ml_collections.ConfigDict()
+    cfg = config_dict.ConfigDict()
     cfg.float_field = 12.6
     cfg.integer_field = 123
     cfg.another_integer_field = 234
-    cfg.nested = ml_collections.ConfigDict()
+    cfg.nested = config_dict.ConfigDict()
     cfg.nested.string_field = 'tom'
 
     print(cfg)
@@ -596,9 +596,9 @@ class ConfigDict:
     print_point(**point)
 
   Note that, depending on your use case, it may be easier to use the `create`
-  function in this package to construct a `ConfigDict`::
+  function in this package to construct a `ConfigDict`:
 
-    from ml_collections.config_dict import config_dict
+    from ml_collections import config_dict
     point = config_dict.create(x=1, y=2)
 
   Differently from standard `dicts`, `ConfigDicts` also have the nice property
@@ -750,7 +750,7 @@ class ConfigDict:
 
     Example::
 
-      cfg = ml_collections.ConfigDict(dict(a=1))
+      cfg = config_dict.ConfigDict(dict(a=1))
       cfg.b = cfg.get_oneway_ref('a')
 
       cfg.a = 2
@@ -1893,7 +1893,7 @@ def create(**kwargs):
   This allows for simple dictionaries whose elements can be accessed directly
   using field access::
 
-    from ml_collections.config_dict import config_dict
+    from ml_collections import config_dict
     point = config_dict.create(x=1, y=2)
     print(point.x, point.y)
 

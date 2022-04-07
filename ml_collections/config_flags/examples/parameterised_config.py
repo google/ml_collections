@@ -15,23 +15,23 @@
 # Lint as: python 3
 """Defines a parameterized method which returns a config depending on input."""
 
-import ml_collections
+from ml_collections import config_dict
 
 
 def get_config(config_string):
   """Return an instance of ConfigDict depending on `config_string`."""
   possible_structures = {
       'linear':
-          ml_collections.ConfigDict({
+          config_dict.ConfigDict({
               'model_constructor': 'snt.Linear',
-              'model_config': ml_collections.ConfigDict({
+              'model_config': config_dict.ConfigDict({
                   'output_size': 42,
               })
           }),
       'lstm':
-          ml_collections.ConfigDict({
+          config_dict.ConfigDict({
               'model_constructor': 'snt.LSTM',
-              'model_config': ml_collections.ConfigDict({
+              'model_config': config_dict.ConfigDict({
                   'hidden_size': 108,
               })
           })

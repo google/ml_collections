@@ -13,14 +13,13 @@
 # limitations under the License.
 
 # Lint as: python3
-"""Tests for ml_collections.FieldReference."""
+"""Tests for config_dict.FieldReference."""
 
 import operator
 
 from absl.testing import absltest
 from absl.testing import parameterized
-import ml_collections
-from ml_collections.config_dict import config_dict
+from ml_collections import config_dict
 
 
 class FieldReferenceTest(parameterized.TestCase):
@@ -54,11 +53,11 @@ class FieldReferenceTest(parameterized.TestCase):
     if assert_fn is None:
       assert_fn = self.assertEqual
 
-    ref = ml_collections.FieldReference(initial_value)
+    ref = config_dict.FieldReference(initial_value)
     new_ref = op(ref, other_value)
     assert_fn(new_ref.get(), true_value)
 
-    config = ml_collections.ConfigDict()
+    config = config_dict.ConfigDict()
     config.a = initial_value
     config.b = other_value
     config.result = op(config.get_ref('a'), config.b)
@@ -94,11 +93,11 @@ class FieldReferenceTest(parameterized.TestCase):
     if assert_fn is None:
       assert_fn = self.assertEqual
 
-    ref = ml_collections.FieldReference(initial_value)
+    ref = config_dict.FieldReference(initial_value)
     new_ref = op(ref)
     assert_fn(new_ref.get(), true_value)
 
-    config = ml_collections.ConfigDict()
+    config = config_dict.ConfigDict()
     config.a = initial_value
     config.result = op(config.get_ref('a'))
     assert_fn(config.result, true_value)
@@ -107,11 +106,11 @@ class FieldReferenceTest(parameterized.TestCase):
     assert_fn(config.result, new_true_value)
 
   def testBasic(self):
-    ref = ml_collections.FieldReference(1)
+    ref = config_dict.FieldReference(1)
     self.assertEqual(ref.get(), 1)
 
   def testGetRef(self):
-    config = ml_collections.ConfigDict()
+    config = config_dict.ConfigDict()
     config.a = 1.
     config.b = config.get_ref('a') + 10
     config.c = config.get_ref('b') + 10
@@ -122,7 +121,7 @@ class FieldReferenceTest(parameterized.TestCase):
     def fn(x):
       return x + 5
 
-    config = ml_collections.ConfigDict()
+    config = config_dict.ConfigDict()
     config.a = 1
     config.b = fn(config.get_ref('a'))
     config.c = fn(config.get_ref('b'))
@@ -134,7 +133,7 @@ class FieldReferenceTest(parameterized.TestCase):
     self.assertEqual(config.c, 12)
 
   def testCycles(self):
-    config = ml_collections.ConfigDict()
+    config = config_dict.ConfigDict()
     config.a = 1.
     config.b = config.get_ref('a') + 10
     config.c = config.get_ref('b') + 10
@@ -148,11 +147,11 @@ class FieldReferenceTest(parameterized.TestCase):
 
     # Introduce a cycle on second operand
     with self.assertRaisesRegex(config_dict.MutabilityError, 'cycle'):
-      config.a = ml_collections.FieldReference(5.0) + config.get_ref('c')
+      config.a = config_dict.FieldReference(5.0) + config.get_ref('c')
 
     # We can create multiple FieldReferences that all point to the same object
     l = [0]
-    config = ml_collections.ConfigDict()
+    config = config_dict.ConfigDict()
     config.a = l
     config.b = l
     config.c = config.get_ref('a') + ['c']
@@ -197,8 +196,8 @@ class FieldReferenceTest(parameterized.TestCase):
           'new_initial_value': ['foo'],
           'new_true_value': ['foo', 'world']
       }, {
-          'initial_value': ml_collections.FieldReference(10),
-          'other_value': ml_collections.FieldReference(5.0),
+          'initial_value': config_dict.FieldReference(10),
+          'other_value': config_dict.FieldReference(5.0),
           'true_value': 15.0,
           'new_initial_value': 12,
           'new_true_value': 17.0
@@ -246,8 +245,8 @@ class FieldReferenceTest(parameterized.TestCase):
           'new_initial_value': set([123]),
           'new_true_value': set([])
       }, {
-          'initial_value': ml_collections.FieldReference(10),
-          'other_value': ml_collections.FieldReference(5.0),
+          'initial_value': config_dict.FieldReference(10),
+          'other_value': config_dict.FieldReference(5.0),
           'true_value': 5.0,
           'new_initial_value': 12,
           'new_true_value': 7.0
@@ -283,8 +282,8 @@ class FieldReferenceTest(parameterized.TestCase):
           'new_initial_value': ['foo'],
           'new_true_value': ['foo', 'foo', 'foo']
       }, {
-          'initial_value': ml_collections.FieldReference(10),
-          'other_value': ml_collections.FieldReference(5.0),
+          'initial_value': config_dict.FieldReference(10),
+          'other_value': config_dict.FieldReference(5.0),
           'true_value': 50.0,
           'new_initial_value': 1,
           'new_true_value': 5.0
@@ -314,8 +313,8 @@ class FieldReferenceTest(parameterized.TestCase):
           'new_initial_value': 6.3,
           'new_true_value': 2.52
       }, {
-          'initial_value': ml_collections.FieldReference(10),
-          'other_value': ml_collections.FieldReference(5.0),
+          'initial_value': config_dict.FieldReference(10),
+          'other_value': config_dict.FieldReference(5.0),
           'true_value': 2.0,
           'new_initial_value': 13,
           'new_true_value': 2.6
@@ -339,8 +338,8 @@ class FieldReferenceTest(parameterized.TestCase):
           'new_initial_value': 7,
           'new_true_value': 3
       }, {
-          'initial_value': ml_collections.FieldReference(10),
-          'other_value': ml_collections.FieldReference(5),
+          'initial_value': config_dict.FieldReference(10),
+          'other_value': config_dict.FieldReference(5),
           'true_value': 2,
           'new_initial_value': 28,
           'new_true_value': 5
@@ -370,8 +369,8 @@ class FieldReferenceTest(parameterized.TestCase):
           'new_initial_value': 6.5,
           'new_true_value': 399.321543621
       }, {
-          'initial_value': ml_collections.FieldReference(10),
-          'other_value': ml_collections.FieldReference(5),
+          'initial_value': config_dict.FieldReference(10),
+          'other_value': config_dict.FieldReference(5),
           'true_value': 1e5,
           'new_initial_value': 2,
           'new_true_value': 32
@@ -407,8 +406,8 @@ class FieldReferenceTest(parameterized.TestCase):
           'new_initial_value': 77,
           'new_true_value': 0.2
       }, {
-          'initial_value': ml_collections.FieldReference(10),
-          'other_value': ml_collections.FieldReference(5),
+          'initial_value': config_dict.FieldReference(10),
+          'other_value': config_dict.FieldReference(5),
           'true_value': 0,
           'new_initial_value': 32,
           'new_true_value': 2
@@ -438,8 +437,8 @@ class FieldReferenceTest(parameterized.TestCase):
           'new_initial_value': False,
           'new_true_value': False
       }, {
-          'initial_value': ml_collections.FieldReference(False),
-          'other_value': ml_collections.FieldReference(False),
+          'initial_value': config_dict.FieldReference(False),
+          'other_value': config_dict.FieldReference(False),
           'true_value': False,
           'new_initial_value': True,
           'new_true_value': False
@@ -463,8 +462,8 @@ class FieldReferenceTest(parameterized.TestCase):
           'new_initial_value': True,
           'new_true_value': True
       }, {
-          'initial_value': ml_collections.FieldReference(True),
-          'other_value': ml_collections.FieldReference(True),
+          'initial_value': config_dict.FieldReference(True),
+          'other_value': config_dict.FieldReference(True),
           'true_value': True,
           'new_initial_value': False,
           'new_true_value': True
@@ -488,8 +487,8 @@ class FieldReferenceTest(parameterized.TestCase):
           'new_initial_value': True,
           'new_true_value': False
       }, {
-          'initial_value': ml_collections.FieldReference(True),
-          'other_value': ml_collections.FieldReference(True),
+          'initial_value': config_dict.FieldReference(True),
+          'other_value': config_dict.FieldReference(True),
           'true_value': False,
           'new_initial_value': False,
           'new_true_value': True
@@ -517,8 +516,8 @@ class FieldReferenceTest(parameterized.TestCase):
           'new_initial_value': -0.2,
           'new_true_value': 0.2
       }, {
-          'initial_value': ml_collections.FieldReference(7),
-          'true_value': ml_collections.FieldReference(-7),
+          'initial_value': config_dict.FieldReference(7),
+          'true_value': config_dict.FieldReference(-7),
           'new_initial_value': 123,
           'new_true_value': -123
       }, {
@@ -547,9 +546,9 @@ class FieldReferenceTest(parameterized.TestCase):
       },
       {
           'initial_value':
-              ml_collections.FieldReference(config_dict.create(attribute=2)),
+              config_dict.FieldReference(config_dict.create(attribute=2)),
           'true_value':
-              ml_collections.FieldReference(2),
+              config_dict.FieldReference(2),
           'new_initial_value':
               config_dict.create(attribute=3),
           'new_true_value':
@@ -579,8 +578,8 @@ class FieldReferenceTest(parameterized.TestCase):
           'new_initial_value': 7.3,
           'new_true_value': 7.3
       }, {
-          'initial_value': ml_collections.FieldReference(-7),
-          'true_value': ml_collections.FieldReference(7),
+          'initial_value': config_dict.FieldReference(-7),
+          'true_value': config_dict.FieldReference(7),
           'new_initial_value': 3,
           'new_true_value': 3
       }, {
@@ -596,7 +595,7 @@ class FieldReferenceTest(parameterized.TestCase):
 
   def testToInt(self):
     self._test_unary_operator(25.3, lambda ref: ref.to_int(), 25, 27.9, 27)
-    ref = ml_collections.FieldReference(64.7)
+    ref = config_dict.FieldReference(64.7)
     ref = ref.to_int()
     self.assertEqual(ref.get(), 64)
     self.assertEqual(ref._field_type, int)
@@ -604,7 +603,7 @@ class FieldReferenceTest(parameterized.TestCase):
   def testToFloat(self):
     self._test_unary_operator(12, lambda ref: ref.to_float(), 12.0, 0, 0.0)
 
-    ref = ml_collections.FieldReference(647)
+    ref = config_dict.FieldReference(647)
     ref = ref.to_float()
     self.assertEqual(ref.get(), 647.0)
     self.assertEqual(ref._field_type, float)
@@ -612,14 +611,14 @@ class FieldReferenceTest(parameterized.TestCase):
   def testToString(self):
     self._test_unary_operator(12, lambda ref: ref.to_str(), '12', 0, '0')
 
-    ref = ml_collections.FieldReference(647)
+    ref = config_dict.FieldReference(647)
     ref = ref.to_str()
     self.assertEqual(ref.get(), '647')
     self.assertEqual(ref._field_type, str)
 
   def testSetValue(self):
-    ref = ml_collections.FieldReference(1.0)
-    other = ml_collections.FieldReference(3)
+    ref = config_dict.FieldReference(1.0)
+    other = config_dict.FieldReference(3)
     ref_plus_other = ref + other
 
     self.assertEqual(ref_plus_other.get(), 4.0)
@@ -635,13 +634,13 @@ class FieldReferenceTest(parameterized.TestCase):
       other.set('this is a string')
 
     with self.assertRaises(TypeError):
-      other.set(ml_collections.FieldReference('this is a string'))
+      other.set(config_dict.FieldReference('this is a string'))
 
     with self.assertRaises(TypeError):
-      other.set(ml_collections.FieldReference(None, field_type=str))
+      other.set(config_dict.FieldReference(None, field_type=str))
 
   def testSetResult(self):
-    ref = ml_collections.FieldReference(1.0)
+    ref = config_dict.FieldReference(1.0)
     result = ref + 1.0
     second_result = result + 1.0
 
@@ -666,8 +665,8 @@ class FieldReferenceTest(parameterized.TestCase):
     self.assertEqual(second_result.get(), 5.0)
 
   def testTypeChecking(self):
-    ref = ml_collections.FieldReference(1)
-    string_ref = ml_collections.FieldReference('a')
+    ref = config_dict.FieldReference(1)
+    string_ref = config_dict.FieldReference('a')
 
     x = ref + string_ref
     with self.assertRaises(TypeError):
@@ -675,13 +674,13 @@ class FieldReferenceTest(parameterized.TestCase):
 
   def testNoType(self):
     self.assertRaisesRegex(TypeError, 'field_type should be a type.*',
-                           ml_collections.FieldReference, None, 0)
+                           config_dict.FieldReference, None, 0)
 
   def testEqual(self):
     # Simple case
-    ref1 = ml_collections.FieldReference(1)
-    ref2 = ml_collections.FieldReference(1)
-    ref3 = ml_collections.FieldReference(2)
+    ref1 = config_dict.FieldReference(1)
+    ref2 = config_dict.FieldReference(1)
+    ref3 = config_dict.FieldReference(2)
     self.assertEqual(ref1, 1)
     self.assertEqual(ref1, ref1)
     self.assertEqual(ref1, ref2)
@@ -689,20 +688,20 @@ class FieldReferenceTest(parameterized.TestCase):
     self.assertNotEqual(ref1, ref3)
 
     # ConfigDict inside FieldReference
-    ref1 = ml_collections.FieldReference(ml_collections.ConfigDict({'a': 1}))
-    ref2 = ml_collections.FieldReference(ml_collections.ConfigDict({'a': 1}))
-    ref3 = ml_collections.FieldReference(ml_collections.ConfigDict({'a': 2}))
-    self.assertEqual(ref1, ml_collections.ConfigDict({'a': 1}))
+    ref1 = config_dict.FieldReference(config_dict.ConfigDict({'a': 1}))
+    ref2 = config_dict.FieldReference(config_dict.ConfigDict({'a': 1}))
+    ref3 = config_dict.FieldReference(config_dict.ConfigDict({'a': 2}))
+    self.assertEqual(ref1, config_dict.ConfigDict({'a': 1}))
     self.assertEqual(ref1, ref1)
     self.assertEqual(ref1, ref2)
-    self.assertNotEqual(ref1, ml_collections.ConfigDict({'a': 2}))
+    self.assertNotEqual(ref1, config_dict.ConfigDict({'a': 2}))
     self.assertNotEqual(ref1, ref3)
 
   def testLessEqual(self):
     # Simple case
-    ref1 = ml_collections.FieldReference(1)
-    ref2 = ml_collections.FieldReference(1)
-    ref3 = ml_collections.FieldReference(2)
+    ref1 = config_dict.FieldReference(1)
+    ref2 = config_dict.FieldReference(1)
+    ref3 = config_dict.FieldReference(2)
     self.assertLessEqual(ref1, 1)
     self.assertLessEqual(ref1, 2)
     self.assertLessEqual(0, ref1)
@@ -715,8 +714,8 @@ class FieldReferenceTest(parameterized.TestCase):
     self.assertGreater(ref3, ref1)
 
   def testControlFlowError(self):
-    ref1 = ml_collections.FieldReference(True)
-    ref2 = ml_collections.FieldReference(False)
+    ref1 = config_dict.FieldReference(True)
+    ref2 = config_dict.FieldReference(False)
 
     with self.assertRaises(NotImplementedError):
       if ref1:

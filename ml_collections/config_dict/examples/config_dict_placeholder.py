@@ -20,15 +20,15 @@ example of ConfigDict features, see example_advanced.
 """
 
 from absl import app
-import ml_collections
+from ml_collections import config_dict
 
 
 def main(_):
-  placeholder = ml_collections.FieldReference(0)
-  cfg = ml_collections.ConfigDict()
+  placeholder = config_dict.FieldReference(0)
+  cfg = config_dict.ConfigDict()
   cfg.placeholder = placeholder
-  cfg.optional = ml_collections.FieldReference(0, field_type=int)
-  cfg.nested = ml_collections.ConfigDict()
+  cfg.optional = config_dict.FieldReference(0, field_type=int)
+  cfg.nested = config_dict.ConfigDict()
   cfg.nested.placeholder = placeholder
 
   try:
@@ -42,7 +42,7 @@ def main(_):
 
   # Note that the indirection provided by FieldReferences will be lost if
   # accessed through a ConfigDict:
-  placeholder = ml_collections.FieldReference(0)
+  placeholder = config_dict.FieldReference(0)
   cfg.field1 = placeholder
   cfg.field2 = placeholder  # This field will be tied to cfg.field1.
   cfg.field3 = cfg.field1  # This will just be an int field initialized to 0.

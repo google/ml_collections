@@ -11,7 +11,7 @@ py_binary(
     srcs_version = "PY3",
     deps = [
         # pip: absl:app
-        "//ml_collections",
+        "//ml_collections/config_dict",
         "//ml_collections/config_flags",
     ],
 )
@@ -44,7 +44,7 @@ py_library(
     srcs_version = "PY3",
     deps = [
         # pip: absl:app
-        "//ml_collections",
+        "//ml_collections/config_dict",
         "//ml_collections/config_flags",
     ],
 )

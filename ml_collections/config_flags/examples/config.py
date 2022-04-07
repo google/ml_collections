@@ -15,14 +15,14 @@
 # Lint as: python 3
 """Defines a method which returns an instance of ConfigDict."""
 
-import ml_collections
+from ml_collections import config_dict
 
 
 def get_config():
-  config = ml_collections.ConfigDict()
+  config = config_dict.ConfigDict()
   config.field1 = 1
   config.field2 = 'tom'
-  config.nested = ml_collections.ConfigDict()
+  config.nested = config_dict.ConfigDict()
   config.nested.field = 2.23
   config.tuple = (1, 2, 3)
   return config

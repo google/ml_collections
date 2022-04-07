@@ -15,17 +15,17 @@
 # Lint as: python 3
 """Config file where `get_config` takes a string argument."""
 
-import ml_collections
+from ml_collections import config_dict
 
 
 def get_config(config_string):
   """A config which takes an extra string argument."""
   possible_configs = {
-      'type_a': ml_collections.ConfigDict({
+      'type_a': config_dict.ConfigDict({
           'thing_a': 23,
           'thing_b': 42,
       }),
-      'type_b': ml_collections.ConfigDict({
+      'type_b': config_dict.ConfigDict({
           'thing_a': 19,
           'thing_c': 65,
       }),

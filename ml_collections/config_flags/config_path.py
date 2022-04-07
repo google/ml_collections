@@ -18,7 +18,7 @@ import ast
 import functools
 from typing import Any, MutableSequence, Tuple
 
-import ml_collections
+from ml_collections import config_dict
 
 
 _AST_SPLIT_CONFIG_PATH = {
@@ -154,7 +154,7 @@ def get_type(config_path: str, config: Any):
   holder, field = _get_holder_field(config_path, config)
   # Check if config is a DM collection and hence has attribute get_type()
   if isinstance(holder,
-                (ml_collections.ConfigDict, ml_collections.FieldReference)):
+                (config_dict.ConfigDict, config_dict.FieldReference)):
     return holder.get_type(field)
   else:
     return type(_get_item_or_attribute(holder, field))

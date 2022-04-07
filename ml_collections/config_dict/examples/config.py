@@ -20,7 +20,7 @@ as well as its limitations. This also exemplifies a self-referencing ConfigDict.
 """
 
 import copy
-import ml_collections
+from ml_collections import config_dict
 
 
 def _get_flat_config():
@@ -28,7 +28,7 @@ def _get_flat_config():
 
   # The suggested way to create a ConfigDict() is to call its constructor
   # and assign all relevant fields.
-  config = ml_collections.ConfigDict()
+  config = config_dict.ConfigDict()
 
   # In order to add new attributes you can just use . notation, like with any
   # python object. They will be tracked by ConfigDict, and you get type checking

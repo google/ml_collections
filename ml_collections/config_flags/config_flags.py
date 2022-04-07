@@ -26,7 +26,7 @@ from typing import Any, Callable, Dict, Generic, List, MutableMapping, Optional,
 
 from absl import flags
 from absl import logging
-import ml_collections
+from ml_collections import config_dict
 from ml_collections.config_flags import config_path
 from ml_collections.config_flags import tuple_parser
 
@@ -192,7 +192,7 @@ def DEFINE_config_file(  # pylint: disable=g-bad-name
 
 def DEFINE_config_dict(  # pylint: disable=g-bad-name
     name: str,
-    config: ml_collections.ConfigDict,
+    config: config_dict.ConfigDict,
     help_string: str = 'ConfigDict instance.',
     flag_values: flags.FlagValues = FLAGS,
     lock_config: bool = True,
@@ -208,11 +208,11 @@ def DEFINE_config_dict(  # pylint: disable=g-bad-name
 
   `script.py`::
 
-    import ml_collections
+    from ml_collections import config_dict
     from ml_collections import config_flags
 
 
-    config = ml_collections.ConfigDict({
+    config = config_dict.ConfigDict({
         'field1': 1,
         'field2': 'tom',
         'nested': {
@@ -251,7 +251,7 @@ def DEFINE_config_dict(  # pylint: disable=g-bad-name
   Returns:
     a handle to defined flag.
   """
-  if not isinstance(config, ml_collections.ConfigDict):
+  if not isinstance(config, config_dict.ConfigDict):
     raise TypeError('config should be a ConfigDict')
   parser = _InlineConfigParser(name=name, lock_config=lock_config)
   flag = _ConfigFlag(
@@ -558,7 +558,7 @@ class _InlineConfigParser(flags.ArgumentParser):
     self._lock_config = lock_config
 
   def parse(self, config):
-    if not isinstance(config, ml_collections.ConfigDict):
+    if not isinstance(config, config_dict.ConfigDict):
       raise TypeError('Overriding {} is not allowed.'.format(self.name))
     if self._lock_config:
       _LockConfig(config)
@@ -723,8 +723,8 @@ class _ConfigFlag(flags.Flag):
     update the values in a configuration. Continuing with the example above:
 
     ```python
-    import ml_collections
-    config = ml_collections.ConfigDict{
+    from ml_collections import config_dict
+    config = config_dict.ConfigDict{
         'a': 123,
         'nested': {
             'b': 456
@@ -776,7 +776,7 @@ class _ConfigFieldParser(flags.ArgumentParser):
       self,
       parser: flags.ArgumentParser,
       path: str,
-      config: ml_collections.ConfigDict,
+      config: config_dict.ConfigDict,
       override_values: MutableMapping[str, Any]):
     """Creates new parser with callback, using existing one to perform parsing.
 

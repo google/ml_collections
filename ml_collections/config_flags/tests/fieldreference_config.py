@@ -15,12 +15,11 @@
 # Lint as: python 3
 """Config file with field references."""
 
-import ml_collections
-from ml_collections.config_dict import config_dict
+from ml_collections import config_dict
 
 
 def get_config():
-  cfg = ml_collections.ConfigDict()
-  cfg.ref = ml_collections.FieldReference(123)
+  cfg = config_dict.ConfigDict()
+  cfg.ref = config_dict.FieldReference(123)
   cfg.ref_nodefault = config_dict.placeholder(int)
   return cfg

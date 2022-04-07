@@ -13,14 +13,14 @@
 # limitations under the License.
 
 # Lint as: python3
-"""Tests for ml_collections.FrozenConfigDict."""
+"""Tests for config_dict.FrozenConfigDict."""
 
 from collections import abc as collections_abc
 import copy
 import pickle
 
 from absl.testing import absltest
-import ml_collections
+from ml_collections import config_dict
 
 _TEST_DICT = {
     'int': 2,
@@ -36,7 +36,7 @@ _TEST_DICT = {
         'tuple_containing_list': (1, 2, (3, [4, 5], (6, 7))),
         'list_containing_tuple': [1, 2, [3, 4], (5, 6)],
     },
-    'ref': ml_collections.FieldReference({'int': 0})
+    'ref': config_dict.FieldReference({'int': 0})
 }
 
 
@@ -45,11 +45,11 @@ def _test_dict_deepcopy():
 
 
 def _test_configdict():
-  return ml_collections.ConfigDict(_TEST_DICT)
+  return config_dict.ConfigDict(_TEST_DICT)
 
 
 def _test_frozenconfigdict():
-  return ml_collections.FrozenConfigDict(_TEST_DICT)
+  return config_dict.FrozenConfigDict(_TEST_DICT)
 
 
 class FrozenConfigDictTest(absltest.TestCase):
@@ -59,13 +59,13 @@ class FrozenConfigDictTest(absltest.TestCase):
     """Assert initialization on all elements of input_list raise ValueError."""
     for initial_dictionary in input_list:
       with self.assertRaises(ValueError):
-        _ = ml_collections.FrozenConfigDict(initial_dictionary)
+        _ = config_dict.FrozenConfigDict(initial_dictionary)
 
   def testBasicEquality(self):
     """Tests basic equality with different types of initialization."""
     fcd = _test_frozenconfigdict()
-    fcd_cd = ml_collections.FrozenConfigDict(_test_configdict())
-    fcd_fcd = ml_collections.FrozenConfigDict(fcd)
+    fcd_cd = config_dict.FrozenConfigDict(_test_configdict())
+    fcd_fcd = config_dict.FrozenConfigDict(fcd)
     self.assertEqual(fcd, fcd_cd)
     self.assertEqual(fcd, fcd_fcd)
 
@@ -84,7 +84,7 @@ class FrozenConfigDictTest(absltest.TestCase):
                         _TEST_DICT['dict']['tuple_containing_list'])
     self.assertEqual(fcd.dict.tuple_containing_list[2][1],
                      tuple(_TEST_DICT['dict']['tuple_containing_list'][2][1]))
-    self.assertIsInstance(fcd.dict, ml_collections.FrozenConfigDict)
+    self.assertIsInstance(fcd.dict, config_dict.FrozenConfigDict)
 
     with self.assertRaises(AttributeError):
       fcd.newitem = 0
@@ -122,13 +122,13 @@ class FrozenConfigDictTest(absltest.TestCase):
     dict_without_fcd_node = _test_dict_deepcopy()
     dict_without_fcd_node.pop('ref')
     dict_with_fcd_node = copy.deepcopy(dict_without_fcd_node)
-    dict_with_fcd_node['dict'] = ml_collections.FrozenConfigDict(
+    dict_with_fcd_node['dict'] = config_dict.FrozenConfigDict(
         dict_with_fcd_node['dict'])
-    cd_without_fcd_node = ml_collections.ConfigDict(dict_without_fcd_node)
-    cd_with_fcd_node = ml_collections.ConfigDict(dict_with_fcd_node)
-    fcd_without_fcd_node = ml_collections.FrozenConfigDict(
+    cd_without_fcd_node = config_dict.ConfigDict(dict_without_fcd_node)
+    cd_with_fcd_node = config_dict.ConfigDict(dict_with_fcd_node)
+    fcd_without_fcd_node = config_dict.FrozenConfigDict(
         dict_without_fcd_node)
-    fcd_with_fcd_node = ml_collections.FrozenConfigDict(dict_with_fcd_node)
+    fcd_with_fcd_node = config_dict.FrozenConfigDict(dict_with_fcd_node)
 
     self.assertEqual(cd_without_fcd_node, cd_with_fcd_node)
     self.assertEqual(fcd_without_fcd_node, fcd_with_fcd_node)
@@ -168,7 +168,7 @@ class FrozenConfigDictTest(absltest.TestCase):
     # Also make sure that converting back to ConfigDict makes no copies
     self.assertEqual(
         id(_TEST_DICT['dict']['tuple_containing_list']),
-        id(ml_collections.ConfigDict(fcd).dict.tuple_containing_list))
+        id(config_dict.ConfigDict(fcd).dict.tuple_containing_list))
 
   def testAsConfigDict(self):
     """Tests that converting FrozenConfigDict to ConfigDict works correctly.
@@ -178,22 +178,22 @@ class FrozenConfigDictTest(absltest.TestCase):
     """
     # First ensure conversion to ConfigDict works on empty FrozenConfigDict
     self.assertEqual(
-        ml_collections.ConfigDict(ml_collections.FrozenConfigDict()),
-        ml_collections.ConfigDict())
+        config_dict.ConfigDict(config_dict.FrozenConfigDict()),
+        config_dict.ConfigDict())
 
     cd = _test_configdict()
-    cd_fcd_cd = ml_collections.ConfigDict(ml_collections.FrozenConfigDict(cd))
+    cd_fcd_cd = config_dict.ConfigDict(config_dict.FrozenConfigDict(cd))
     self.assertEqual(cd, cd_fcd_cd)
 
     # Make sure locking is respected
     cd.lock()
     self.assertEqual(
-        cd, ml_collections.ConfigDict(ml_collections.FrozenConfigDict(cd)))
+        cd, config_dict.ConfigDict(config_dict.FrozenConfigDict(cd)))
 
     # Make sure type_safe is respected
-    cd = ml_collections.ConfigDict(_TEST_DICT, type_safe=False)
+    cd = config_dict.ConfigDict(_TEST_DICT, type_safe=False)
     self.assertEqual(
-        cd, ml_collections.ConfigDict(ml_collections.FrozenConfigDict(cd)))
+        cd, config_dict.ConfigDict(config_dict.FrozenConfigDict(cd)))
 
   def testInitSelfReferencing(self):
     """Ensure initialization fails on self-referencing dicts."""
@@ -231,7 +231,7 @@ class FrozenConfigDictTest(absltest.TestCase):
     list_containing_cd = {'list': [1, 2, 3, _test_configdict()]}
     tuple_containing_cd = {'tuple': (1, 2, 3, _test_configdict())}
     fr_containing_list_containing_dict = {
-        'fr': ml_collections.FieldReference([1, {
+        'fr': config_dict.FieldReference([1, {
             'a': 2
         }])
     }
@@ -243,9 +243,9 @@ class FrozenConfigDictTest(absltest.TestCase):
 
   def testInitFieldReferenceInList(self):
     """Ensure initialization fails on FieldReferences in lists/tuples."""
-    list_containing_fr = {'list': [1, 2, 3, ml_collections.FieldReference(4)]}
+    list_containing_fr = {'list': [1, 2, 3, config_dict.FieldReference(4)]}
     tuple_containing_fr = {
-        'tuple': (1, 2, 3, ml_collections.FieldReference('a'))
+        'tuple': (1, 2, 3, config_dict.FieldReference('a'))
     }
 
     self.assertFrozenRaisesValueError([list_containing_fr, tuple_containing_fr])
@@ -256,36 +256,36 @@ class FrozenConfigDictTest(absltest.TestCase):
     immutable_name = {'__hash__': None}
 
     with self.assertRaises(ValueError):
-      ml_collections.FrozenConfigDict(dot_name)
+      config_dict.FrozenConfigDict(dot_name)
 
     with self.assertRaises(AttributeError):
-      ml_collections.FrozenConfigDict(immutable_name)
+      config_dict.FrozenConfigDict(immutable_name)
 
   def testFieldReferenceResolved(self):
     """Tests that FieldReferences are resolved."""
-    cfg = ml_collections.ConfigDict({'fr': ml_collections.FieldReference(1)})
-    frozen_cfg = ml_collections.FrozenConfigDict(cfg)
+    cfg = config_dict.ConfigDict({'fr': config_dict.FieldReference(1)})
+    frozen_cfg = config_dict.FrozenConfigDict(cfg)
     self.assertNotIsInstance(frozen_cfg._fields['fr'],
-                             ml_collections.FieldReference)
+                             config_dict.FieldReference)
     hash(frozen_cfg)  # with FieldReference resolved, frozen_cfg is hashable
 
   def testFieldReferenceCycle(self):
     """Tests that FieldReferences may not contain reference cycles."""
     frozenset_fr = {'frozenset': frozenset({1, 2})}
-    frozenset_fr['fr'] = ml_collections.FieldReference(
+    frozenset_fr['fr'] = config_dict.FieldReference(
         frozenset_fr['frozenset'])
     list_fr = {'list': [1, 2]}
-    list_fr['fr'] = ml_collections.FieldReference(list_fr['list'])
+    list_fr['fr'] = config_dict.FieldReference(list_fr['list'])
 
     cyclic_fr = {'a': 1}
-    cyclic_fr['fr'] = ml_collections.FieldReference(cyclic_fr)
+    cyclic_fr['fr'] = config_dict.FieldReference(cyclic_fr)
     cyclic_fr_parent = {'dict': {}}
-    cyclic_fr_parent['dict']['fr'] = ml_collections.FieldReference(
+    cyclic_fr_parent['dict']['fr'] = config_dict.FieldReference(
         cyclic_fr_parent)
 
     # FieldReference is allowed to point to non-cyclic objects:
-    _ = ml_collections.FrozenConfigDict(frozenset_fr)
-    _ = ml_collections.FrozenConfigDict(list_fr)
+    _ = config_dict.FrozenConfigDict(frozenset_fr)
+    _ = config_dict.FrozenConfigDict(list_fr)
     # But not cycles:
     self.assertFrozenRaisesValueError([cyclic_fr, cyclic_fr_parent])
 
@@ -305,11 +305,11 @@ class FrozenConfigDictTest(absltest.TestCase):
 
     list_to_tuple = _test_dict_deepcopy()
     list_to_tuple['list'] = tuple(list_to_tuple['list'])
-    fcd_list_to_tuple = ml_collections.FrozenConfigDict(list_to_tuple)
+    fcd_list_to_tuple = config_dict.FrozenConfigDict(list_to_tuple)
 
     set_to_frozenset = _test_dict_deepcopy()
     set_to_frozenset['set'] = frozenset(set_to_frozenset['set'])
-    fcd_set_to_frozenset = ml_collections.FrozenConfigDict(set_to_frozenset)
+    fcd_set_to_frozenset = config_dict.FrozenConfigDict(set_to_frozenset)
 
     self.assertNotEqual(fcd, fcd_list_to_tuple)
 
@@ -328,17 +328,17 @@ class FrozenConfigDictTest(absltest.TestCase):
     # False for other types.
     self.assertFalse(fcd.eq_as_configdict([1, 2]))
     self.assertTrue(fcd.eq_as_configdict(fcd.as_configdict()))
-    empty_fcd = ml_collections.FrozenConfigDict()
-    self.assertTrue(empty_fcd.eq_as_configdict(ml_collections.ConfigDict()))
+    empty_fcd = config_dict.FrozenConfigDict()
+    self.assertTrue(empty_fcd.eq_as_configdict(config_dict.ConfigDict()))
 
     # Now, ensure it has the same immutability detection as __eq__().
     list_to_tuple = _test_dict_deepcopy()
     list_to_tuple['list'] = tuple(list_to_tuple['list'])
-    fcd_list_to_tuple = ml_collections.FrozenConfigDict(list_to_tuple)
+    fcd_list_to_tuple = config_dict.FrozenConfigDict(list_to_tuple)
 
     set_to_frozenset = _test_dict_deepcopy()
     set_to_frozenset['set'] = frozenset(set_to_frozenset['set'])
-    fcd_set_to_frozenset = ml_collections.FrozenConfigDict(set_to_frozenset)
+    fcd_set_to_frozenset = config_dict.FrozenConfigDict(set_to_frozenset)
 
     self.assertFalse(fcd.eq_as_configdict(fcd_list_to_tuple))
     # Because set == frozenset in Python:
@@ -351,17 +351,17 @@ class FrozenConfigDictTest(absltest.TestCase):
 
     self.assertEqual(
         hash(_test_frozenconfigdict()),
-        hash(ml_collections.FrozenConfigDict(_test_dict_deepcopy())))
+        hash(config_dict.FrozenConfigDict(_test_dict_deepcopy())))
     self.assertNotEqual(
         hash(_test_frozenconfigdict()),
-        hash(ml_collections.FrozenConfigDict(list_to_tuple)))
+        hash(config_dict.FrozenConfigDict(list_to_tuple)))
 
     # Ensure Python realizes FrozenConfigDict is hashable
     self.assertIsInstance(_test_frozenconfigdict(), collections_abc.Hashable)
 
   def testUnhashableType(self):
     """Ensures __hash__() fails if FrozenConfigDict has unhashable value."""
-    unhashable_fcd = ml_collections.FrozenConfigDict(
+    unhashable_fcd = config_dict.FrozenConfigDict(
         {'unhashable': bytearray()})
     with self.assertRaises(TypeError):
       hash(unhashable_fcd)
@@ -372,12 +372,12 @@ class FrozenConfigDictTest(absltest.TestCase):
     list_to_tuple['list'] = tuple(list_to_tuple['list'])
 
     self.assertEqual(_test_frozenconfigdict().to_dict(),
-                     ml_collections.FrozenConfigDict(list_to_tuple).to_dict())
+                     config_dict.FrozenConfigDict(list_to_tuple).to_dict())
 
   def testPickle(self):
     """Make sure FrozenConfigDict can be dumped and loaded with pickle."""
     fcd = _test_frozenconfigdict()
-    locked_fcd = ml_collections.FrozenConfigDict(_test_configdict().lock())
+    locked_fcd = config_dict.FrozenConfigDict(_test_configdict().lock())
 
     unpickled_fcd = pickle.loads(pickle.dumps(fcd))
     unpickled_locked_fcd = pickle.loads(pickle.dumps(locked_fcd))

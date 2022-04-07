@@ -20,15 +20,15 @@ For examples of more features, see example_advanced.
 """
 
 from absl import app
-import ml_collections
+from ml_collections import config_dict
 
 
 def main(_):
-  cfg = ml_collections.ConfigDict()
+  cfg = config_dict.ConfigDict()
   cfg.float_field = 12.6
   cfg.integer_field = 123
   cfg.another_integer_field = 234
-  cfg.nested = ml_collections.ConfigDict()
+  cfg.nested = config_dict.ConfigDict()
   cfg.nested.string_field = 'tom'
 
   print(cfg.integer_field)  # Prints 123.

@@ -35,13 +35,13 @@ This document describes example usage of `ConfigDict`, `FrozenConfigDict`,
 ### Basic Usage
 
 ```python
-import ml_collections
+from ml_collections import config_dict
 
-cfg = ml_collections.ConfigDict()
+cfg = config_dict.ConfigDict()
 cfg.float_field = 12.6
 cfg.integer_field = 123
 cfg.another_integer_field = 234
-cfg.nested = ml_collections.ConfigDict()
+cfg.nested = config_dict.ConfigDict()
 cfg.nested.string_field = 'tom'
 
 print(cfg.integer_field)  # Prints 123.
@@ -63,7 +63,7 @@ print(cfg)
 A `FrozenConfigDict`is an immutable, hashable type of `ConfigDict`:
 
 ```python
-import ml_collections
+from ml_collections import config_dict
 
 initial_dictionary = {
     'int': 1,
@@ -73,15 +73,15 @@ initial_dictionary = {
     'dict_tuple_list': {'tuple_list': ([1, 2], 3)}
 }
 
-cfg = ml_collections.ConfigDict(initial_dictionary)
-frozen_dict = ml_collections.FrozenConfigDict(initial_dictionary)
+cfg = config_dict.ConfigDict(initial_dictionary)
+frozen_dict = config_dict.FrozenConfigDict(initial_dictionary)
 
 print(frozen_dict.tuple)  # Prints tuple (1, 2, 3)
 print(frozen_dict.list)  # Prints tuple (1, 2)
 print(frozen_dict.set)  # Prints frozenset {1, 2, 3, 4}
 print(frozen_dict.dict_tuple_list.tuple_list[0])  # Prints tuple (1, 2)
 
-frozen_cfg = ml_collections.FrozenConfigDict(cfg)
+frozen_cfg = config_dict.FrozenConfigDict(cfg)
 print(frozen_cfg == frozen_dict)  # True
 print(hash(frozen_cfg) == hash(frozen_dict))  # True
 
@@ -91,7 +91,7 @@ except AttributeError as e:
   print(e)
 
 # Converting between `FrozenConfigDict` and `ConfigDict`:
-thawed_frozen_cfg = ml_collections.ConfigDict(frozen_dict)
+thawed_frozen_cfg = config_dict.ConfigDict(frozen_dict)
 print(thawed_frozen_cfg == cfg)  # True
 frozen_cfg_to_cfg = frozen_dict.as_configdict()
 print(frozen_cfg_to_cfg == cfg)  # True
@@ -107,14 +107,13 @@ with a `None` default value. This is useful if a program uses optional
 configuration fields.
 
 ```python
-import ml_collections
-from ml_collections.config_dict import config_dict
+from ml_collections import config_dict
 
-placeholder = ml_collections.FieldReference(0)
-cfg = ml_collections.ConfigDict()
+placeholder = config_dict.FieldReference(0)
+cfg = config_dict.ConfigDict()
 cfg.placeholder = placeholder
 cfg.optional = config_dict.placeholder(int)
-cfg.nested = ml_collections.ConfigDict()
+cfg.nested = config_dict.ConfigDict()
 cfg.nested.placeholder = placeholder
 
 try:
@@ -133,9 +132,9 @@ Note that the indirection provided by `FieldReference`s will be lost if accessed
 through a `ConfigDict`.
 
 ```python
-import ml_collections
+from ml_collections import config_dict
 
-placeholder = ml_collections.FieldReference(0)
+placeholder = config_dict.FieldReference(0)
 cfg.field1 = placeholder
 cfg.field2 = placeholder  # This field will be tied to cfg.field1.
 cfg.field3 = cfg.field1  # This will just be an int field initialized to 0.
@@ -150,9 +149,9 @@ and get the reference's computed value, and `FieldReference.set()` to change the
 original reference's value.
 
 ```python
-import ml_collections
+from ml_collections import config_dict
 
-ref = ml_collections.FieldReference(1)
+ref = config_dict.FieldReference(1)
 print(ref.get())  # Prints 1
 
 add_ten = ref.get() + 10  # ref.get() is an integer and so is add_ten
@@ -175,10 +174,10 @@ We can also use fields in a `ConfigDict` in lazy computation. In this case a
 field will only be lazily evaluated if `ConfigDict.get_ref()` is used to get it.
 
 ```python
-import ml_collections
+from ml_collections import config_dict
 
-config = ml_collections.ConfigDict()
-config.reference_field = ml_collections.FieldReference(1)
+config = config_dict.ConfigDict()
+config.reference_field = config_dict.FieldReference(1)
 config.integer_field = 2
 config.float_field = 2.5
 
@@ -213,9 +212,9 @@ computation will be lost and all computations downstream in the reference graph
 will use the new value.
 
 ```python
-import ml_collections
+from ml_collections import config_dict
 
-config = ml_collections.ConfigDict()
+config = config_dict.ConfigDict()
 config.reference = 1
 config.reference_0 = config.get_ref('reference') + 10
 config.reference_1 = config.get_ref('reference') + 20
@@ -242,10 +241,9 @@ assigning a computed field to one that *is not* the result of computation. This
 is forbidden:
 
 ```python
-import ml_collections
-from ml_collections.config_dict import config_dict
+from ml_collections import config_dict
 
-config = ml_collections.ConfigDict()
+config = config_dict.ConfigDict()
 config.integer_field = 1
 config.bigger_integer_field = config.get_ref('integer_field') + 10
 
@@ -263,9 +261,9 @@ Here are some more advanced examples showing lazy computation with different
 operators and data types.
 
 ```python
-import ml_collections
+from ml_collections import config_dict
 
-config = ml_collections.ConfigDict()
+config = config_dict.ConfigDict()
 config.float_field = 12.6
 config.integer_field = 123
 config.list_field = [0, 1, 2]
@@ -297,13 +295,13 @@ You can use `==` and `.eq_as_configdict()` to check equality among `ConfigDict`
 and `FrozenConfigDict` objects.
 
 ```python
-import ml_collections
+from ml_collections import config_dict
 
 dict_1 = {'list': [1, 2]}
 dict_2 = {'list': (1, 2)}
-cfg_1 = ml_collections.ConfigDict(dict_1)
-frozen_cfg_1 = ml_collections.FrozenConfigDict(dict_1)
-frozen_cfg_2 = ml_collections.FrozenConfigDict(dict_2)
+cfg_1 = config_dict.ConfigDict(dict_1)
+frozen_cfg_1 = config_dict.FrozenConfigDict(dict_1)
+frozen_cfg_2 = config_dict.FrozenConfigDict(dict_2)
 
 # True because FrozenConfigDict converts lists to tuples
 print(frozen_cfg_1.items() == frozen_cfg_2.items())
@@ -324,13 +322,13 @@ if two sets of computations are different as long as they result in the same
 value.
 
 ```python
-import ml_collections
+from ml_collections import config_dict
 
-cfg_1 = ml_collections.ConfigDict()
+cfg_1 = config_dict.ConfigDict()
 cfg_1.a = 1
 cfg_1.b = cfg_1.get_ref('a') + 2
 
-cfg_2 = ml_collections.ConfigDict()
+cfg_2 = config_dict.ConfigDict()
 cfg_2.a = 1
 cfg_2.b = cfg_2.get_ref('a') * 3
 
@@ -344,9 +342,9 @@ Here is an example with `lock()` and `deepcopy()`:
 
 ```python
 import copy
-import ml_collections
+from ml_collections import config_dict
 
-cfg = ml_collections.ConfigDict()
+cfg = config_dict.ConfigDict()
 cfg.integer_field = 123
 
 # Locking prohibits the addition and deletion of new fields but allows
@@ -369,7 +367,7 @@ print(cfg)
 ### Dictionary attributes and initialization
 
 ```python
-import ml_collections
+from ml_collections import config_dict
 
 referenced_dict = {'inner_float': 3.14}
 d = {
@@ -379,7 +377,7 @@ d = {
 }
 
 # We can initialize on a dictionary
-cfg = ml_collections.ConfigDict(d)
+cfg = config_dict.ConfigDict(d)
 
 # Reference structure is preserved
 print(id(cfg.referenced_dict_1) == id(cfg.referenced_dict_2))  # True
@@ -442,16 +440,16 @@ if __name__ == '__main__':
 ```python
 # Note that this is a valid Python script.
 # get_config() can return an arbitrary dict-like object. However, it is advised
-# to use ml_collections.ConfigDict.
+# to use ml_collections.config_dict.ConfigDict.
 # See ml_collections/config_dict/examples/config_dict_basic.py
 
-import ml_collections
+from ml_collections import config_dict
 
 def get_config():
-  config = ml_collections.ConfigDict()
+  config = config_dict.ConfigDict()
   config.field1 = 1
   config.field2 = 'tom'
-  config.nested = ml_collections.ConfigDict()
+  config.nested = config_dict.ConfigDict()
   config.nested.field = 2.23
   config.tuple = (1, 2, 3)
   return config
@@ -490,13 +488,13 @@ separate file.
 ```python
 from absl import app
 
-import ml_collections
+from ml_collections import config_dict
 from ml_collections import config_flags
 
-config = ml_collections.ConfigDict()
+config = config_dict.ConfigDict()
 config.field1 = 1
 config.field2 = 'tom'
-config.nested = ml_collections.ConfigDict()
+config.nested = config_dict.ConfigDict()
 config.nested.field = 2.23
 config.tuple = (1, 2, 3)
 
@@ -538,18 +536,18 @@ A better system is to pass some configuration, indicating which structure of
 ConfigDict should be returned. An example is the following config file:
 
 ```python
-import ml_collections
+from ml_collections import config_dict
 
 def get_config(config_string):
   possible_structures = {
-      'linear': ml_collections.ConfigDict({
+      'linear': config_dict.ConfigDict({
           'model_constructor': 'snt.Linear',
-          'model_config': ml_collections.ConfigDict({
+          'model_config': config_dict.ConfigDict({
               'output_size': 42,
           }),
-      'lstm': ml_collections.ConfigDict({
+      'lstm': config_dict.ConfigDict({
           'model_constructor': 'snt.LSTM',
-          'model_config': ml_collections.ConfigDict({
+          'model_config': config_dict.ConfigDict({
               'hidden_size': 108,
           })
       })

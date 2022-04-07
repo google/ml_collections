@@ -19,11 +19,11 @@ This example shows the roles and scopes of ConfigDict's lock().
 """
 
 from absl import app
-import ml_collections
+from ml_collections import config_dict
 
 
 def main(_):
-  cfg = ml_collections.ConfigDict()
+  cfg = config_dict.ConfigDict()
   cfg.integer_field = 123
 
   # Locking prohibits the addition and deletion of new fields but allows

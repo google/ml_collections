@@ -20,7 +20,7 @@ py_library(
         ":tuple_parser",
         # pip: absl/flags
         # pip: absl/logging
-        "//ml_collections",
+        "//ml_collections/config_dict",
     ],
 )
 
@@ -28,7 +28,7 @@ py_library(
     name = "config_path",
     srcs = ["config_path.py"],
     deps = [
-        "//ml_collections",
+        "//ml_collections/config_dict",
     ],
 )
 

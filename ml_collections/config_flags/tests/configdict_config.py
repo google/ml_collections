@@ -15,7 +15,7 @@
 # Lint as: python 3
 """ConfigDict config file."""
 
-import ml_collections
+from ml_collections import config_dict
 
 
 class UnusableConfig(object):
@@ -91,12 +91,12 @@ class UnusableConfig(object):
 
 def get_config():
   """Returns a ConfigDict. Used for tests."""
-  cfg = ml_collections.ConfigDict()
+  cfg = config_dict.ConfigDict()
   cfg.integer = 1
-  cfg.reference = ml_collections.FieldReference(1)
+  cfg.reference = config_dict.FieldReference(1)
   cfg.list = [1, 2, 3]
   cfg.nested_list = [[1, 2, 3]]
-  cfg.nested_configdict = ml_collections.ConfigDict()
+  cfg.nested_configdict = config_dict.ConfigDict()
   cfg.nested_configdict.integer = 1
   cfg.unusable_config = UnusableConfig()
 

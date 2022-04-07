@@ -15,7 +15,7 @@ py_test(
     deps = [
         # pip: absl/testing:absltest
         # pip: absl/testing:parameterized
-        "//ml_collections",
+        "//ml_collections/config_dict",
         # pip: mock
         # pip: six
         # pip: yaml
@@ -32,7 +32,7 @@ py_test(
     srcs_version = "PY3",
     deps = [
         # pip: absl/testing:absltest
-        "//ml_collections",
+        "//ml_collections/config_dict",
     ],
 )
 
@@ -47,6 +47,6 @@ py_test(
     deps = [
         # pip: absl/testing:absltest
         # pip: absl/testing:parameterized
-        "//ml_collections",
+        "//ml_collections/config_dict",
     ],
 )
