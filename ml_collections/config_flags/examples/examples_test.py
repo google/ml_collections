@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Lint as: python3
 """Tests for config_flags examples.
 
 Ensures that from define_config_dict_basic, define_config_file_basic run
