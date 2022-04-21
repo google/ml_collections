@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Lint as: python3
 """Tests for ConfigDict examples.
 
 Ensures that config_dict_basic, config_dict_initialization, config_dict_lock,

@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Lint as: python3
 """Classes for defining configurations of experiments and models.
 
 This file defines the classes `ConfigDict` and `FrozenConfigDict`, which are

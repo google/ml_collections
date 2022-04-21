@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Lint as: python3
 """Example of basic FrozenConfigDict usage.
 
 This example shows the most basic usage of FrozenConfigDict, highlighting

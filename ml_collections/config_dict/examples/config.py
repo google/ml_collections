@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Lint as: python3
 """Example of a config file using ConfigDict.
 
 The idea of this configuration file is to show a typical use case of ConfigDict,

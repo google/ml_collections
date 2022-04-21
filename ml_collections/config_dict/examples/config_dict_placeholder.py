@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Lint as: python3
 """Example of placeholder fields in a ConfigDict.
 
 This example shows how ConfigDict placeholder fields work. For a more complete
