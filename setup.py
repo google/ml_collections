@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Lint as: python 3
 """Setup for pip package."""
 
 from setuptools import find_namespace_packages

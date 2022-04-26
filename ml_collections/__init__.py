@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Lint as: python 3
 """ML Collections is a library of Python collections designed for ML usecases."""
 
 from ml_collections.config_dict import ConfigDict
