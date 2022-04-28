@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Lint as: python 3
 r"""Example of basic DEFINE_config_dict usage.
 
 To run this example:

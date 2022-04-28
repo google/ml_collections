@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Lint as: python 3
 """Config flags module."""
 
 from .config_flags import DEFINE_config_dataclass

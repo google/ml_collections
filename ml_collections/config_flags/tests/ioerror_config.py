@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Lint as: python 3
 """Config file that raises IOError on import.
 
 The flags library tries to load configuration files in a few different ways.

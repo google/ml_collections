@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Lint as: python 3
 """Defines a method which returns an instance of ConfigDict."""
 
 from ml_collections import config_dict

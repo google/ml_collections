@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Lint as: python 3
 """Config file that raises TypeError on import.
 
 When trying loading the configuration file as a flag, the flags library catches
