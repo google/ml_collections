@@ -16,6 +16,8 @@
 
 import copy
 
+from ml_collections.config_flags.tests import spork
+
 
 class TestConfig(object):
   """Just a dummy config."""
@@ -38,6 +40,7 @@ class TestConfig(object):
     self.list = [1, 2, [3]]
     self.tuple = (1, 2, (3,))
     self.tuple_with_spaces = (1, 2, (3,))
+    self.enum = spork.SporkType.SPOON
 
   @property
   def readonly_field(self):

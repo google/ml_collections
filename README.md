@@ -587,6 +587,7 @@ python script.py -- --config=path_to_config.py:lstm \
     *   `types.BooleanType` (bool)
     *   `types.StringType` (string)
     *   `types.TupleType` (tuple)
+    *   `enum.Enum` (enum)
 *   Overriding is type safe.
 *   Overriding of `TupleType` can be done by passing in the `tuple` as a string
     (see the example in the [Usage](#usage) section).

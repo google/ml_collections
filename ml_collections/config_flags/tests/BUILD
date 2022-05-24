@@ -24,6 +24,7 @@ py_test(
     python_version = "PY3",
     srcs_version = "PY3",
     deps = [
+        ":spork",
         # pip: absl/flags
         # pip: absl/testing:absltest
         # pip: absl/testing:flagsaver
@@ -45,4 +46,9 @@ py_test(
         # pip: absl/testing:absltest
         "//ml_collections/config_flags",
     ],
+)
+
+py_library(
+    name = "spork",
+    srcs = ["spork.py"],
 )

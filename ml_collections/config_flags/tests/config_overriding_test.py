@@ -15,6 +15,7 @@
 """Tests for ml_collection.config_flags."""
 
 import copy
+import enum
 import shlex
 import sys
 
@@ -25,6 +26,7 @@ from absl.testing import parameterized
 from ml_collections import config_dict
 from ml_collections.config_flags import config_flags
 from ml_collections.config_flags.tests import mock_config
+from ml_collections.config_flags.tests import spork
 
 
 _CHECK_TYPES = (int, str, float, bool)
@@ -305,6 +307,17 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
 
     values = _parse_flags('{} --notest_config.object.bool'.format(prefix))
     self.assertFalse(values.test_config.object.bool)
+
+  def testOverrideEnum(self):
+    """Tests overriding enumn config values from command line."""
+    prefix = './program --test_config={}'.format(_TEST_CONFIG_FILE)
+
+    # The default for dict.enum is SPOON.
+    values = _parse_flags('{} --test_config.enum=FORK'.format(prefix))
+    self.assertEqual(values.test_config.enum, spork.SporkType.FORK)
+    # Flag is case-insensetive.
+    values = _parse_flags('{} --test_config.enum=spork'.format(prefix))
+    self.assertEqual(values.test_config.enum, spork.SporkType.SPORK)
 
   def testFieldReferenceOverride(self):
     """Tests whether types of FieldReference fields are valid."""

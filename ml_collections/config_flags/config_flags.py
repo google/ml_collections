@@ -15,6 +15,7 @@
 """Configuration commmand line parser."""
 
 import dataclasses
+import enum
 import errno
 import imp
 import os
@@ -44,12 +45,7 @@ _FIELD_TYPE_TO_PARSER = {
     bool: flags.BooleanParser(),
     tuple: tuple_parser.TupleParser(),
     int: flags.IntegerParser(),
-    str: flags.ArgumentParser()
-}
-
-_FIELD_TYPE_TO_SERIALIZER = {
-    t: flags.ArgumentSerializer()
-    for t in _FIELD_TYPE_TO_PARSER
+    str: flags.ArgumentParser(),
 }
 
 
@@ -628,16 +624,22 @@ class _ConfigFlag(flags.Flag):
       field_help = 'An override of {}\'s field {}'.format(self.name, field_path)
       field_name = '{}.{}'.format(self.name, field_path)
 
-      if field_type in _FIELD_TYPE_TO_PARSER:
+      parser = None
+      if issubclass(field_type, enum.Enum):
+        parser = _ConfigFieldParser(
+            flags.EnumClassParser(field_type, case_sensitive=False), field_path,
+            config, self._override_values)
+      elif field_type in _FIELD_TYPE_TO_PARSER:
         parser = _ConfigFieldParser(_FIELD_TYPE_TO_PARSER[field_type],
                                     field_path, config, self._override_values)
+      if parser:
         flags.DEFINE(
             parser,
             field_name,
             config_path.get_value(field_path, config),
             field_help,
             flag_values=self.flag_values,
-            serializer=_FIELD_TYPE_TO_SERIALIZER[field_type])
+            serializer=flags.ArgumentSerializer())
         flag = self.flag_values._flags().get(field_name)  # pylint: disable=protected-access
         flag.boolean = field_type is bool
       else:
@@ -807,4 +809,3 @@ class _ConfigFieldParser(flags.ArgumentParser):
   @property
   def syntactic_help(self) -> str:
     return self._parser.syntactic_help
-
