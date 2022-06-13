@@ -15,8 +15,10 @@
 """Module for spliting flag prefixes."""
 
 import ast
+import dataclasses as dc
 import functools
-from typing import Any, MutableSequence, Tuple
+import typing
+from typing import Any, MutableSequence, Tuple, Union
 
 from ml_collections import config_dict
 
@@ -132,6 +134,36 @@ def get_value(config_path: str, config: Any):
   return functools.reduce(_get_item_or_attribute, split(config_path), config)
 
 
+def normalize_type(type_spec: type) -> type:
+  """Normalizes a type object.
+
+  Strips all None types from the type specification and returns the remaining
+  single type. This is primarily useful for Optional type annotations in which
+  case it will strip out the NoneType and return the inner type.
+
+  Args:
+    type_spec: The type to normalize.
+  Raises:
+    TypeError: If there is not exactly 1 non-None type in the union.
+  Returns:
+    The normalized type.
+  """
+  if hasattr(typing, 'get_origin'):
+    if typing.get_origin(type_spec) == Union:
+      non_none = [t for t in typing.get_args(type_spec) if t is not type(None)]
+      if len(non_none) != 1:
+        raise TypeError(f'Unable to normalize ambiguous type: {type_spec}')
+      return non_none[0]
+  # TODO(sergomez): Remove fallback when 3.7 support is no longer needed.
+  else:
+    if hasattr(type_spec, '__origin__') and type_spec.__origin__ is Union:
+      non_none = [t for t in type_spec.__args__ if t is not type(None)]
+      if len(non_none) != 1:
+        raise TypeError(f'Unable to normalize ambiguous type: {type_spec}')
+      return non_none[0]
+  return type_spec
+
+
 def get_type(config_path: str, config: Any):
   """Gets type of field in config described by a config_path.
 
@@ -150,12 +182,19 @@ def get_type(config_path: str, config: Any):
     IndexError: Integer field not found in nested structure.
     KeyError: Non-integer field not found in nested structure.
     ValueError: Empty/invalid config_path after parsing.
+    TypeError: Ambiguous type annotation on dataclass field.
   """
   holder, field = _get_holder_field(config_path, config)
   # Check if config is a DM collection and hence has attribute get_type()
   if isinstance(holder,
                 (config_dict.ConfigDict, config_dict.FieldReference)):
     return holder.get_type(field)
+  # For dataclasses we can just use the type annotation.
+  elif dc.is_dataclass(holder):
+    matches = [f.type for f in dc.fields(holder) if f.name == field]
+    if not matches:
+      raise KeyError(f'Field {field} not found on dataclass {type(holder)}')
+    return normalize_type(matches[0])
   else:
     return type(_get_item_or_attribute(holder, field))
 

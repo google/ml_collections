@@ -15,8 +15,9 @@
 """Tests for config_flags used in conjunction with DEFINE_config_dataclass."""
 
 import dataclasses
+import functools
 import sys
-from typing import Mapping, Optional, Sequence, Tuple
+from typing import Mapping, Optional, Sequence, Tuple, Union
 
 from absl import flags
 from absl.testing import absltest
@@ -32,6 +33,8 @@ class MyModelConfig:
   bar: Sequence[str]
   baz: Optional[Mapping[str, str]] = None
   buz: Optional[Mapping[Tuple[int, int], str]] = None
+  qux: Optional[int] = None
+  bax: float = 1
 
 
 @dataclasses.dataclass
@@ -96,6 +99,52 @@ class TypedConfigFlagsTest(absltest.TestCase):
     self.assertIsInstance(config, MyConfig)
     self.assertEqual(config.my_model, _CONFIG.my_model)
     self.assertEqual(_CONFIG, config)
+
+  def test_flag_config_dataclass_optional(self):
+    result = test_flags(_CONFIG, '.baseline_model.qux=10')
+    self.assertEqual(result.baseline_model.qux, 10)
+    self.assertIsInstance(result.baseline_model.qux, int)
+    self.assertIsNone(result.my_model.qux)
+
+  def test_flag_config_dataclass_type_mismatch(self):
+    result = test_flags(_CONFIG, '.my_model.bax=10')
+    self.assertIsInstance(result.my_model.bax, float)
+    # We can't do anything when the value isn't overridden.
+    self.assertIsInstance(result.baseline_model.bax, int)
+    self.assertRaises(
+        flags.IllegalFlagValueError,
+        functools.partial(test_flags, _CONFIG, '.my_model.bax=string'))
+
+  def test_illegal_dataclass_field_type(self):
+
+    @dataclasses.dataclass
+    class Config:
+      field: Union[int, float] = 3
+
+    self.assertRaises(TypeError,
+                      functools.partial(test_flags, Config(), '.field=1'))
+
+  def test_spurious_dataclass_field(self):
+
+    @dataclasses.dataclass
+    class Config:
+      field: int = 3
+    cfg = Config()
+    cfg.extra = 'test'
+
+    self.assertRaises(KeyError, functools.partial(test_flags, cfg, '.extra=hi'))
+
+  def test_nested_dataclass(self):
+
+    @dataclasses.dataclass
+    class Parent:
+      field: int = 3
+
+    @dataclasses.dataclass
+    class Child(Parent):
+      other: int = 4
+
+    self.assertEqual(test_flags(Child(), '.field=1').field, 1)
 
   def test_flag_config_dataclass(self):
     result = test_flags(_CONFIG, '.baseline_model.foo=10', '.my_model.foo=7')
