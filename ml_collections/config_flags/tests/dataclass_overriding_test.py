@@ -14,6 +14,7 @@
 
 """Tests for config_flags used in conjunction with DEFINE_config_dataclass."""
 
+import copy
 import dataclasses
 import functools
 import sys
@@ -37,10 +38,28 @@ class MyModelConfig:
   bax: float = 1
 
 
+class ParserForCustomConfig(flags.ArgumentParser):
+  def __init__(self, delta=1):
+    self.delta = delta
+
+  def parse(self, value):
+    if isinstance(value, CustomParserConfig):
+      return value
+    return CustomParserConfig(i=int(value), j=int(value) + self.delta)
+
+
+@dataclasses.dataclass
+@config_flags.register_flag_parser(parser=ParserForCustomConfig())
+class CustomParserConfig():
+  i: int
+  j: int = 1
+
+
 @dataclasses.dataclass
 class MyConfig:
   my_model: MyModelConfig
   baseline_model: MyModelConfig
+  custom: CustomParserConfig = CustomParserConfig(0)
 
 
 _CONFIG = MyConfig(
@@ -78,8 +97,10 @@ def test_flags(default, *flag_args, parse_fn=None):
 
 
 def parse_config_flag(value):
+  cfg = _CONFIG
   return dataclasses.replace(
-      _CONFIG, my_model=dataclasses.replace(_CONFIG.my_model, foo=int(value)))
+      cfg,
+      my_model=dataclasses.replace(cfg.my_model, foo=int(value)))
 
 
 class TypedConfigFlagsTest(absltest.TestCase):
@@ -105,6 +126,53 @@ class TypedConfigFlagsTest(absltest.TestCase):
     self.assertEqual(result.baseline_model.qux, 10)
     self.assertIsInstance(result.baseline_model.qux, int)
     self.assertIsNone(result.my_model.qux)
+
+  def test_custom_flag_parsing_shared_default(self):
+    result = test_flags(_CONFIG, '.baseline_model.foo=324')
+    result1 = test_flags(_CONFIG, '.baseline_model.foo=123')
+    # Here we verify that despite using _CONFIG as shared default for
+    # result and result1, the final values are not in fact shared.
+    self.assertEqual(result.baseline_model.foo, 324)
+    self.assertEqual(result1.baseline_model.foo, 123)
+    self.assertEqual(_CONFIG.baseline_model.foo, 55)
+
+
+  def test_custom_flag_parsing_parser_override(self):
+    config_flags.register_flag_parser_for_type(
+        CustomParserConfig, ParserForCustomConfig(2))
+    result = test_flags(_CONFIG, '.custom=10')
+    self.assertEqual(result.custom.i, 10)
+    self.assertEqual(result.custom.j, 12)
+
+    # Restore old parser.
+    config_flags.register_flag_parser_for_type(
+        CustomParserConfig, ParserForCustomConfig())
+
+  def test_custom_flag_parsing_override_work(self):
+    # Overrides still work
+    result = test_flags(_CONFIG, '.custom.i=10')
+    self.assertEqual(result.custom.i, 10)
+    self.assertEqual(result.custom.j, 1)
+
+
+  def test_custom_flag_parser_invoked(self):
+    # custom parser gets invoked
+    result = test_flags(_CONFIG, '.custom=10')
+    self.assertEqual(result.custom.i, 10)
+    self.assertEqual(result.custom.j, 11)
+
+  def test_custom_flag_parser_invoked_overrides_applied(self):
+    result = test_flags(_CONFIG, '.custom=15', '.custom.i=11')
+    # Override applied successfully
+    self.assertEqual(result.custom.i, 11)
+    self.assertEqual(result.custom.j, 16)
+
+  def test_custom_flag_application_order(self):
+    # Later value overrides the earlier value.
+    result = test_flags(_CONFIG, '.custom.i=11', '.custom=15')
+    self.assertEqual(result.custom.i, 15)
+    self.assertEqual(result.custom.j, 16)
+
 
   def test_flag_config_dataclass_type_mismatch(self):
     result = test_flags(_CONFIG, '.my_model.bax=10')

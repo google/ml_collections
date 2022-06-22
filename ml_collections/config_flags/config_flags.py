@@ -14,9 +14,11 @@
 
 """Configuration commmand line parser."""
 
+import copy
 import dataclasses
 import enum
 import errno
+import functools as ft
 import imp
 import os
 import re
@@ -29,7 +31,6 @@ from absl import logging
 from ml_collections import config_dict
 from ml_collections.config_flags import config_path
 from ml_collections.config_flags import tuple_parser
-
 FLAGS = flags.FLAGS
 
 # Forward for backwards compatability.
@@ -299,10 +300,12 @@ class  _DataclassParser(flags.ArgumentParser, Generic[_T]):
     self.parse_fn = parse_fn
 
   def parse(self, config: Any) -> _T:
+    # It is important to use deepcopy here, so if parser returns constants
+    # they are not modified during the flag parsing.
     if isinstance(config, self.dataclass_type):
-      return config
+      return copy.deepcopy(config)
     if self.parse_fn:
-      return self.parse_fn(config)
+      return copy.deepcopy(self.parse_fn(config))
     raise TypeError('Overriding {} is not allowed.'.format(self.name))
 
   def flag_type(self):
@@ -336,7 +339,6 @@ def DEFINE_config_dataclass(  # pylint: disable=invalid-name
 
   if not dataclasses.is_dataclass(config):
     raise ValueError('Configuration object must be a `dataclass`.')
-
   # Define the flag.
   parser = _DataclassParser(name=name, dataclass_type=type(config),
                             parse_fn=parse_fn)
@@ -809,3 +811,59 @@ class _ConfigFieldParser(flags.ArgumentParser):
   @property
   def syntactic_help(self) -> str:
     return self._parser.syntactic_help
+
+
+def register_flag_parser_for_type(
+    field_type: _T, parser: flags.ArgumentParser) -> _T:
+  """Registers parser for a given type.
+
+  See documentation for `register_flag_parser` for usage example.
+
+  Args:
+    field_type: field type to register
+    parser: parser to use
+
+  Returns:
+    field_type unmodified.
+  """
+  _FIELD_TYPE_TO_PARSER[field_type] = parser
+  return field_type
+
+
+def register_flag_parser(*, parser: flags.ArgumentParser) -> Callable[[_T], _T]:
+  """Creates a decorator to register parser on types.
+
+  For example:
+
+  ```
+  class ParserForCustomConfig(flags.ArgumentParser):
+  def parse(self, value):
+    if isinstance(value, CustomConfig):
+      return value
+    return CustomConfig(i=int(value), j=int(value))
+
+
+  @dataclasses.dataclass
+  @config_flags.register_flag_parser(parser=ParserForCustomConfig())
+  class CustomConfig:
+    i: int = None
+    j: int = None
+
+  class MainConfig:
+    sub: CustomConfig
+
+  config_flags.DEFINE_config_dataclass(
+    'cfg', MainConfig(), 'MyConfig data')
+  ```
+
+  will declare cfg flag, then passing `--cfg.sub=1`, will initialie both i and j
+  fields to 1. The fields can still be set individually:
+  `--cfg.sub=1 --cfg.sub.j=3` will set `i` to `1` and `j` to `3`.
+
+  Args:
+    parser: parser to use.
+
+  Returns:
+    Decorator to apply to types.
+  """
+  return ft.partial(register_flag_parser_for_type, parser=parser)

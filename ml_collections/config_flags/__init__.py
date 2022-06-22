@@ -19,6 +19,8 @@ from .config_flags import DEFINE_config_dict
 from .config_flags import DEFINE_config_file
 from .config_flags import get_config_filename
 from .config_flags import get_override_values
+from .config_flags import register_flag_parser
+from .config_flags import register_flag_parser_for_type
 
 __all__ = (
     "DEFINE_config_dataclass",
@@ -26,4 +28,6 @@ __all__ = (
     "DEFINE_config_file",
     "get_config_filename",
     "get_override_values",
+    "register_flag_parser",
+    "register_flag_parser_for_type",
 )
