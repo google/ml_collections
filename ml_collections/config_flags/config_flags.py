@@ -68,6 +68,7 @@ def DEFINE_config_file(  # pylint: disable=g-bad-name
     help_string: str = 'path to config file.',
     flag_values: flags.FlagValues = FLAGS,
     lock_config: bool = True,
+    sys_argv: Optional[List[str]] = None,
     **kwargs) -> flags.FlagHolder:
   r"""Defines flag for `ConfigDict` files compatible with absl flags.
 
@@ -168,6 +169,9 @@ def DEFINE_config_file(  # pylint: disable=g-bad-name
         (default: absl.flags.FLAGS)
     lock_config: If set to True, loaded config will be locked through calling
         .lock() method on its instance (if it exists). (default: True)
+    sys_argv: If set, interprets this as the full list of args used in parsing.
+      This is used to identify which overrides to define as flags. If not
+      specified, uses the system sys.argv to figure it out.
     **kwargs: Optional keyword arguments passed to Flag constructor.
 
   Returns:
@@ -181,6 +185,7 @@ def DEFINE_config_file(  # pylint: disable=g-bad-name
       default=default,
       help_string=help_string,
       flag_values=flag_values,
+      sys_argv=sys_argv,
       **kwargs)
 
   return flags.DEFINE_flag(flag, flag_values)
@@ -192,6 +197,7 @@ def DEFINE_config_dict(  # pylint: disable=g-bad-name
     help_string: str = 'ConfigDict instance.',
     flag_values: flags.FlagValues = FLAGS,
     lock_config: bool = True,
+    sys_argv: Optional[List[str]] = None,
     **kwargs) -> flags.FlagHolder:
   """Defines flag for inline `ConfigDict's` compatible with absl flags.
 
@@ -242,6 +248,9 @@ def DEFINE_config_dict(  # pylint: disable=g-bad-name
         (default: absl.flags.FLAGS)
     lock_config: If set to True, loaded config will be locked through calling
         .lock() method on its instance (if it exists). (default: True)
+    sys_argv: If set, interprets this as the full list of args used in parsing.
+      This is used to identify which overrides to define as flags. If not
+      specified, uses the system sys.argv to figure it out.
     **kwargs: Optional keyword arguments passed to Flag constructor.
 
   Returns:
@@ -257,6 +266,7 @@ def DEFINE_config_dict(  # pylint: disable=g-bad-name
       default=config,
       help_string=help_string,
       flag_values=flag_values,
+      sys_argv=sys_argv,
       **kwargs)
 
   # Get the module name for the frame at depth 1 in the call stack.
@@ -317,6 +327,7 @@ def DEFINE_config_dataclass(  # pylint: disable=invalid-name
     config: _T,
     help_string: str = 'Configuration object. Must be a dataclass.',
     flag_values: flags.FlagValues = FLAGS,
+    sys_argv: Optional[List[str]] = None,
     parse_fn: Optional[Callable[[Any], _T]] = None,
     **kwargs,
 ) -> _TypedFlagHolder[_T]:
@@ -329,6 +340,9 @@ def DEFINE_config_dataclass(  # pylint: disable=invalid-name
     config: A user-defined configuration object. Must be built via `dataclass`.
     help_string: Help string to display when --helpfull is called.
     flag_values: FlagValues instance used for parsing.
+    sys_argv: If set, interprets this as the full list of args used in parsing.
+      This is used to identify which overrides to define as flags. If not
+      specified, uses the system sys.argv to figure it out.
     parse_fn: Function that can parse provided flag value, when assigned
     via flag.value, or passed on command line. Default is to only allow
     to assign instances of this class.
@@ -349,6 +363,7 @@ def DEFINE_config_dataclass(  # pylint: disable=invalid-name
       name=name,
       default=config,
       help_string=help_string,
+      sys_argv=sys_argv,
       **kwargs)
 
   return _TypedFlagHolder(flag=flags.DEFINE_flag(flag, flag_values))
@@ -568,10 +583,11 @@ class _InlineConfigParser(flags.ArgumentParser):
 class _ConfigFlag(flags.Flag):
   """Flag definition for command-line overridable configs."""
 
-  def __init__(self, flag_values=FLAGS, **kwargs):
+  def __init__(self, flag_values=FLAGS, sys_argv=None, **kwargs):
     # Parent constructor can already call .Parse, thus additional fields
     # have to be set here.
     self.flag_values = flag_values
+    self._sys_argv = sys.argv if sys_argv is None else sys_argv
     super(_ConfigFlag, self).__init__(**kwargs)
 
   def _GetOverrides(self, argv):
@@ -606,7 +622,7 @@ class _ConfigFlag(flags.Flag):
     return self._FindConfigSpecified(argv) >= 0
 
   def _set_default(self, default):
-    if self._IsConfigSpecified(sys.argv):
+    if self._IsConfigSpecified(self._sys_argv):
       self.default = default
     else:
       super(_ConfigFlag, self)._set_default(default)  # pytype: disable=attribute-error
@@ -617,7 +633,7 @@ class _ConfigFlag(flags.Flag):
     config = super(_ConfigFlag, self)._parse(argument)
 
     # Get list or overrides
-    overrides = self._GetOverrides(sys.argv)
+    overrides = self._GetOverrides(self._sys_argv)
 
     # Iterate over overridden fields and create valid parsers
     self._override_values = {}

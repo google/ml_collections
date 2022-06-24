@@ -55,19 +55,22 @@ def _parse_flags(command,
                  default=None,
                  config=None,
                  lock_config=True,
-                 required=False):
-  """Parses arguments simulating sys.argv."""
+                 required=False,
+                 use_sys_argv_override=False):
+  """Parses arguments simulating sys.argv or via sys_argv argument."""
 
   if config is not None and default is not None:
     raise ValueError('If config is supplied a default should not be.')
 
-  # Storing copy of the old sys.argv.
-  old_argv = list(sys.argv)
-
-  # Overwriting sys.argv, as sys has a global state it gets propagated.
   # The module shlex is useful here because it splits the input similar to
   # sys.argv. For instance, string arguments are not split by space.
-  sys.argv = shlex.split(command)
+  argv = shlex.split(command)
+
+  # Storing copy of the old sys.argv.
+  old_argv = list(sys.argv)
+  # Overwriting sys.argv, as sys has a global state it gets propagated.
+  if not use_sys_argv_override:
+    sys.argv = argv
 
   # Actual parsing.
   values = flags.FlagValues()
@@ -76,20 +79,23 @@ def _parse_flags(command,
         'test_config',
         default=default,
         flag_values=values,
-        lock_config=lock_config)
+        lock_config=lock_config,
+        sys_argv=(argv if use_sys_argv_override else None))
   else:
     config_flags.DEFINE_config_dict(
         'test_config',
         config=config,
         flag_values=values,
-        lock_config=lock_config)
+        lock_config=lock_config,
+        sys_argv=(argv if use_sys_argv_override else None))
 
   if required:
     flags.mark_flag_as_required('test_config', flag_values=values)
-  values(sys.argv)
+  values(argv)
 
   # Going back to original values.
-  sys.argv = old_argv
+  if not use_sys_argv_override:
+    sys.argv = old_argv
 
   return values
 
@@ -231,18 +237,31 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
   # the quotes (' ') are left intact when we format the string.
   @parameterized.named_parameters(
       ('TwoDashConfigAndOverride',
-       '--test_config={}'.format(_TEST_CONFIG_FILE), '--test_config.{}={!r}'),
+       '--test_config={}'.format(_TEST_CONFIG_FILE), '--test_config.{}={!r}',
+       False),
       ('TwoDashSpaceConfigAndOverride',
-       '--test_config {}'.format(_TEST_CONFIG_FILE), '--test_config.{} {!r}'),
+       '--test_config {}'.format(_TEST_CONFIG_FILE), '--test_config.{} {!r}',
+       False),
       ('OneDashConfigAndOverride',
-       '-test_config {}'.format(_TEST_CONFIG_FILE), '-test_config.{} {!r}'),
+       '-test_config {}'.format(_TEST_CONFIG_FILE), '-test_config.{} {!r}',
+       False),
       ('OneDashEqualConfigAndOverride',
-       '-test_config={}'.format(_TEST_CONFIG_FILE), '-test_config.{}={!r}'),
+       '-test_config={}'.format(_TEST_CONFIG_FILE), '-test_config.{}={!r}',
+       False),
       ('OneDashConfigAndTwoDashOverride',
-       '-test_config {}'.format(_TEST_CONFIG_FILE), '--test_config.{}={!r}'),
+       '-test_config {}'.format(_TEST_CONFIG_FILE), '--test_config.{}={!r}',
+       False),
       ('TwoDashConfigAndOneDashOverride',
-       '--test_config={}'.format(_TEST_CONFIG_FILE), '-test_config.{} {!r}'))
-  def testOverride(self, config_flag, override_format):
+       '--test_config={}'.format(_TEST_CONFIG_FILE), '-test_config.{} {!r}',
+       False),
+      ('TwoDashConfigAndOverrideAndSysArgvOverride',
+       '--test_config={}'.format(_TEST_CONFIG_FILE), '--test_config.{}={!r}',
+       True),
+      ('TwoDashSpaceConfigAndOverrideAndSysArgvOverride',
+       '--test_config {}'.format(_TEST_CONFIG_FILE), '--test_config.{} {!r}',
+       True),
+       )
+  def testOverride(self, config_flag, override_format, use_sys_argv_override):
     """Tests overriding config values from command line."""
     overrides = {
         'integer': 1,
@@ -265,7 +284,9 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
     }
 
     override_flags = _get_override_flags(overrides, override_format)
-    values = _parse_flags('./program {} {}'.format(config_flag, override_flags))
+    values = _parse_flags(
+        './program {} {}'.format(config_flag, override_flags),
+        use_sys_argv_override=use_sys_argv_override)
 
     test_config = mock_config.get_config()
     test_config.integer = overrides['integer']
@@ -290,22 +311,33 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
 
     self.assert_equal_configs(values.test_config, test_config)
 
-  def testOverrideBoolean(self):
+  @parameterized.named_parameters(
+      ('GlobalSysArgvParsing', False),
+      ('SysArgvOverride', True))
+  def testOverrideBoolean(self, use_sys_argv_override):
     """Tests overriding boolean config values from command line."""
     prefix = './program --test_config={}'.format(_TEST_CONFIG_FILE)
 
     # The default for dict.bool is False.
-    values = _parse_flags('{} --test_config.dict.bool'.format(prefix))
+    values = _parse_flags(
+        '{} --test_config.dict.bool'.format(prefix),
+        use_sys_argv_override=use_sys_argv_override)
     self.assertTrue(values.test_config.dict['bool'])
 
-    values = _parse_flags('{} --test_config.dict.bool=true'.format(prefix))
+    values = _parse_flags(
+        '{} --test_config.dict.bool=true'.format(prefix),
+        use_sys_argv_override=use_sys_argv_override)
     self.assertTrue(values.test_config.dict['bool'])
 
     # The default for object.bool is True.
-    values = _parse_flags('{} --test_config.object.bool=false'.format(prefix))
+    values = _parse_flags(
+        '{} --test_config.object.bool=false'.format(prefix),
+        use_sys_argv_override=use_sys_argv_override)
     self.assertFalse(values.test_config.object.bool)
 
-    values = _parse_flags('{} --notest_config.object.bool'.format(prefix))
+    values = _parse_flags(
+        '{} --notest_config.object.bool'.format(prefix),
+        use_sys_argv_override=use_sys_argv_override)
     self.assertFalse(values.test_config.object.bool)
 
   def testOverrideEnum(self):
@@ -595,7 +627,7 @@ def _simple_config():
   return config
 
 
-class ConfigDictFlagTest(_ConfigFlagTestCase, absltest.TestCase):
+class ConfigDictFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
   """Tests DEFINE_config_dict.
 
   DEFINE_config_dict reuses a lot of code in DEFINE_config_file so the tests
@@ -623,11 +655,15 @@ class ConfigDictFlagTest(_ConfigFlagTestCase, absltest.TestCase):
     with self.assertRaisesRegex(TypeError, 'should be a ConfigDict'):
       _parse_flags('./program', config=non_config_dict)
 
-  def testOverridingAttribute(self):
+  @parameterized.named_parameters(
+      ('GlobalSysArgvParsing', False),
+      ('SysArgvOverride', True))
+  def testOverridingAttribute(self, use_sys_argv_override):
     new_foo = 10
     values = _parse_flags(
         './program --test_config.foo={}'.format(new_foo),
-        config=_simple_config())
+        config=_simple_config(),
+        use_sys_argv_override=use_sys_argv_override)
     self.assertNotEqual(new_foo, _simple_config().foo)
     self.assertEqual(new_foo, values.test_config.foo)
 
