@@ -587,7 +587,10 @@ class _ConfigFlag(flags.Flag):
     # Parent constructor can already call .Parse, thus additional fields
     # have to be set here.
     self.flag_values = flag_values
-    self._sys_argv = sys.argv if sys_argv is None else sys_argv
+    # Note, we don't replace sys_argv with sys.argv here if it's None because
+    # in some obscure multiprocessing use cases, sys.argv may not be populated
+    # until later and we need to look it up at parse time.
+    self._sys_argv = sys_argv
     super(_ConfigFlag, self).__init__(**kwargs)
 
   def _GetOverrides(self, argv):
@@ -622,7 +625,8 @@ class _ConfigFlag(flags.Flag):
     return self._FindConfigSpecified(argv) >= 0
 
   def _set_default(self, default):
-    if self._IsConfigSpecified(self._sys_argv):
+    if self._IsConfigSpecified(
+        sys.argv if self._sys_argv is None else self._sys_argv):
       self.default = default
     else:
       super(_ConfigFlag, self)._set_default(default)  # pytype: disable=attribute-error
@@ -633,7 +637,8 @@ class _ConfigFlag(flags.Flag):
     config = super(_ConfigFlag, self)._parse(argument)
 
     # Get list or overrides
-    overrides = self._GetOverrides(self._sys_argv)
+    overrides = self._GetOverrides(
+      sys.argv if self._sys_argv is None else self._sys_argv)
 
     # Iterate over overridden fields and create valid parsers
     self._override_values = {}
