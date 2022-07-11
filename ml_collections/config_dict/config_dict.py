@@ -1104,6 +1104,20 @@ class ConfigDict:
     """
     return self._json_dumps_wrapper(cls=_BestEffortCustomJSONEncoder, **kwargs)
 
+  def save_as_json_best_effort(self, file, **kwargs):
+    """Saves a best effort JSON representation of the object to file.
+
+    Args:
+      file: path-like object giving the pathname of the file to be written to
+      **kwargs: Keyword arguments for json.dump. They cannot contain "cls"
+          as this method specifies it on its own.
+
+    Returns:
+      JSON representation of the object.
+    """
+    with open(file, 'w') as f:
+      json.dump(self._fields, f, cls=_BestEffortCustomJSONEncoder, **kwargs)
+
   def to_dict(self, visit_map=None, preserve_field_references=False):
     """Converts ConfigDict to regular dict recursively with valid references.
 
