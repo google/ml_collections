@@ -70,15 +70,20 @@ def split(config_path: str) -> Tuple[Any]:
   raise ValueError(config_path)
 
 
-def _get_item_or_attribute(config, field):
+def _get_item_or_attribute(config, field, field_path=None):
   """Returns attribute of member failing that the item."""
   if isinstance(field, str) and hasattr(config, field):
     return getattr(config, field)
   if hasattr(config, '__getitem__'):
     return config[field]
   if isinstance(field, int):
-    raise IndexError(f'{field}')
-  raise KeyError(f'{field}')
+    raise IndexError(
+        f'{type(config)} does not support integer indexing [{field}]]. '
+        f'Attempting to lookup: {field_path}')
+  raise KeyError(
+      f'Attribute {type(config)}.{field} does not exist '
+      'and the type does not support indexing. '
+      f'Attempting to lookup: {field_path}')
 
 
 def _get_holder_field(config_path: str, config: Any) -> Tuple[Any, str]:
@@ -108,7 +113,8 @@ def _get_holder_field(config_path: str, config: Any) -> Tuple[Any, str]:
   fields = split(config_path)
   if not fields:
     raise ValueError('Path cannot be empty')
-  holder = functools.reduce(_get_item_or_attribute, fields[:-1], config)
+  get_item = functools.partial(_get_item_or_attribute, field_path=config_path)
+  holder = functools.reduce(get_item, fields[:-1], config)
   return holder, fields[-1]
 
 
@@ -131,7 +137,8 @@ def get_value(config_path: str, config: Any):
     KeyError: Non-integer field not found in nested structure.
     ValueError: Empty/invalid config_path after parsing.
   """
-  return functools.reduce(_get_item_or_attribute, split(config_path), config)
+  get_item = functools.partial(_get_item_or_attribute, field_path=config_path)
+  return functools.reduce(get_item, split(config_path), config)
 
 
 def normalize_type(type_spec: type) -> type:
@@ -196,7 +203,7 @@ def get_type(config_path: str, config: Any):
       raise KeyError(f'Field {field} not found on dataclass {type(holder)}')
     return normalize_type(matches[0])
   else:
-    return type(_get_item_or_attribute(holder, field))
+    return type(_get_item_or_attribute(holder, field, config_path))
 
 
 def set_value(config_path: str, config: Any, value: Any):
