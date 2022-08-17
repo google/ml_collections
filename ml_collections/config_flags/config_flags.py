@@ -685,15 +685,17 @@ class _ConfigFlag(flags.Flag):
 
     ```python
     ...
+    from absl import flags
     from ml_collections import config_flags
 
+    FLAGS = flags.FLAGS
     _CONFIG = config_flags.DEFINE_config_file(
       name='my_config',
       default='ml_collections/config_flags/tests/configdict_config.py',
       help_string='config file')
     ...
 
-    _CONFIG.value.config_filename
+    FLAGS['my_config'].config_filename
 
     will output
     'ml_collections/config_flags/tests/configdict_config.py'
@@ -734,7 +736,7 @@ class _ConfigFlag(flags.Flag):
     --config.a=10 --config.nested.b=20
     ```
 
-    Then `_CONFIG.value.override_values` will return:
+    Then `FLAGS['config'].override_values` will return:
 
     ```python
     {
@@ -754,7 +756,7 @@ class _ConfigFlag(flags.Flag):
             'b': 456
         }
     }
-    config.update_from_flattened_dict(_CONFIG.value.override_values)
+    config.update_from_flattened_dict(FLAGS['config'].override_values)
     print(config.a)  # Prints `10`.
     print(config.nested.b)  # Prints `20`.
     ```
