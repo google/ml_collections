@@ -18,7 +18,8 @@ import ast
 import dataclasses as dc
 import functools
 import typing
-from typing import Any, MutableSequence, Tuple, Union
+from typing import Any, MutableSequence, Optional, Tuple, Union
+import typing_inspect
 
 from ml_collections import config_dict
 
@@ -141,6 +142,13 @@ def get_value(config_path: str, config: Any):
   return functools.reduce(get_item, split(config_path), config)
 
 
+def get_origin(type_spec: type) -> Optional[type]:
+  """Call typing.get_origin, with a fallback for Python 3.7 and below."""
+  if hasattr(typing, 'get_origin'):
+    return typing.get_origin(type_spec)
+  return getattr(type_spec, '__origin__', None)
+
+
 def normalize_type(type_spec: type) -> type:
   """Normalizes a type object.
 
@@ -155,19 +163,13 @@ def normalize_type(type_spec: type) -> type:
   Returns:
     The normalized type.
   """
-  if hasattr(typing, 'get_origin'):
-    if typing.get_origin(type_spec) == Union:
-      non_none = [t for t in typing.get_args(type_spec) if t is not type(None)]
-      if len(non_none) != 1:
-        raise TypeError(f'Unable to normalize ambiguous type: {type_spec}')
-      return non_none[0]
-  # TODO(sergomez): Remove fallback when 3.7 support is no longer needed.
-  else:
-    if hasattr(type_spec, '__origin__') and type_spec.__origin__ is Union:
-      non_none = [t for t in type_spec.__args__ if t is not type(None)]
-      if len(non_none) != 1:
-        raise TypeError(f'Unable to normalize ambiguous type: {type_spec}')
-      return non_none[0]
+  if get_origin(type_spec) == Union:
+    non_none = [t for t in typing_inspect.get_args(type_spec)
+                if t is not type(None)]
+    if len(non_none) != 1:
+      raise TypeError(f'Unable to normalize ambiguous type: {type_spec}')
+    return non_none[0]
+
   return type_spec
 
 

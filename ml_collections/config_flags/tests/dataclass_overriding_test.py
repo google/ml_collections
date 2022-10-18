@@ -36,6 +36,7 @@ class MyModelConfig:
   buz: Optional[Mapping[Tuple[int, int], str]] = None
   qux: Optional[int] = None
   bax: float = 1
+  boj: Tuple[int, ...] = ()
 
 
 class ParserForCustomConfig(flags.ArgumentParser):
@@ -226,6 +227,10 @@ class TypedConfigFlagsTest(absltest.TestCase):
   def test_flag_config_dataclass_tuple_dict(self):
     result = test_flags(_CONFIG, '.my_model.buz[(0,1)]=hello')
     self.assertEqual(result.my_model.buz[(0, 1)], 'hello')
+
+  def test_flag_config_dataclass_typed_tuple(self):
+    result = test_flags(_CONFIG, '.my_model.boj=(0, 1)')
+    self.assertEqual(result.my_model.boj, (0, 1))
 
 
 class DataClassParseFnTest(absltest.TestCase):

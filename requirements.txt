@@ -4,3 +4,4 @@ six
 contextlib2
 dataclasses;python_version<'3.7'
 typing;python_version<'3.5'
+typing_inspect
