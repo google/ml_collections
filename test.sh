@@ -40,6 +40,6 @@ echo "deb [arch=amd64] https://storage.googleapis.com/bazel-apt stable jdk1.8" |
 sudo apt update && sudo apt install bazel
 
 # Run bazel test
-bazel test ml_collections/...
+bazel test --test_output=errors ml_collections/...
 
 echo "PASS"
