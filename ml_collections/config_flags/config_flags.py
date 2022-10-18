@@ -644,22 +644,17 @@ class _ConfigFlag(flags.Flag):
     self._override_values = {}
     for field_path in overrides:
       field_type = config_path.get_type(field_path, config)
-      field_type_origin = config_path.get_origin(field_type)
       field_help = 'An override of {}\'s field {}'.format(self.name, field_path)
       field_name = '{}.{}'.format(self.name, field_path)
 
       parser = None
-      if field_type in _FIELD_TYPE_TO_PARSER:
-        parser = _ConfigFieldParser(_FIELD_TYPE_TO_PARSER[field_type],
-                                    field_path, config, self._override_values)
-      elif field_type_origin and field_type_origin in _FIELD_TYPE_TO_PARSER:
-        parser = _ConfigFieldParser(_FIELD_TYPE_TO_PARSER[field_type_origin],
-                                    field_path, config, self._override_values)
-      elif issubclass(field_type, enum.Enum):
+      if issubclass(field_type, enum.Enum):
         parser = _ConfigFieldParser(
             flags.EnumClassParser(field_type, case_sensitive=False), field_path,
             config, self._override_values)
-
+      elif field_type in _FIELD_TYPE_TO_PARSER:
+        parser = _ConfigFieldParser(_FIELD_TYPE_TO_PARSER[field_type],
+                                    field_path, config, self._override_values)
       if parser:
         flags.DEFINE(
             parser,
