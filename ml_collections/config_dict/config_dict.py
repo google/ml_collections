@@ -1225,7 +1225,10 @@ class ConfigDict:
     for field in state['_fields']:
       self[field] = state['_fields'][field]
     if state['_locked']:
-      self.lock()
+      # Don't call self.lock() here as that recurses into its children. With
+      # circular references that can lead to attempts to lock other instances
+      # in the hierarchy before their __setstate__ method has been called.
+      super(ConfigDict, self).__setattr__('_locked', True)
 
   @contextlib.contextmanager
   def unlocked(self):

@@ -1070,6 +1070,23 @@ class ConfigDictTest(parameterized.TestCase):
     self.assertIsInstance(pickle_cfg, config_dict.ConfigDict)
     self.assertEqual(str(cfg), str(pickle_cfg))
 
+  def testPicklingLockedWithCircularReference(self):
+    cfg = config_dict.ConfigDict()
+    cfg.a = 1.0
+    cfg.b = config_dict.ConfigDict()
+    cfg.b.c = config_dict.ConfigDict()
+    cfg.b.d = cfg
+    cfg.lock()
+
+    pickle_cfg = pickle.loads(pickle.dumps(cfg))
+    self.assertTrue(pickle_cfg.is_locked)
+    self.assertTrue(pickle_cfg.b.is_locked)
+    self.assertTrue(pickle_cfg.b.c.is_locked)
+    self.assertTrue(pickle_cfg.b.d.is_locked)
+    self.assertEqual(pickle_cfg.a, 1.0)
+    self.assertIsInstance(pickle_cfg, config_dict.ConfigDict)
+    self.assertIsInstance(pickle_cfg.b.d, config_dict.ConfigDict)
+
   def testPlaceholder(self):
     """Tests whether FieldReference works correctly as a placeholder."""
     cfg_element = config_dict.FieldReference(0)
