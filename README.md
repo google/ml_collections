@@ -26,11 +26,11 @@ This document describes example usage of `ConfigDict`, `FrozenConfigDict`,
 *   Human readable printing (with valid references and cycles), using valid YAML
     format.
 *   Fields can be passed as keyword arguments using the `**` operator.
-*   There are two exceptions to the strong type-safety of the ConfigDict. `int`
+*   There is one exception to the strong type-safety of the ConfigDict: `int`
     values can be passed in to fields of type `float`. In such a case, the value
-    is type-converted to a `float` before being stored. Similarly, all string
-    types (including Unicode strings) can be stored in fields of type `str` or
-    `unicode`.
+    is type-converted to a `float` before being stored. (Back in the day of
+    Python 2, there was a similar exception to allow both `str` and `unicode`
+    values in string fields.)
 
 ### Basic Usage
 
