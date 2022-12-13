@@ -650,26 +650,25 @@ class _ConfigFlag(flags.Flag):
 
       parser = None
       if field_type in _FIELD_TYPE_TO_PARSER:
-        parser = _ConfigFieldParser(_FIELD_TYPE_TO_PARSER[field_type],
-                                    field_path, config, self._override_values)
+        parser = _FIELD_TYPE_TO_PARSER[field_type]
       elif field_type_origin and field_type_origin in _FIELD_TYPE_TO_PARSER:
-        parser = _ConfigFieldParser(_FIELD_TYPE_TO_PARSER[field_type_origin],
-                                    field_path, config, self._override_values)
+        parser = _FIELD_TYPE_TO_PARSER[field_type_origin]
       elif issubclass(field_type, enum.Enum):
-        parser = _ConfigFieldParser(
-            flags.EnumClassParser(field_type, case_sensitive=False), field_path,
-            config, self._override_values)
+        parser = flags.EnumClassParser(field_type, case_sensitive=False)
 
       if parser:
-        flags.DEFINE(
-            parser,
-            field_name,
-            config_path.get_value(field_path, config),
-            field_help,
-            flag_values=self.flag_values,
-            serializer=flags.ArgumentSerializer())
-        flag = self.flag_values._flags().get(field_name)  # pylint: disable=protected-access
+        flag = _ConfigFieldFlag(
+            path=field_path,
+            config=config,
+            override_values=self._override_values,
+            parser=parser,
+            serializer=flags.ArgumentSerializer(),
+            name=field_name,
+            default=config_path.get_value(field_path, config),
+            help_string=field_help,
+        )
         flag.boolean = field_type is bool
+        flags.DEFINE_flag(flag=flag, flag_values=self.flag_values)
       else:
         raise UnsupportedOperationError(
             "Type {} of field {} is not supported for overriding. "
@@ -794,51 +793,41 @@ def is_config_flag(flag):  # pylint: disable=g-bad-name
   return isinstance(flag, _ConfigFlag)
 
 
-class _ConfigFieldParser(flags.ArgumentParser):
-  """Parser with config update after parsing.
-
-  This class-based wrapper creates a new object, which uses
-  existing parser to do actual parsing and attaches a single callback to
-  SetValue afterwards, which is used to update a predefined path in
-  the config object.
-  """
+class _ConfigFieldFlag(flags.Flag):
+  """Flag for updating a field in a ConfigDict."""
 
   def __init__(
       self,
-      parser: flags.ArgumentParser,
       path: str,
       config: config_dict.ConfigDict,
-      override_values: MutableMapping[str, Any]):
-    """Creates new parser with callback, using existing one to perform parsing.
-
-    Args:
-      parser: ArgumentParser instance to wrap.
-      path: Dot separated path in config to update with the result of
-          parser.parse(...)
-      config: Reference to the config object.
-      override_values: Dictionary with override values. The 'parse' method will
-          add the parsed value to this dictionary with key `path`.
-    """
-    self._parser = parser
+      override_values: MutableMapping[str, Any],
+      *,
+      parser: flags.ArgumentParser,
+      serializer: flags.ArgumentSerializer,
+      name: str,
+      default: Any,
+      help_string: str,
+      short_name: Optional[str] = None,
+      boolean: bool = False,
+  ):
+    """Creates new flag with callback."""
+    super().__init__(
+        parser=parser,
+        serializer=serializer,
+        name=name,
+        default=default,
+        help_string=help_string,
+        short_name=short_name,
+        boolean=boolean)
     self._path = path
     self._config = config
     self._override_values = override_values
 
-  def __getattr__(self, attr):
-    return getattr(self._parser, attr)
-
-  def parse(self, argument):  # pylint: disable=invalid-name
-    value = self._parser.parse(argument)
-    config_path.set_value(self._path, self._config, value)
-    self._override_values[self._path] = value
-    return value
-
-  def flag_type(self) -> str:
-    return self._parser.flag_type()
-
-  @property
-  def syntactic_help(self) -> str:
-    return self._parser.syntactic_help
+  def parse(self, argument):
+    super().parse(argument)
+    # Callback to set value in ConfigDict.
+    config_path.set_value(self._path, self._config, self.value)
+    self._override_values[self._path] = self.value
 
 
 def register_flag_parser_for_type(

@@ -394,17 +394,19 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
     test_config = mock_config.get_config()
     overrides = {}
 
-    wrapped_parser = config_flags._ConfigFieldParser(parser, 'integer',
-                                                     test_config, overrides)
+    config_field_flag = config_flags._ConfigFieldFlag(
+        path='integer',
+        config=test_config,
+        override_values=overrides,
+        parser=parser,
+        serializer=flags.ArgumentSerializer(),
+        name='integer',
+        default=test_config.integer,
+        help_string='')
 
-    wrapped_parser.parse('12321')
+    config_field_flag.parse('12321')
     self.assertEqual(test_config.integer, 12321)
     self.assertEqual(overrides, {'integer': 12321})
-
-    self.assertEqual(wrapped_parser.flag_type(), parser.flag_type())
-    self.assertEqual(wrapped_parser.syntactic_help, parser.syntactic_help)
-
-    self.assertEqual(wrapped_parser.convert('3'), parser.convert('3'))
 
   def testTypes(self):
     """Tests whether various types of objects are valid."""
