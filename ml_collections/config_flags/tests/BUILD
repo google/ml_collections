@@ -52,3 +52,13 @@ py_library(
     name = "spork",
     srcs = ["spork.py"],
 )
+
+py_test(
+    name = "tuple_parser_test",
+    srcs = ["tuple_parser_test.py"],
+    deps = [
+        # pip: absl/testing:absltest
+        # pip: absl/testing:parameterized
+        "//ml_collections/config_flags:tuple_parser",
+    ],
+)

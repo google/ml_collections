@@ -14,6 +14,7 @@
 
 """Custom parser to override tuples in the config dict."""
 import ast
+import collections.abc
 
 from absl import flags
 
@@ -36,15 +37,12 @@ class TupleParser(flags.ArgumentParser):
 
     Args:
       argument: The argument to be parsed. Valid types are `tuple` and
-        `str`. An empty `tuple` is returned for arguments `NoneType`.
+        `str` or a single object. `str` arguments are parsed and converted to a
+        tuple, a single object is converted to a tuple of length 1, and an empty
+        `tuple` is returned for arguments `NoneType`. 
 
     Returns:
       A `TupleType` representing the input argument as a `tuple`.
-
-    Raises:
-      `TypeError`: If the argument is not of type `tuple`, `str`, or
-        `NoneType`.
-      `ValueError`: If the string is not a well formed `tuple`.
     """
     if isinstance(argument, tuple):
       return argument
@@ -53,10 +51,7 @@ class TupleParser(flags.ArgumentParser):
     elif argument is None:
       return ()
     else:
-      msg = ('Could not parse argument {} of type '
-             '{} for element of type `tuple`.'
-            ).format(argument, type(argument))
-      raise TypeError(msg)
+      return (argument,)
 
   def flag_type(self):
     return 'tuple'
@@ -91,8 +86,11 @@ def _convert_str_to_tuple(string):
     msg = 'Error while parsing string: {}'.format(string)
     raise ValueError(msg)
 
-  # Make sure we got a tuple. If not, its an error.
+  # Make sure we return a tuple.
   if isinstance(value, tuple):
     return value
+  elif (isinstance(value, collections.abc.Iterable) and
+        not isinstance(value, str)):
+    return tuple(value)
   else:
-    raise ValueError('Expected a tuple argument, got {}'.format(type(value)))
+    return (value,)

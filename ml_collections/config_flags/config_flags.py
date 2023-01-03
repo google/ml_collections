@@ -657,18 +657,36 @@ class _ConfigFlag(flags.Flag):
         parser = flags.EnumClassParser(field_type, case_sensitive=False)
 
       if parser:
-        flag = _ConfigFieldFlag(
-            path=field_path,
-            config=config,
-            override_values=self._override_values,
-            parser=parser,
-            serializer=flags.ArgumentSerializer(),
-            name=field_name,
-            default=config_path.get_value(field_path, config),
-            help_string=field_help,
-        )
-        flag.boolean = field_type is bool
-        flags.DEFINE_flag(flag=flag, flag_values=self.flag_values)
+        if not isinstance(parser, tuple_parser.TupleParser):
+          flag = _ConfigFieldFlag(
+              path=field_path,
+              config=config,
+              override_values=self._override_values,
+              parser=parser,
+              serializer=flags.ArgumentSerializer(),
+              name=field_name,
+              default=config_path.get_value(field_path, config),
+              help_string=field_help,
+          )
+          flag.boolean = field_type is bool
+          flags.DEFINE_flag(flag=flag, flag_values=self.flag_values)
+        elif field_name not in self.flag_values:
+          # Overriding a tuple field. Define the flag only once -- it might
+          # appear multiple times on the command-line (e.g.
+          # `--config.flag a --config.flag b`) but defining the same flag multiple
+          # times is an error. All arguments for the same flag are passed to a
+          # single call of _ConfigFieldMultiFlag.parse.
+          flag = _ConfigFieldMultiFlag(
+              path=field_path,
+              config=config,
+              override_values=self._override_values,
+              parser=parser,
+              serializer=flags.ArgumentSerializer(),
+              name=field_name,
+              default=config_path.get_value(field_path, config),
+              help_string=field_help,
+          )
+          flags.DEFINE_flag(flag=flag, flag_values=self.flag_values)
       else:
         raise UnsupportedOperationError(
             "Type {} of field {} is not supported for overriding. "
@@ -828,6 +846,50 @@ class _ConfigFieldFlag(flags.Flag):
     # Callback to set value in ConfigDict.
     config_path.set_value(self._path, self._config, self.value)
     self._override_values[self._path] = self.value
+
+
+class _ConfigFieldMultiFlag(flags.MultiFlag):
+  """Flag for updating a tuple field in a ConfigDict."""
+
+  def __init__(
+      self,
+      path: str,
+      config: config_dict.ConfigDict,
+      override_values: MutableMapping[str, Any],
+      *,
+      parser: flags.ArgumentParser,
+      serializer: flags.ArgumentSerializer,
+      name: str,
+      default: Any,
+      help_string: str,
+      short_name: Optional[str] = None,
+      boolean: bool = False,
+  ):
+    """Creates new flag with callback."""
+    super().__init__(
+        parser=parser,
+        serializer=serializer,
+        name=name,
+        default=default,
+        help_string=help_string,
+        short_name=short_name,
+        boolean=boolean)
+    self._path = path
+    self._config = config
+    self._override_values = override_values
+
+  def parse(self, arguments):
+    super().parse(arguments)
+    # Callback to set value in ConfigDict.
+    config_path.set_value(self._path, self._config, tuple(self.value))
+    self._override_values[self._path] = tuple(self.value)
+
+  def _parse(self, arguments):
+    # MultiFlag passes each argument one-at-a-time to the parser.parse. Just
+    # call Flag._parse (grandparent class) directly so all arguments are passed
+    # to parser.parse in a single call.
+    result = flags.Flag._parse(self, arguments)  # pylint: disable=protected-access
+    return list(result)
 
 
 def register_flag_parser_for_type(

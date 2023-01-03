@@ -554,6 +554,20 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
       override_flags = _get_override_flags(overrides, '--test_config.{}={}')
       _parse_flags('./program {} {}'.format(config_flag, override_flags))
 
+  @parameterized.parameters(
+      {'overrides': ('2,',), 'expected_tuple': (2,)},
+      {'overrides': ('2,3',), 'expected_tuple': (2, 3)},
+      {'overrides': ('(2,3)',), 'expected_tuple': (2, 3)},
+      {'overrides': ('2',), 'expected_tuple': (2,)},
+      {'overrides': ('2', '3',), 'expected_tuple': (2, 3)},
+  )
+  def testOverridingMultiConfigDict(self, overrides, expected_tuple):
+    config_flag = '--test_config={}'.format(_TEST_CONFIG_FILE)
+    override_flags = ' '.join(
+        [f'--test_config.tuple={value}' for value in overrides])
+    values = _parse_flags('./program {} {}'.format(config_flag, override_flags))
+    self.assertEqual(values.test_config.tuple, expected_tuple)
+
   # This test adds new flags, so use FlagSaver to make it hermetic.
   @flagsaver.flagsaver
   def testIsConfigFile(self):
