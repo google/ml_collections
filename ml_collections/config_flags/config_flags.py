@@ -691,8 +691,9 @@ class _ConfigFlag(flags.Flag):
         raise UnsupportedOperationError(
             "Type {} of field {} is not supported for overriding. "
             "Currently supported types are: {}. (Note that tuples should "
-            "be passed as a string on the command line: flag='(a, b, c)', "
-            "rather than flag=(a, b, c).)".format(
+            "be passed as a string on the command line, `--flag='(a, b, c)'`, "
+            "or by repeated flags, `--flag=1 --flag=2 --flag=3`, rather than "
+            "--flag=(a, b, c).)".format(
                 field_type, field_name, _FIELD_TYPE_TO_PARSER.keys()))
 
     self._config_filename = argument
