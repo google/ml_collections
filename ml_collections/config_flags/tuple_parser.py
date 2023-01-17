@@ -76,9 +76,11 @@ def _convert_str_to_tuple(string):
     value = ast.literal_eval(string)
   except ValueError:
     # A ValueError is raised by literal_eval if the string is not well
-    # formed. Catch it and print out a more readable statement.
-    msg = 'Argument {} does not evaluate to a `tuple` object.'.format(string)
-    raise ValueError(msg)
+    # formed. This is probably because string represents a single string
+    # element, e.g. string='abc', and a tuple of strings field was overridden by
+    # repeated use of a flag (ie `--flag a --flag b` instead of
+    # `--flag '("a", "b")'`).
+    value = string
   except SyntaxError:
     # The only other error that may be raised is a `SyntaxError` because
     # `literal_eval` calls the Python in-built `compile`. This error is

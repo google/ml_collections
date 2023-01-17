@@ -40,6 +40,7 @@ class TupleParserTest(parameterized.TestCase):
       {'argument': '1', 'expected': (1,)},
       {'argument': '"abc"', 'expected': ('abc',)},
       {'argument': '"abc",', 'expected': ('abc',)},
+      {'argument': 'abc', 'expected': ('abc',)},
       {'argument': '1, "a"', 'expected': (1, 'a')},
       {'argument': '(1, "a")', 'expected': (1, 'a')},
       {'argument': '(1, "a", (2, 3))', 'expected': (1, 'a', (2, 3))},

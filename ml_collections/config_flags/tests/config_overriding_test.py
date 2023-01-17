@@ -560,11 +560,17 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
       {'overrides': ('(2,3)',), 'expected_tuple': (2, 3)},
       {'overrides': ('2',), 'expected_tuple': (2,)},
       {'overrides': ('2', '3',), 'expected_tuple': (2, 3)},
+      {'overrides': ('a',), 'expected_tuple': ('a',)},
+      {'overrides': ('"a"',), 'expected_tuple': ('a',)},
+      {'overrides': ('"a",',), 'expected_tuple': ('a',)},
+      {'overrides': ('("a",)',), 'expected_tuple': ('a',)},
+      {'overrides': ('a', 'b',), 'expected_tuple': ('a', 'b')},
+      {'overrides': ('("a","b")',), 'expected_tuple': ('a', 'b')},
   )
   def testOverridingMultiConfigDict(self, overrides, expected_tuple):
     config_flag = '--test_config={}'.format(_TEST_CONFIG_FILE)
     override_flags = ' '.join(
-        [f'--test_config.tuple={value}' for value in overrides])
+        [f'--test_config.tuple={shlex.quote(value)}' for value in overrides])
     values = _parse_flags('./program {} {}'.format(config_flag, override_flags))
     self.assertEqual(values.test_config.tuple, expected_tuple)
 
