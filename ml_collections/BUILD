@@ -1,6 +1,16 @@
 # ML Collections is a library of Python Collections designed for ML usecases.
 
-package(default_visibility = ["//visibility:public"])
+load("//tools/build_defs/license:license.bzl", "license")
+
+package(
+    default_applicable_licenses = ["//ml_collections:license"],
+    default_visibility = ["//visibility:public"],
+)
+
+license(
+    name = "license",
+    package_name = "ml_collections",
+)
 
 licenses(["notice"])
 
