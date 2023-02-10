@@ -1,6 +1,9 @@
 # Examples for ml_collections.config_dict
 
-package(default_visibility = ["//visibility:private"])
+package(
+    default_applicable_licenses = ["//ml_collections:license"],
+    default_visibility = ["//visibility:private"],
+)
 
 licenses(["notice"])
 

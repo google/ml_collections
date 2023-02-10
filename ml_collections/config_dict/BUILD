@@ -1,6 +1,9 @@
 # ConfigDict is a dict like class used for expressing configurations of experiments and models.
 
-package(default_visibility = ["//visibility:public"])
+package(
+    default_applicable_licenses = ["//ml_collections:license"],
+    default_visibility = ["//visibility:public"],
+)
 
 licenses(["notice"])
 
