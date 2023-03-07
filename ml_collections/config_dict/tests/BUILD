@@ -1,7 +1,6 @@
 # Package of tests for ml_collections.config_dict package.
 
 package(
-    default_applicable_licenses = ["//ml_collections:license"],
     default_visibility = ["//visibility:private"],
 )
 
