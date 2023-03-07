@@ -63,6 +63,17 @@ class MyConfig:
   custom: CustomParserConfig = CustomParserConfig(0)
 
 
+@dataclasses.dataclass
+class SubConfig:
+  model: Optional[MyModelConfig] = dataclasses.field(
+      default_factory=lambda: MyModelConfig(foo=0, bar=['1']))
+
+
+@dataclasses.dataclass
+class ConfigWithOptionalNestedField:
+  sub: Optional[SubConfig] = None
+  non_optional: SubConfig = SubConfig()
+
 _CONFIG = MyConfig(
     my_model=MyModelConfig(
         foo=3,
@@ -150,11 +161,58 @@ class TypedConfigFlagsTest(absltest.TestCase):
         CustomParserConfig, ParserForCustomConfig())
 
   def test_custom_flag_parsing_override_work(self):
-    # Overrides still work
+    # Overrides still work.
     result = test_flags(_CONFIG, '.custom.i=10')
     self.assertEqual(result.custom.i, 10)
     self.assertEqual(result.custom.j, 1)
 
+  def test_optional_nested_fields(self):
+    with self.assertRaises(ValueError):
+      # Implicit creation not allowed.
+      test_flags(ConfigWithOptionalNestedField(), '.sub.model.foo=12')
+
+    # Explicit creation works.
+    result = test_flags(ConfigWithOptionalNestedField(), '.sub=build',
+                        '.sub.model.foo=12')
+    self.assertEqual(result.sub.model.foo, 12)
+
+    # Default initialization support.
+    result = test_flags(ConfigWithOptionalNestedField(), '.sub=build')
+    self.assertEqual(result.sub.model.foo, 0)
+
+    # Using default value (None).
+    result = test_flags(ConfigWithOptionalNestedField())
+    self.assertIsNone(result.sub)
+
+    with self.assertRaises(config_flag_lib.FlagOrderError):
+      # Don't allow accidental overwrites.
+      test_flags(ConfigWithOptionalNestedField(), '.sub.model.foo=12',
+                 '.sub=build')
+
+  def test_set_to_none_dataclass_fields(self):
+    result = test_flags(ConfigWithOptionalNestedField(), '.sub=build',
+                        '.sub.model=none')
+    self.assertIsNone(result.sub.model, None)
+
+    with self.assertRaises(KeyError):
+      # Parent field is set to None (from not None default value),
+      # so this is not a valid set of flags.
+      test_flags(ConfigWithOptionalNestedField(),
+                 '.sub=build', '.sub.model=none', '.sub.model.foo=12')
+
+    with self.assertRaises(KeyError):
+      # Parent field is explicitly set to None (with None default value),
+      # so this is not a valid set of flags.
+      test_flags(ConfigWithOptionalNestedField(),
+                 '.sub=none', '.sub.model.foo=12')
+
+    with self.assertRaises(flags.IllegalFlagValueError):
+      # Field is not marked as optional so it can't be set to None.
+      test_flags(ConfigWithOptionalNestedField, '.non_optional=None')
+
+  def test_no_default_initializer(self):
+    with self.assertRaises(flags.IllegalFlagValueError):
+      test_flags(ConfigWithOptionalNestedField(), '.sub=1', '.sub.model=1')
 
   def test_custom_flag_parser_invoked(self):
     # custom parser gets invoked
@@ -169,10 +227,9 @@ class TypedConfigFlagsTest(absltest.TestCase):
     self.assertEqual(result.custom.j, 16)
 
   def test_custom_flag_application_order(self):
-    # Later value overrides the earlier value.
-    result = test_flags(_CONFIG, '.custom.i=11', '.custom=15')
-    self.assertEqual(result.custom.i, 15)
-    self.assertEqual(result.custom.j, 16)
+    # Disallow for later value to override the earlier value.
+    with self.assertRaises(config_flag_lib.FlagOrderError):
+      test_flags(_CONFIG, '.custom.i=11', '.custom=15')
 
 
   def test_flag_config_dataclass_type_mismatch(self):

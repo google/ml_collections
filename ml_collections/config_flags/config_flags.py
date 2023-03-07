@@ -24,7 +24,7 @@ import os
 import re
 import sys
 import traceback
-from typing import Any, Callable, Dict, Generic, List, MutableMapping, Optional, Tuple, Type, TypeVar
+from typing import Any, Callable, Dict, Generic, List, MutableMapping, Optional, Sequence, Tuple, Type, TypeVar
 
 from absl import flags
 from absl import logging
@@ -335,6 +335,54 @@ def DEFINE_config_dataclass(  # pylint: disable=invalid-name
 
   Similar to `DEFINE_config_dict` except `config` should be a `dataclass`.
 
+  The config value can contain nested fields, including other dataclasses.
+  If a field is of form  Optional[dataclass] with None as a default value,
+  it can be explicitly initialized using special value `build`. E.g.
+  For instance:
+
+  ```
+  @dc.dataclass
+  class FancyLoss
+    foo_scale: float = 0.1
+
+  @dc.dataclass
+  class Config:
+    fancy_loss: Optional[FancyLoss] = None
+  ```
+
+  Then if `--config.fancy_loss=build  --config.fancy_loss.foo_scale=1` will
+  instantiate and override foo_scale to 1.  Note: that the reverse
+  order is not allowed:  `--config.fancy_loss.foo_scale=1
+  --config.fancy_loss.foo_scale=create` will cause FlagOrderError.
+
+  Optional dataclass fields can also be set to None using special `none` value.
+  For instance:
+
+  ```
+  @dc.dataclass
+  class FancyLossConfig
+    foo_loss_scale: float = 0.1
+
+  @dc.dataclass
+  class Config:
+    fancy_loss: Optional[FancyLossConfig] = FancyLossConfig()
+  ```
+
+  Then `--config.fancy_loss=none`, will set it to None.
+
+  Implementation note: This flag will register all the needed nested flags
+  dynamically based on sys.argv or sys_argv, in order to support
+  free-text keyed flags such as `foo.bar['i']=1`. Because of how flag subsystem
+  works this will happen either at flag-parsing time (during app.run),
+  if there is a root level override, such as `--config=<..>` or during
+  declaration otherwise (during this invocation).
+  Parsing at declaration (e.g. if no root override) can cause problems
+  with multiprocessing  since sys.argv is not yet populated at
+  declaration time for spawn processes. To avoid this, pass custom sys_argv
+  value instead if you want to use this library with multiprocessing.
+  Also note, in the future we might consider to always do it at declaration
+  time, as this cleans up the logic significantly.
+
   Args:
     name: Flag name.
     config: A user-defined configuration object. Must be built via `dataclass`.
@@ -437,6 +485,24 @@ class _IgnoreFileNotFoundAndCollectErrors:
     return '\n'.join(
         '  Attempted [{}]:\n    {}\n      {}'.format(attempt[0], attempt[1], e)
         for attempt, e in self._attempts)
+
+
+def _MakeDefaultOrNone(kls, config, allow_none=True, field_path=''):
+  if config in ['build', True]:
+    try:
+      return kls()
+    except Exception as e:
+      raise ValueError(
+          f'Unable to create default instance for "{field_path}" '
+          f'of type "{kls}": {e}') from e
+
+  elif (config in ['0', 0, False] or config.lower() == 'none'):
+    if not allow_none:
+      raise ValueError(f'None is not allowed as value for "{field_path}", '
+                       'as the dataclass field is not marked as optional.')
+    return None
+  raise ValueError(f'Unable to parse value "{config}" as instance of {kls}'
+                   f'for {field_path} values allowed are [0/none, or 1]')
 
 
 def _LoadConfigModule(name: str, path: str):
@@ -632,16 +698,36 @@ class _ConfigFlag(flags.Flag):
       super(_ConfigFlag, self)._set_default(default)  # pytype: disable=attribute-error
     self.default_as_str = "'{}'".format(default)
 
+  def _validate_overrides(self, config, overrides: Sequence[str]):
+    # Verify that we don't provide --config.foo.bar=1 followed by override of
+    # config.foo.
+    for i, override_a in enumerate(overrides, 1):
+      for override_b in overrides[i:]:
+        # verify if override_b will overwrite override_a
+        if override_a.startswith(override_b + '.'):
+          raise FlagOrderError(
+              f'Flag --{self.name}.{override_b} is provided after '
+              f'--{self.name}.{override_a} and '
+              'it will overwrite the value provided in '
+              f'--{self.name}.{override_a}, '
+              'which is probably not what you expect.')
+
+  def _initialize_missing_parent_fields(self, config, overrides):
+    for override in overrides:
+      config_path.initialize_missing_parent_fields(
+          config, override, overrides)
+
   def _parse(self, argument):
     # Parse config
     config = super(_ConfigFlag, self)._parse(argument)
 
     # Get list or overrides
     overrides = self._GetOverrides(
-      sys.argv if self._sys_argv is None else self._sys_argv)
-
+        sys.argv if self._sys_argv is None else self._sys_argv)
     # Iterate over overridden fields and create valid parsers
     self._override_values = {}
+    self._initialize_missing_parent_fields(config, overrides)
+    self._validate_overrides(config, overrides)
     for field_path in overrides:
       field_type = config_path.get_type(field_path, config)
       field_type_origin = config_path.get_origin(field_type)
@@ -655,6 +741,13 @@ class _ConfigFlag(flags.Flag):
         parser = _FIELD_TYPE_TO_PARSER[field_type_origin]
       elif issubclass(field_type, enum.Enum):
         parser = flags.EnumClassParser(field_type, case_sensitive=False)
+      elif dataclasses.is_dataclass(field_type):
+        # For dataclasses-valued fields allow default instance creation.
+        is_optional = config_path.is_optional(field_path, config)
+        parser = _DataclassParser(
+            name=field_path, dataclass_type=field_type,
+            parse_fn=ft.partial(_MakeDefaultOrNone, field_type,
+                                allow_none=is_optional, field_path=field_path))
 
       if parser:
         if not isinstance(parser, tuple_parser.TupleParser):
@@ -930,14 +1023,14 @@ def register_flag_parser(*, parser: flags.ArgumentParser) -> Callable[[_T], _T]:
     j: int = None
 
   class MainConfig:
-    sub: CustomConfig
+    sub: CustomConfig = CustomConfig()
 
   config_flags.DEFINE_config_dataclass(
     'cfg', MainConfig(), 'MyConfig data')
   ```
 
-  will declare cfg flag, then passing `--cfg.sub=1`, will initialie both i and j
-  fields to 1. The fields can still be set individually:
+  will declare cfg flag, then passing `--cfg.sub=1`, will initialize
+  both i and j fields to 1. The fields can still be set individually:
   `--cfg.sub=1 --cfg.sub.j=3` will set `i` to `1` and `j` to `3`.
 
   Args:
