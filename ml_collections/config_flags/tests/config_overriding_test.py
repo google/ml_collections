@@ -153,6 +153,10 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
 
     self.assert_equal_configs(values.test_config,
                               mock_config.get_config())
+    self.assertEqual(
+        values['test_config'].serialize(),
+        '--test_config=ml_collections/config_flags/tests/mock_config.py',
+    )
 
   @parameterized.named_parameters(*_DASH_PARAMETERS)
   def testRequired(self, config_flag):
@@ -175,6 +179,10 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
 
       self.assert_equal_configs(values.test_config,
                                 mock_config.get_config())
+    self.assertEqual(
+        values['test_config'].serialize(),
+        f'--test_config={_TEST_CONFIG_FILE}',
+    )
 
   def testLoadingNonExistingConfigLoading(self):
     """Tests whether loading non existing file raises an error."""
@@ -411,7 +419,7 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
   def testTypes(self):
     """Tests whether various types of objects are valid."""
 
-    parser = config_flags._ConfigFileParser('test_config')
+    parser = config_flags._ConfigFileFlagParser('test_config')
     self.assertEqual(parser.flag_type(), 'config object')
 
   @parameterized.named_parameters(

@@ -177,10 +177,11 @@ def DEFINE_config_file(  # pylint: disable=g-bad-name
   Returns:
     a handle to defined flag.
   """
-  parser = _ConfigFileParser(name=name, lock_config=lock_config)
+  parser = _ConfigFileFlagParser(name=name, lock_config=lock_config)
+  serializer = _ConfigFileFlagSerializer(name=name, flag_values=flag_values)
   flag = _ConfigFlag(
       parser=parser,
-      serializer=flags.ArgumentSerializer(),
+      serializer=serializer,
       name=name,
       default=default,
       help_string=help_string,
@@ -578,7 +579,7 @@ def _LockConfig(config):
     pass  # config.lock() does not have desired semantics, do nothing.
 
 
-class _ConfigFileParser(flags.ArgumentParser):
+class _ConfigFileFlagParser(flags.ArgumentParser):
   """Parser for config files."""
 
   def __init__(self, name, lock_config=True):
@@ -626,6 +627,24 @@ class _ConfigFileParser(flags.ArgumentParser):
 
   def flag_type(self):
     return 'config object'
+
+
+class _ConfigFileFlagSerializer(flags.ArgumentSerializer):
+  """Serializer for config files."""
+
+  def __init__(self, name, flag_values):
+    self.name = name
+    self.flag_values = flag_values
+
+  def serialize(self, value: Any) -> str:
+    if self.name in self.flag_values:
+      # If the flag was parsed, the value is the dict and we need the unparsed
+      # argument which is stored during parsing.
+      return self.flag_values[self.name].config_filename
+    else:
+      # If the flag wasn't parsed, the value passed in will be the default,
+      # unparsed argument.
+      return value
 
 
 class _InlineConfigParser(flags.ArgumentParser):
