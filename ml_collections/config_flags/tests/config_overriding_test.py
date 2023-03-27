@@ -419,7 +419,7 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
   def testTypes(self):
     """Tests whether various types of objects are valid."""
 
-    parser = config_flags._ConfigFileFlagParser('test_config')
+    parser = config_flags._ConfigFileParser('test_config')
     self.assertEqual(parser.flag_type(), 'config object')
 
   @parameterized.named_parameters(

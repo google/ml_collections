@@ -177,7 +177,7 @@ def DEFINE_config_file(  # pylint: disable=g-bad-name
   Returns:
     a handle to defined flag.
   """
-  parser = _ConfigFileFlagParser(name=name, lock_config=lock_config)
+  parser = _ConfigFileParser(name=name, lock_config=lock_config)
   serializer = _ConfigFileFlagSerializer(name=name, flag_values=flag_values)
   flag = _ConfigFlag(
       parser=parser,
@@ -579,7 +579,7 @@ def _LockConfig(config):
     pass  # config.lock() does not have desired semantics, do nothing.
 
 
-class _ConfigFileFlagParser(flags.ArgumentParser):
+class _ConfigFileParser(flags.ArgumentParser):
   """Parser for config files."""
 
   def __init__(self, name, lock_config=True):
