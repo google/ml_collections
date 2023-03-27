@@ -178,7 +178,7 @@ def DEFINE_config_file(  # pylint: disable=g-bad-name
     a handle to defined flag.
   """
   parser = _ConfigFileParser(name=name, lock_config=lock_config)
-  serializer = _ConfigFileFlagSerializer(name=name, flag_values=flag_values)
+  serializer = flags.ArgumentSerializer()
   flag = _ConfigFlag(
       parser=parser,
       serializer=serializer,
