@@ -109,7 +109,7 @@ class _ConfigFlagTestCase(object):
   """Base class for tests with additional asserts for comparing configs."""
 
   def assert_subset_configs(self, config1, config2):
-    """Checks if all atrributes/values in config1 are present in config2."""
+    """Checks if all attributes/values in config1 are present in config2."""
 
     if config1 is None:
       return
@@ -411,7 +411,7 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
   def testTypes(self):
     """Tests whether various types of objects are valid."""
 
-    parser = config_flags._ConfigFileParser('test_config')
+    parser = config_flags.ConfigFileFlagParser('test_config')
     self.assertEqual(parser.flag_type(), 'config object')
 
   @parameterized.named_parameters(

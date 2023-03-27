@@ -33,7 +33,7 @@ from ml_collections.config_flags import config_path
 from ml_collections.config_flags import tuple_parser
 FLAGS = flags.FLAGS
 
-# Forward for backwards compatability.
+# Forward for backwards compatibility.
 GetValue = config_path.get_value
 GetType = config_path.get_type
 SetValue = config_path.set_value
@@ -177,7 +177,7 @@ def DEFINE_config_file(  # pylint: disable=g-bad-name
   Returns:
     a handle to defined flag.
   """
-  parser = _ConfigFileParser(name=name, lock_config=lock_config)
+  parser = ConfigFileFlagParser(name=name, lock_config=lock_config)
   serializer = flags.ArgumentSerializer()
   flag = _ConfigFlag(
       parser=parser,
@@ -579,7 +579,7 @@ def _LockConfig(config):
     pass  # config.lock() does not have desired semantics, do nothing.
 
 
-class _ConfigFileParser(flags.ArgumentParser):
+class ConfigFileFlagParser(flags.ArgumentParser):
   """Parser for config files."""
 
   def __init__(self, name, lock_config=True):
@@ -627,6 +627,10 @@ class _ConfigFileParser(flags.ArgumentParser):
 
   def flag_type(self):
     return 'config object'
+
+
+# Alias to an older name, for backwards compatibility.
+_ConfigFileParser = ConfigFileFlagParser
 
 
 class _ConfigFileFlagSerializer(flags.ArgumentSerializer):
