@@ -629,6 +629,28 @@ class ConfigFileFlagParser(flags.ArgumentParser):
     return 'config object'
 
 
+# Alias to an older name, for backwards compatibility.
+_ConfigFileParser = ConfigFileFlagParser
+
+
+class _ConfigFileFlagSerializer(flags.ArgumentSerializer):
+  """Serializer for config files."""
+
+  def __init__(self, name, flag_values):
+    self.name = name
+    self.flag_values = flag_values
+
+  def serialize(self, value: Any) -> str:
+    if self.name in self.flag_values:
+      # If the flag was parsed, the value is the dict and we need the unparsed
+      # argument which is stored during parsing.
+      return self.flag_values[self.name].config_filename
+    else:
+      # If the flag wasn't parsed, the value passed in will be the default,
+      # unparsed argument.
+      return value
+
+
 class _InlineConfigParser(flags.ArgumentParser):
   """Parser for a config defined inline (not from a file)."""
 
@@ -792,10 +814,6 @@ class _ConfigFlag(flags.Flag):
 
     self._config_filename = argument
     return config
-
-  def serialize(self):
-    # Use the config filename instead of the dictionary when serializing.
-    return self._serialize(self.config_filename)
 
   @property
   def config_filename(self):
