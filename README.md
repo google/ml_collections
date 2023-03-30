@@ -455,6 +455,11 @@ def get_config():
   return config
 ```
 
+Warning: If you are using a pickle-based distributed programming framework such
+as [Launchpad](https://github.com/deepmind/launchpad#readme), be aware of
+limitations on the structure of this script that are [described below]
+(#config_files_and_pickling).
+
 Now, after running:
 
 ```bash
@@ -593,6 +598,52 @@ python script.py -- --config=path_to_config.py:lstm \
     (see the example in the [Usage](#usage) section).
 *   The overriding `tuple` object can be of a different size and have different
     types than the original. Nested tuples are also supported.
+
+### Config Files and Pickling {#config_files_and_pickling}
+
+This is likely to be troublesome:
+
+```python {.bad}
+@dataclasses.dataclass
+class MyRecord:
+  num_balloons: int
+  color: str
+
+def get_config():
+  return MyRecord(num_balloons=99, color='red')
+```
+
+This is not:
+
+```python {.good}
+def get_config():
+  @dataclasses.dataclass
+  class MyRecord:
+    num_balloons: int
+    color: str
+
+  return MyRecord(num_balloons=99, color='red')
+```
+
+#### Explanation
+
+A config file is a Python module but it is not imported through Python's usual
+module-importing mechanism.
+
+Meanwhile, serialization libraries such as [`cloudpickle`](
+https://github.com/cloudpipe/cloudpickle#readme) (which is used by [Launchpad](
+https://github.com/deepmind/launchpad#readme)) and [Apache Beam](
+https://beam.apache.org/) expect to be able to pickle an object without also
+pickling every type to which it refers, on the assumption that types defined
+at module scope can later be reconstructed simply by re-importing the modules
+in which they are defined.
+
+That assumption does not hold for a type that is defined at module scope in a
+config file, because the config file can't be imported the usual way. The
+symptom of this will be an `ImportError` when unpickling an object.
+
+The treatment is to move types from module scope into `get_config()` so that
+they will be serialized along with the values that have those types.
 
 ## Authors
 *   Sergio Gómez Colmenarejo - sergomez@google.com
