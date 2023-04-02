@@ -354,7 +354,7 @@ def DEFINE_config_dataclass(  # pylint: disable=invalid-name
   Then if `--config.fancy_loss=build  --config.fancy_loss.foo_scale=1` will
   instantiate and override foo_scale to 1.  Note: that the reverse
   order is not allowed:  `--config.fancy_loss.foo_scale=1
-  --config.fancy_loss.foo_scale=create` will cause FlagOrderError.
+  --config.fancy_loss=build` will cause FlagOrderError.
 
   Optional dataclass fields can also be set to None using special `none` value.
   For instance:
