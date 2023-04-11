@@ -31,6 +31,11 @@ class TupleParserTest(parameterized.TestCase):
       {'argument': '1, "a"', 'expected': (1, 'a')},
       {'argument': '(1, "a")', 'expected': (1, 'a')},
       {'argument': '(1, "a", (2, 3))', 'expected': (1, 'a', (2, 3))},
+      {'argument': ('abc*', 'def*'), 'expected': ('abc*', 'def*')},
+      {'argument': '("abc*", "def*")', 'expected': ('abc*', 'def*')},
+      {'argument': '("/abc",)', 'expected': ('/abc',)},
+      {'argument': '("/abc*",)', 'expected': ('/abc*',)},
+      {'argument': '("/abc/",)', 'expected': ('/abc/',)},
   )
   def test_tuple_parser_parse(self, argument, expected):
     parser = tuple_parser.TupleParser()
@@ -44,9 +49,27 @@ class TupleParserTest(parameterized.TestCase):
       {'argument': '1, "a"', 'expected': (1, 'a')},
       {'argument': '(1, "a")', 'expected': (1, 'a')},
       {'argument': '(1, "a", (2, 3))', 'expected': (1, 'a', (2, 3))},
+      {'argument': '("abc*", "def*")', 'expected': ('abc*', 'def*')},
+      {'argument': '"abc*", "def*"', 'expected': ('abc*', 'def*')},
+      {'argument': '"abc*",', 'expected': ('abc*',)},
+      {'argument': 'abc*', 'expected': ('abc*',)},
+      {'argument': '"/abc",', 'expected': ('/abc',)},
+      {'argument': '/abc*', 'expected': ('/abc*',)},
+      {'argument': '/abc/', 'expected': ('/abc/',)},
   )
   def test_convert_str_to_tuple(self, argument, expected):
     self.assertEqual(tuple_parser._convert_str_to_tuple(argument), expected)
+
+  @parameterized.parameters(
+      'a b',
+      'a,b*',
+      '/a,b*',
+      '/a,b',
+      'a b',
+  )
+  def test_convert_str_to_tuple_bad_inputs(self, argument):
+    with self.assertRaises(ValueError):
+      tuple_parser._convert_str_to_tuple(argument)
 
 
 if __name__ == '__main__':

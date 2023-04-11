@@ -81,12 +81,30 @@ def _convert_str_to_tuple(string):
     # repeated use of a flag (ie `--flag a --flag b` instead of
     # `--flag '("a", "b")'`).
     value = string
-  except SyntaxError:
+  except SyntaxError as exc:
     # The only other error that may be raised is a `SyntaxError` because
     # `literal_eval` calls the Python in-built `compile`. This error is
     # caused by parsing issues.
-    msg = 'Error while parsing string: {}'.format(string)
-    raise ValueError(msg)
+    if ',' not in string and ' ' not in string:
+      # Most likely passed a single string that contained an operator -- e.g.
+      # '/path/to/file' or 'file_pattern*'. If a comma isn't in the string, then
+      # it can't have been a tuple, so assume it's an unquoted string.
+      # If passed strings containing a comma (user probably expects conversion
+      # to a tuple) or whitespace (user might expect implicit conversion to
+      # tuple?) raise an exception.
+      value = string
+    else:
+      msg = (
+          f'Error while parsing string: {string} as tuple. If you intended to'
+          ' pass the argument as a single element, use quotes such as `--flag'
+          f' {repr(repr(string))}, otherwise insert quotes around each element.'
+      )
+      if ' ' in string:
+        msg += (
+            ' Use commas instead of whitespace as the separator between'
+            ' elements.'
+        )
+      raise ValueError(msg) from exc
 
   # Make sure we return a tuple.
   if isinstance(value, tuple):
