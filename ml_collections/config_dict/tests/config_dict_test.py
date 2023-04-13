@@ -1487,5 +1487,99 @@ class CycleTest(absltest.TestCase):
       config.a = config.get_ref('b')
 
 
+class GetOverriddenValuesTest(absltest.TestCase):
+
+  def testBasic(self):
+    cfg = config_dict.create(field=0.0)
+    cfg.field = 2.34
+    self.assertEqual(cfg.get_overridden_values(), {'field': (0.0, 2.34)})
+
+  def testEmpty(self):
+    cfg = config_dict.create(field=0.0)
+    self.assertEmpty(cfg.get_overridden_values())
+
+  def testOverriddenNestedField(self):
+    cfg = config_dict.ConfigDict({
+        'a': {
+            'aa': [1, 2],
+        },
+        'b': {
+            'ba': {
+                'baa': 2,
+                'bab': 3,
+            },
+            'bb': {1, 2, 3},
+        },
+    })
+    cfg.b.ba.baa = 10
+    self.assertEqual(cfg.get_overridden_values(), {'b.ba.baa': (2, 10)})
+
+  def testOverriddenNonexistentField(self):
+    cfg = config_dict.create(field=0.0)
+    cfg.missing_field = 2.0
+    self.assertEqual(cfg.get_overridden_values(),
+                     {'missing_field': (None, 2.0)})
+
+  def testOverriddenFieldWithIncorrectType(self):
+    cfg = config_dict.create(field=0.0)
+    with self.assertRaises(TypeError):
+      cfg.field = 'incorrect_type'
+    self.assertEmpty(cfg.get_overridden_values())
+
+
+class ResetDefaultsTest(absltest.TestCase):
+
+  def testBasic(self):
+    cfg = config_dict.create(field=0.0)
+    cfg.reset_defaults({'field': 2.34})
+    self.assertEqual(cfg.field, 2.34)
+    self.assertEmpty(cfg.get_overridden_values())
+
+  def testBasicNested(self):
+    cfg = config_dict.ConfigDict({
+        'a': {
+            'aa': [1, 2],
+        },
+        'b': {
+            'ba': {
+                'baa': 2,
+                'bab': 3,
+            },
+            'bb': {1, 2, 3},
+        },
+    })
+    cfg.reset_defaults({'b': {'ba': {'baa': 10}}})
+    self.assertEqual(cfg.b.ba.baa, 10)
+    self.assertEmpty(cfg.get_overridden_values())
+
+  def testResetDefaultAndGetOverriddenValues(self):
+    cfg = config_dict.create(field=0.0)
+    cfg.field = 0.0
+    cfg.reset_defaults({'field': 2.34})
+    self.assertEqual(cfg.get_overridden_values(), {'field': (2.34, 0.0)})
+
+  def testNestedResetDefaultAndGetOverriddenValues(self):
+    cfg = config_dict.ConfigDict({
+        'a': {
+            'aa': [1, 2],
+        },
+        'b': {
+            'ba': {
+                'baa': 2,
+                'bab': 3,
+            },
+            'bb': {1, 2, 3},
+        },
+    })
+    cfg.b.ba.baa = 2
+    cfg.reset_defaults({'b': {'ba': {'baa': 10}}})
+    self.assertEqual(cfg.get_overridden_values(), {'b.ba.baa': (10, 2)})
+
+  def testResetMissingFieldRaisesValueError(self):
+    cfg = config_dict.create(field=0.0)
+    with self.assertRaises(ValueError):
+      cfg.reset_defaults({'missing_field': 2.0})
+
+
 if __name__ == '__main__':
   absltest.main()
