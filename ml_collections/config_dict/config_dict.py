@@ -21,7 +21,6 @@ configurations of experiments and models.
 """
 
 import abc
-import copy
 import collections
 from collections import abc as collections_abc
 import contextlib
@@ -545,15 +544,13 @@ def _configdict_fill_seed(seed, initial_dictionary, visit_map=None):
       elif id(value.get()) in visit_map:
         value.set(visit_map[id(value.get())], False)
       else:
-        value_cd = ConfigDict(
-            value.get(), type_safe=seed.is_type_safe, visit_map=visit_map
-        )
+        value_cd = ConfigDict(type_safe=seed.is_type_safe)
+        _configdict_fill_seed(value_cd, value.get(), visit_map)
         value.set(value_cd, False)
 
     elif isinstance(value, dict) and seed.convert_dict:
-      value_cd = ConfigDict(
-          value, type_safe=seed.is_type_safe, visit_map=visit_map
-      )
+      value_cd = ConfigDict(type_safe=seed.is_type_safe)
+      _configdict_fill_seed(value_cd, value, visit_map)
       value = value_cd
 
     elif isinstance(value, FrozenConfigDict):
@@ -617,7 +614,6 @@ class ConfigDict:
       initial_dictionary: Optional[Mapping[str, Any]] = None,
       type_safe: bool = True,
       convert_dict: bool = True,
-      visit_map: Optional[dict] = None,
   ):
     """Creates an instance of ConfigDict.
 
@@ -657,13 +653,6 @@ class ConfigDict:
           (default: True).
       convert_dict: If set to True, all dict used as value in the ConfigDict
           will automatically be converted to ConfigDict (default: True).
-      visit_map: This optional field typically does not need to be supplied.
-        Dictionary from memory addresses to values, storing the
-        FrozenConfigDict versions of dictionary values. Lists which have
-        been converted to tuples and sets to frozensets are also stored in
-        visit_map to preserve the reference structure of initial_configdict.
-        visit_map need not contain (id(initial_configdict), seed) as a key/value
-        pair.
     """
 
     if isinstance(initial_dictionary, FrozenConfigDict):
@@ -673,33 +662,15 @@ class ConfigDict:
     super(ConfigDict, self).__setattr__('_locked', False)
     super(ConfigDict, self).__setattr__('_type_safe', type_safe)
     super(ConfigDict, self).__setattr__('_convert_dict', convert_dict)
-    # Store initial dictionary fields that are not nested dictionaries.
-    initial_dictionary_nondict_fields = None
-    if initial_dictionary is not None:
-      initial_dictionary_nondict_fields = {
-          k: copy.deepcopy(v) for k, v in initial_dictionary.items()
-          if not isinstance(v, dict)}
-    super(ConfigDict, self).__setattr__(
-        '_initial_dictionary', initial_dictionary_nondict_fields
-    )
 
     if initial_dictionary is not None:
-      _configdict_fill_seed(self, initial_dictionary, visit_map=visit_map)
+      _configdict_fill_seed(self, initial_dictionary)
 
     if isinstance(initial_dictionary, ConfigDict):
       super(ConfigDict, self).__setattr__('_locked',
                                           initial_dictionary.is_locked)
       super(ConfigDict, self).__setattr__('_type_safe',
                                           initial_dictionary.is_type_safe)
-    # Mapping of field to whether the value has been overridden.
-    is_overridden = {}
-    if initial_dictionary is not None:
-      is_overridden = {
-          k: False
-          for k, v in initial_dictionary.items()
-          if not isinstance(v, dict)
-      }
-    super(ConfigDict, self).__setattr__('_is_overridden', is_overridden)
 
   @property
   def is_type_safe(self) -> bool:
@@ -857,7 +828,7 @@ class ConfigDict:
     except KeyError as e:
       raise AttributeError(e)
 
-  def _setitem(self, key, value, update_is_overridden_dict=True):
+  def __setitem__(self, key, value):
     if '.' in key:
       raise ValueError('ConfigDict does not accept dots in field names, but '
                        'the key {} contains one.'.format(key))
@@ -895,67 +866,6 @@ class ConfigDict:
         value.set(value_cd, False)
 
     self._fields[key] = value
-    if (
-        hasattr(self, '_is_overridden')
-        and update_is_overridden_dict
-        and not isinstance(value, ConfigDict)
-    ):
-      # If the value is not a nested ConfigDict, defaults have been
-      # initialized, and `update_is_overridden_dict` is true, then mark that
-      # the item is no longer set to the default.
-      self._is_overridden[key] = True
-
-  def __setitem__(self, key, value):
-    self._setitem(key, value)
-
-  def get_overridden_values(self, prefix: str = '') -> dict:
-    """Compute fields that have been overridden.
-
-    The overridden fields are computed by comparing the initial dictionary
-    with the current value of the fields.
-
-    Args:
-      prefix: The prefix that should be appended to the beginning of the field
-        name that is being overridden.
-
-    Returns:
-      Dictionary of field name to a tuple containing the values before and
-      after overrides. If the field had no default, the value before will be
-      `None`.
-    """
-    diff_dict = {}
-    for k, v in self._fields.items():
-      if isinstance(v, ConfigDict):
-        diff_dict.update(v.get_overridden_values(prefix=f'{prefix}{k}.'))
-        continue
-      elif self._is_overridden[k]:
-        diff_dict[f'{prefix}{k}'] = (
-            self._initial_dictionary.get(k, None), self._fields[k])
-    return diff_dict
-
-  def reset_defaults(self, new_defaults: dict) -> None:
-    """Reset default values.
-
-    Fields that were not changed since initialization will assume new values,
-    while the fields that were overridden (even with the same value) will stay
-    unchanged.
-
-    Args:
-      new_defaults: A mapping from field name to new default value.
-
-    Raises:
-      ValueError when `new_defaults` contains a nonexistent field.
-    """
-    for k, v in new_defaults.items():
-      if isinstance(v, collections_abc.Mapping) and k in self._fields:
-        self._fields[k].reset_defaults(v)
-      elif k not in self._initial_dictionary:
-        raise ValueError(
-            '{} is not in the original ConfigDict.'.format(k))
-      elif self._initial_dictionary[k] != v:
-        if not self._is_overridden[k]:
-          self._setitem(k, v, update_is_overridden_dict=False)
-        self._initial_dictionary[k] = v
 
   def _generate_did_you_mean_message(self, request, message=''):
     matches = difflib.get_close_matches(request, self.keys(), 1, 0.75)
