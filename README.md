@@ -587,17 +587,17 @@ python script.py -- --config=path_to_config.py:lstm \
     callable `.lock()` method.
 *   Supports command-line overriding of arbitrarily nested values in dict-like
     objects (with key/attribute based getters/setters) of the following types:
-    *   `types.IntType` (integer)
-    *   `types.FloatType` (float)
-    *   `types.BooleanType` (bool)
-    *   `types.StringType` (string)
-    *   `types.TupleType` (tuple)
-    *   `enum.Enum` (enum)
+    *   `int`
+    *   `float`
+    *   `bool`
+    *   `str`
+    *   `tuple` (but **not** `list`)
+    *   `enum.Enum`
 *   Overriding is type safe.
-*   Overriding of `TupleType` can be done by passing in the `tuple` as a string
-    (see the example in the [Usage](#usage) section).
-*   The overriding `tuple` object can be of a different size and have different
-    types than the original. Nested tuples are also supported.
+*   Overriding of a `tuple` can be done by passing in the `tuple` value as a
+    string (see the example in the [Usage](#usage) section).
+*   The overriding `tuple` object can be of a different length and have
+    different item types than the original. Nested tuples are also supported.
 
 ### Config Files and Pickling {#config_files_and_pickling}
 
