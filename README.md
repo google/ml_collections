@@ -351,17 +351,29 @@ cfg.integer_field = 123
 # modification of existing values.
 cfg.lock()
 try:
-  cfg.integer_field = 124  # Raises AttributeError and suggests valid field.
-except AttributeError as e:
+  cfg.intagar_field = 124  # Modifies the wrong field
+except AttributeError as e:  # Raises AttributeError and suggests valid field.
   print(e)
 with cfg.unlocked():
-  cfg.integer_field = 1555  # Works fine too.
+  cfg.intagar_field = 1555  # Works fine.
 
 # Get a copy of the config dict.
 new_cfg = copy.deepcopy(cfg)
 new_cfg.integer_field = -123  # Works fine.
 
 print(cfg)
+print(new_cfg)
+```
+
+Output:
+
+```
+'Key "intagar_field" does not exist and cannot be added since the config is locked. Other fields present: "{\'integer_field\': 123}"\nDid you mean "integer_field" instead of "intagar_field"?'
+intagar_field: 1555
+integer_field: 123
+
+intagar_field: 1555
+integer_field: -123
 ```
 
 ### Dictionary attributes and initialization
