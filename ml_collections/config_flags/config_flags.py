@@ -282,25 +282,6 @@ def DEFINE_config_dict(  # pylint: disable=g-bad-name
 _T = TypeVar('_T')
 
 
-class _TypedFlagHolder(flags.FlagHolder, Generic[_T]):
-  """A typed wrapper for a FlagHolder."""
-
-  def __init__(self, flag: flags.FlagHolder):
-    self._flag = flag
-
-  @property
-  def value(self) -> _T:
-    return self._flag.value
-
-  @property
-  def default(self) -> _T:
-    return self._flag.default
-
-  @property
-  def name(self) -> str:
-    return self._flag.name
-
-
 class  _DataclassParser(flags.ArgumentParser, Generic[_T]):
   """Parser for a config defined inline (not from a file)."""
 
@@ -331,7 +312,7 @@ def DEFINE_config_dataclass(  # pylint: disable=invalid-name
     sys_argv: Optional[List[str]] = None,
     parse_fn: Optional[Callable[[Any], _T]] = None,
     **kwargs,
-) -> _TypedFlagHolder[_T]:
+) -> flags.FlagHolder[_T]:
   """Defines a typed (dataclass) flag-overrideable configuration.
 
   Similar to `DEFINE_config_dict` except `config` should be a `dataclass`.
@@ -415,7 +396,7 @@ def DEFINE_config_dataclass(  # pylint: disable=invalid-name
       sys_argv=sys_argv,
       **kwargs)
 
-  return _TypedFlagHolder(flag=flags.DEFINE_flag(flag, flag_values))
+  return flags.DEFINE_flag(flag, flag_values)
 
 
 def get_config_filename(config_flag) -> str:  # pylint: disable=g-bad-name
