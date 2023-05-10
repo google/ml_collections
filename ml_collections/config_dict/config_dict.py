@@ -301,7 +301,7 @@ class FieldReference:
     if value is None:
       self._value = None
     elif isinstance(value, FieldReference):
-      if type_safe and value.get_type() is not self.get_type():
+      if type_safe and not issubclass(value.get_type(), self.get_type()):
         raise TypeError('Reference is of type {} but should be of type {}'
                         .format(value.get_type(), self.get_type()))
       old_value = getattr(self, '_value', None)
