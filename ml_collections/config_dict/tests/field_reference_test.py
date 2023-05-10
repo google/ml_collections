@@ -638,6 +638,16 @@ class FieldReferenceTest(parameterized.TestCase):
     with self.assertRaises(TypeError):
       other.set(config_dict.FieldReference(None, field_type=str))
 
+  def testSetValueSubclass(self):
+    class A:
+      pass
+
+    class B(A):
+      pass
+
+    ref = config_dict.FieldReference(A())
+    ref.set(B())  # Can assign subclasses
+
   def testSetResult(self):
     ref = config_dict.FieldReference(1.0)
     result = ref + 1.0
