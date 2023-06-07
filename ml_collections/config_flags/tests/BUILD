@@ -1,6 +1,8 @@
 # Package of tests for ml_collections.library.config_flags package.
 
-package(default_visibility = ["//visibility:private"])
+package(
+    default_visibility = ["//visibility:private"],
+)
 
 licenses(["notice"])
 

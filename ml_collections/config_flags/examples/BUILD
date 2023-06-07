@@ -1,6 +1,8 @@
 # Package of examples for ml_collections.config_flags package.
 
-package(default_visibility = ["//visibility:private"])
+package(
+    default_visibility = ["//visibility:private"],
+)
 
 licenses(["notice"])
 
