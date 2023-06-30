@@ -60,7 +60,8 @@ class CustomParserConfig():
 class MyConfig:
   my_model: MyModelConfig
   baseline_model: MyModelConfig
-  custom: CustomParserConfig = CustomParserConfig(0)
+  custom: CustomParserConfig = dataclasses.field(
+      default_factory=lambda: CustomParserConfig(0))
 
 
 @dataclasses.dataclass
@@ -72,7 +73,8 @@ class SubConfig:
 @dataclasses.dataclass
 class ConfigWithOptionalNestedField:
   sub: Optional[SubConfig] = None
-  non_optional: SubConfig = SubConfig()
+  non_optional: SubConfig = dataclasses.field(
+      default_factory=SubConfig)
 
 _CONFIG = MyConfig(
     my_model=MyModelConfig(
@@ -206,9 +208,10 @@ class TypedConfigFlagsTest(absltest.TestCase):
       test_flags(ConfigWithOptionalNestedField(),
                  '.sub=none', '.sub.model.foo=12')
 
+  def test_set_none_non_optional_dataclass_fields(self):
     with self.assertRaises(flags.IllegalFlagValueError):
       # Field is not marked as optional so it can't be set to None.
-      test_flags(ConfigWithOptionalNestedField, '.non_optional=None')
+      test_flags(ConfigWithOptionalNestedField(), '.non_optional=None')
 
   def test_no_default_initializer(self):
     with self.assertRaises(flags.IllegalFlagValueError):
