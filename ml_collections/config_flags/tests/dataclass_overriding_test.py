@@ -19,6 +19,7 @@ import dataclasses
 import functools
 import sys
 from typing import Mapping, Optional, Sequence, Tuple, Union
+import unittest
 
 from absl import flags
 from absl.testing import absltest
@@ -150,7 +151,6 @@ class TypedConfigFlagsTest(absltest.TestCase):
     self.assertEqual(result1.baseline_model.foo, 123)
     self.assertEqual(_CONFIG.baseline_model.foo, 55)
 
-
   def test_custom_flag_parsing_parser_override(self):
     config_flags.register_flag_parser_for_type(
         CustomParserConfig, ParserForCustomConfig(2))
@@ -161,6 +161,15 @@ class TypedConfigFlagsTest(absltest.TestCase):
     # Restore old parser.
     config_flags.register_flag_parser_for_type(
         CustomParserConfig, ParserForCustomConfig())
+
+  @unittest.skipIf(sys.version_info[:2] < (3, 10), 'Need 3.10 to test | syntax')
+  def test_pipe_syntax(self):
+    @dataclasses.dataclass
+    class PipeConfig:
+      foo: int | None = None
+
+    result = test_flags(PipeConfig(), '.foo=32')
+    self.assertEqual(result.foo, 32)
 
   def test_custom_flag_parsing_override_work(self):
     # Overrides still work.
@@ -233,7 +242,6 @@ class TypedConfigFlagsTest(absltest.TestCase):
     # Disallow for later value to override the earlier value.
     with self.assertRaises(config_flag_lib.FlagOrderError):
       test_flags(_CONFIG, '.custom.i=11', '.custom=15')
-
 
   def test_flag_config_dataclass_type_mismatch(self):
     result = test_flags(_CONFIG, '.my_model.bax=10')

@@ -17,8 +17,9 @@
 import ast
 import dataclasses as dc
 import functools
+import types
 import typing
-from typing import Any, MutableSequence, Optional, Tuple, Union, Sequence
+from typing import Any, MutableSequence, Optional, Sequence, Tuple, Union
 
 from ml_collections import config_dict
 
@@ -218,9 +219,16 @@ def get_args(type_spec: type) -> Union[NoneType, Tuple[type, ...]]:  # pylint: d
   return getattr(type_spec, '__args__', NoneType)
 
 
-def extract_type_from_optional(type_spec: type) -> Optional[type]:   # pylint: disable=g-bare-generic drop when 3.7 support is not needed
+def _is_union_type(type_spec: type) -> bool:  # pylint: disable=g-bare-generic drop when 3.7 support is not needed
+  """Cheeck if a type_spec is a Union type or not."""
+  # UnionType was only introduced in python 3.10. We need getattr for
+  # backward compatibility.
+  return get_origin(type_spec) in [Union, getattr(types, 'UnionType', Union)]
+
+
+def extract_type_from_optional(type_spec: type) -> Optional[type]:  # pylint: disable=g-bare-generic drop when 3.7 support is not needed
   """If type_spec is of type Optional[T], returns T object, otherwise None"""
-  if get_origin(type_spec) != Union:
+  if not _is_union_type(type_spec):
     return None
   non_none = [t for t in get_args(type_spec) if t is not NoneType]
   if len(non_none) != 1:
@@ -237,12 +245,13 @@ def normalize_type(type_spec: type) -> type:  # pylint: disable=g-bare-generic d
 
   Args:
     type_spec: The type to normalize.
+
   Raises:
     TypeError: If there is not exactly 1 non-None type in the union.
   Returns:
     The normalized type.
   """
-  if get_origin(type_spec) == Union:
+  if _is_union_type(type_spec):
     subtype = extract_type_from_optional(type_spec)
     if subtype is None:
       raise TypeError(f'Unable to normalize ambiguous type: {type_spec}')
