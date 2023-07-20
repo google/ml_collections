@@ -1320,6 +1320,34 @@ class ConfigDictUpdateTest(absltest.TestCase):
     self.assertIsInstance(cfg.b.c.d, tuple)
     self.assertEqual(cfg.b.c.d, (2, 4, 6, 8))
 
+  def testUpdateFromFlattenedTupleListIndexConversion(self):
+    cfg = config_dict.ConfigDict({
+        'a': 1,
+        'b': {
+            'c': {
+                'd': (1, 2, 3, 4, 5),
+            },
+            'e': [
+                config_dict.ConfigDict({
+                    'f': 4,
+                    'g': 5,
+                }),
+                config_dict.ConfigDict({
+                    'f': 6,
+                    'g': 7,
+                }),
+            ],
+        }
+    })
+    updates = {
+        'b.c.d[2]': 9,
+        'b.e[1].f': 12,
+    }
+    cfg.update_from_flattened_dict(updates)
+    self.assertIsInstance(cfg.b.c.d, tuple)
+    self.assertEqual(cfg.b.c.d, (1, 2, 9, 4, 5))
+    self.assertCountEqual(cfg.b.e[1], {'f': 12, 'g': 7})
+
   def testDecodeError(self):
     # ConfigDict containing two strings with incompatible encodings.
     cfg = config_dict.ConfigDict({

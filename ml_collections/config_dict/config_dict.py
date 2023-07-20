@@ -29,7 +29,8 @@ import functools
 import inspect
 import json
 import operator
-from typing import Any, Mapping, Optional
+import re
+from typing import Any, Mapping, Optional, Tuple
 
 from absl import logging
 
@@ -155,6 +156,18 @@ def _get_computed_value(value_or_fieldreference):
   if isinstance(value_or_fieldreference, FieldReference):
     return value_or_fieldreference.get()
   return value_or_fieldreference
+
+
+def _parse_key(key: str) -> Tuple[str, Optional[int]]:
+  """Parse a ConfigDict key into to it's initial part and index (if any)."""
+  key = key.split('.')[0]
+  index_match = re.match("(.*)\[([0-9]+)\]", key)
+  if index_match:
+    key = index_match.group(1)
+    index = int(index_match.group(2))
+  else:
+    index = None
+  return key, index
 
 
 class _Op(collections.namedtuple('_Op', ['fn', 'args'])):
@@ -1344,6 +1357,17 @@ class ConfigDict:
         else:
           self[key] = value
 
+  def _update_value(self, key, index, value):
+    if index is None:
+      self[key] = value
+    elif isinstance(self[key], list):
+      self[key][index] = value
+    elif isinstance(self[key], tuple):
+      # Tuples are immutable, so convert to list, update and convert back.
+      tuple_as_list = list(self[key])
+      tuple_as_list[index] = value
+      self[key] = tuple(tuple_as_list)
+
   def update_from_flattened_dict(self, flattened_dict, strip_prefix=''):
     """In-place updates values taken from a flattened dict.
 
@@ -1416,31 +1440,49 @@ class ConfigDict:
 
     # Keep track of any children that we want to update. Make sure that we
     # recurse into each one only once.
-    children_to_update = set()
+    children_to_update = {}
 
     for full_key, value in six.iteritems(interesting_items):
       key = full_key[len(strip_prefix):] if strip_prefix else full_key
 
-      if '.' in key:
-        # If the path is hierarchical, we'll need to tell the first component
-        # to update itself.
-        child = key.split('.')[0]
-        if child in self:
-          if isinstance(self[child], ConfigDict):
-            children_to_update.add(child)
-          else:
-            raise KeyError('Key "{}" cannot be updated as "{}" is not a '
-                           'ConfigDict.'.format(full_key, strip_prefix + child))
-        else:
-          raise KeyError('Key "{}" cannot be set as "{}" was not found.'
-                         .format(full_key, strip_prefix + child))
-      else:
-        self[key] = value
+      # If the path is hierarchical, we'll need to tell the first component
+      # to update itself.
+      full_child = key.split('.')[0]
 
-    for child in children_to_update:
-      child_strip_prefix = strip_prefix + child + '.'
-      self[child].update_from_flattened_dict(interesting_items,
-                                             child_strip_prefix)
+      # Check to see if we are trying to update a single element of a tuple/list
+      #
+      # TODO(kkg): The key/index parsing & handling logic below duplicates
+      # similar logic in the config_flags/config_path module. Ideally we should
+      # refactor the code to reuse the 'config_path' module here - but that is
+      # likely a significant effort since that module already depends on this
+      # leading to a circular dependency.
+      child, index = _parse_key(full_child)
+
+      if not child in self:
+        raise KeyError('Key "{}" cannot be set as "{}" was not found.'
+                       .format(full_key, strip_prefix + child))
+
+      if index is not None and not isinstance(self[child], (list, tuple)):
+        raise KeyError('Key "{}" cannot be set as "{}" is not a tuple/list.'
+                       .format(full_key, strip_prefix + child))
+
+      if '.' in key:
+        child_value = self[child] if index is None else self[child][index]
+        if not isinstance(child_value, ConfigDict):
+          raise KeyError(
+              'Key "{}" cannot be updated as "{}" is not a ConfigDict ({}).'
+              .format(full_key, strip_prefix + full_child, type(child_value))
+          )
+
+        children_to_update[full_child] = child_value
+      else:
+        self._update_value(child, index, value)
+
+    for full_child, child_value in children_to_update.items():
+      child_strip_prefix = f'{strip_prefix}{full_child}.'
+      child_value.update_from_flattened_dict(
+          interesting_items, child_strip_prefix
+      )
 
 
 def _frozenconfigdict_valid_input(obj, ancestor_list=None):
