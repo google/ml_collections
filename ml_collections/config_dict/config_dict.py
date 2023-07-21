@@ -1387,8 +1387,12 @@ class ConfigDict:
 
       updates = {
           'a': 2,
-          'b.c.d': 3
+          'b.c.d': 3,
+          'b.c.e': 4,
       }
+
+    Note that update_from_flattened_dict will allow you add (not just update)
+    leaf nodes - for example, 'b.c.e' above
 
     This filters `paths_dict` to only contain paths starting with
     `strip_prefix` and strips the prefix when applying the update.
@@ -1457,6 +1461,11 @@ class ConfigDict:
       # likely a significant effort since that module already depends on this
       # leading to a circular dependency.
       child, index = _parse_key(full_child)
+
+      if '.' not in key and index is None:
+        # For a simple leaf node, just add the entry if it does not exist
+        self[child] = value
+        continue
 
       if not child in self:
         raise KeyError('Key "{}" cannot be set as "{}" was not found.'

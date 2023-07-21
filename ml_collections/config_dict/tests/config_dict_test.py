@@ -1278,10 +1278,11 @@ class ConfigDictUpdateTest(absltest.TestCase):
 
   def testUpdateFromFlattened(self):
     cfg = config_dict.ConfigDict({'a': 1, 'b': {'c': {'d': 2}}})
-    updates = {'a': 2, 'b.c.d': 3}
+    updates = {'a': 2, 'b.c.d': 3, 'b.c.e': 4}
     cfg.update_from_flattened_dict(updates)
     self.assertEqual(cfg.a, 2)
     self.assertEqual(cfg.b.c.d, 3)
+    self.assertEqual(cfg.b.c.e, 4)
 
   def testUpdateFromFlattenedWithPrefix(self):
     cfg = config_dict.ConfigDict({'a': 1, 'b': {'c': {'d': 2}}})
