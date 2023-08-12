@@ -1,5 +1,7 @@
 # Package of tests for ml_collections.library.config_flags package.
 
+# Placeholder: load py_test
+
 package(
     default_visibility = ["//visibility:private"],
 )
