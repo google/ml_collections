@@ -863,7 +863,7 @@ class ConfigDict:
         if (not isinstance(value, FieldReference) or
             value.get_type() is not type(field)):
           if isinstance(value, dict) and self._convert_dict:
-            value = ConfigDict(value, self._type_safe)
+            value = type(self)(value, self._type_safe)
           value = _safe_cast(value, type(field), self._type_safe)
       except TypeError as e:
         raise TypeError('Could not override field \'{}\' (reference). {}'
