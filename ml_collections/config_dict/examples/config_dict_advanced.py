@@ -28,7 +28,7 @@ _CONFIG = config_flags.DEFINE_config_file(
     default='ml_collections/config_dict/examples/config.py')
 
 
-def dummy_function(string, **unused_kwargs):
+def hello_function(string, **unused_kwargs):
   return 'Hello {}'.format(string)
 
 
@@ -110,7 +110,7 @@ def main(_):
 
   # Using ** unrolling to pass the config to a function as named arguments.
   print_section('Unpacking with **')
-  print(dummy_function(**config))
+  print(hello_function(**config))
 
   # You can even load a dictionary (notice it is not ConfigDict anymore) from
   # a yaml string representation of ConfigDict.

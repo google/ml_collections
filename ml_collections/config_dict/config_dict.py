@@ -389,8 +389,8 @@ class FieldReference:
     applied whereas `_apply_cast_op` generates a FieldReference with casted
     field_type.
 
-    Since `fn(value, *args)` we need to ignore `value` which now contains a
-      dummy default value of field_type.
+    Since the signature is `fn(value, *args)` we need to ignore `value`
+      which now contains a unused default value of field_type.
 
     Args:
       field_type: data type to cast to.
@@ -399,7 +399,7 @@ class FieldReference:
       A new FieldReference with of `field_type`.
     """
     return FieldReference(
-        field_type(),  # Creates dummy default value matching `field_type`.
+        field_type(),  # Creates unused default value matching `field_type`.
         field_type=field_type,
         op=_Op(lambda _, val: field_type(val),  # `fn` ignores `field_type()`.
                [self]),

@@ -28,7 +28,7 @@ from ml_collections.config_flags import config_flags as config_flag_lib
 
 
 #####
-# Simple dummy configuration classes.
+# Simple configuration class for testing.
 @dataclasses.dataclass
 class MyModelConfig:
   foo: int

@@ -34,7 +34,7 @@ class UnusableConfig(object):
   This class only has unusable attributes. There are two
   exceptions for which this class behaves normally:
   * Python's special functions which start and end with a double underscore.
-  * `dummy_attribute`, an attribute used to test the class.
+  * `valid_attribute`, an attribute used to test the class.
 
   For other attributes, both `hasttr(obj, attr)` and `callable(obj, attr)` will
   return True. Calling `obj.attr` will return a function which takes no
@@ -51,7 +51,7 @@ class UnusableConfig(object):
   """
 
   def __init__(self):
-    self._dummy_attribute = 1
+    self._valid_attribute = 1
 
   def __getattr__(self, attribute):
     """Get an arbitrary attribute.
@@ -80,13 +80,12 @@ class UnusableConfig(object):
     return raise_attribute_error_fun
 
   @property
-  def dummy_attribute(self):
-    return self._dummy_attribute
+  def valid_attribute(self):
+    return self._valid_attribute
 
-  @dummy_attribute.setter
-  def dummy_attribute(self, value):
-    self._dummy_attribute = value
-
+  @valid_attribute.setter
+  def valid_attribute(self, value):
+    self._valid_attribute = value
 
 def get_config():
   """Returns a ConfigDict. Used for tests."""

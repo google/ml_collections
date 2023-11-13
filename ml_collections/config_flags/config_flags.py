@@ -519,7 +519,7 @@ def _LoadConfigModule(name: str, path: str):
 
 
 class _ErrorConfig:
-  """Dummy ConfigDict that raises an error on any attribute access."""
+  """ConfigDict object that raises an error on any attribute access."""
 
   def __init__(self, error):
     super(_ErrorConfig, self).__init__()

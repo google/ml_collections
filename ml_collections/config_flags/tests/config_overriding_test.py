@@ -532,7 +532,7 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
         'list[0]': 5,
         'nested_list[0][0]': 5,
         'nested_configdict.integer': 5,
-        'unusable_config.dummy_attribute': 5
+        'unusable_config.valid_attribute': 5
     }
     override_flags = _get_override_flags(overrides, '--test_config.{}={}')
     values = _parse_flags('./program {} {}'.format(config_flag, override_flags))
@@ -543,8 +543,8 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
                      overrides['nested_list[0][0]'])
     self.assertEqual(values.test_config.nested_configdict.integer,
                      overrides['nested_configdict.integer'])
-    self.assertEqual(values.test_config.unusable_config.dummy_attribute,
-                     overrides['unusable_config.dummy_attribute'])
+    self.assertEqual(values.test_config.unusable_config.valid_attribute,
+                     overrides['unusable_config.valid_attribute'])
     # Attribute error.
     overrides = {'nonexistent': 'value'}
     with self.assertRaises(AttributeError):

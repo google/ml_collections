@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Dummy Config file."""
+"""Placeholder Config file."""
 
 import copy
 
@@ -20,7 +20,7 @@ from ml_collections.config_flags.tests import spork
 
 
 class TestConfig(object):
-  """Just a dummy config."""
+  """Default Test config value."""
 
   def __init__(self):
     self.integer = 23
