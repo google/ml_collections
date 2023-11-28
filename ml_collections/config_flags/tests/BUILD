@@ -20,6 +20,7 @@ py_test(
     data = [
         "configdict_config.py",
         "ioerror_config.py",
+        "literal_config.py",
         "mini_config.py",
         "parameterised_config.py",
         "typeerror_config.py",

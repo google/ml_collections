@@ -14,6 +14,7 @@
 
 """Configuration commmand line parser."""
 
+import ast
 import copy
 import dataclasses
 import enum
@@ -41,12 +42,33 @@ SetValue = config_path.set_value
 # Prevent this module being considered for `FLAGS.find_module_defining_flag`.
 flags._helpers.disclaim_module_ids.add(id(sys.modules[__name__]))  # pylint: disable=protected-access
 
+
+class _LiteralParser(flags.ArgumentParser):
+  """Parse arbitrary built-in (`--cfg.val=1`, `--cfg.val="[1, 2, {}]"`,...)."""
+
+  def parse(self, argument: str) -> Any:
+    # _LiteralParser cannot know in advance what is the expected type.
+    # The default value is never passed, as default is overwritten to `None`
+    # bellow inside `_ConfigFlag._parse`.
+    if not isinstance(argument, str):
+      raise TypeError('argument should be a string')
+    try:
+      return ast.literal_eval(argument)
+    except (SyntaxError, ValueError):
+      # Otherwise, the flag is a string: `--cfg.value="my_string"`
+      return argument
+
+  def flag_type(self):
+    return 'config_literal'
+
+
 _FIELD_TYPE_TO_PARSER = {
     float: flags.FloatParser(),
     bool: flags.BooleanParser(),
     tuple: tuple_parser.TupleParser(),
     int: flags.IntegerParser(),
     str: flags.ArgumentParser(),
+    object: _LiteralParser(),
 }
 
 
@@ -737,6 +759,16 @@ class _ConfigFlag(flags.Flag):
 
       if parser:
         if not isinstance(parser, tuple_parser.TupleParser):
+          if isinstance(parser, _LiteralParser):
+            # We do not pass the default to `_ConfigFieldFlag`, otherwise
+            # `_LiteralParser.parse(default)` is called with `default`,
+            # which would try to parse string.
+            # Setting the value to `None` never call `.parse`, so the
+            # default value from the config is kept.
+            # TODO(sandler): Investigate if value could be None for all parsers.
+            default = None
+          else:
+            default = config_path.get_value(field_path, config)
           flag = _ConfigFieldFlag(
               path=field_path,
               config=config,
@@ -744,7 +776,7 @@ class _ConfigFlag(flags.Flag):
               parser=parser,
               serializer=flags.ArgumentSerializer(),
               name=field_name,
-              default=config_path.get_value(field_path, config),
+              default=default,
               help_string=field_help,
           )
           flag.boolean = field_type is bool

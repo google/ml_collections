@@ -49,6 +49,7 @@ _FIELDREFERENCE_CONFIG_FILE = '{}/fieldreference_config.py'.format(
     _TEST_DIRECTORY)
 _PARAMETERISED_CONFIG_FILE = '{}/parameterised_config.py'.format(
     _TEST_DIRECTORY)
+_LITERAL_CONFIG_FILE = '{}/literal_config.py'.format(_TEST_DIRECTORY)
 
 
 def _parse_flags(command,
@@ -649,6 +650,26 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
     values = _parse_flags('./program --test_config={}'.format(config_file))
     self.assertEqual(config_flags.get_config_filename(values['test_config']),
                      config_file)
+
+  def testLiteral(self):
+    """Test access to saved config file path."""
+    values = _parse_flags(
+        # fmt: off
+        './program'
+        f' --test_config={_LITERAL_CONFIG_FILE}'
+        ' --test_config.integer=123'
+        ' --test_config.string="abc def"'
+        ' --test_config.nested="{\'a\': [1, 2, 3]}"'
+        ' --test_config.other_with_default_overitten=True'
+        # Change type
+        # fmt: on
+    )
+    cfg = values.test_config
+    self.assertEqual(cfg.integer, 123)
+    self.assertEqual(cfg.string, 'abc def')
+    self.assertEqual(cfg.nested, {'a': [1, 2, 3]})
+    self.assertEqual(cfg.other_with_default, 123)
+    self.assertEqual(cfg.other_with_default_overitten, True)
 
 
 def _simple_config():
