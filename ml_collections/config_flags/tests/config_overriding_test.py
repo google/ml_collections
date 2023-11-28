@@ -52,12 +52,15 @@ _PARAMETERISED_CONFIG_FILE = '{}/parameterised_config.py'.format(
 _LITERAL_CONFIG_FILE = '{}/literal_config.py'.format(_TEST_DIRECTORY)
 
 
-def _parse_flags(command,
-                 default=None,
-                 config=None,
-                 lock_config=True,
-                 required=False,
-                 use_sys_argv_override=False):
+def _parse_flags(
+    command,
+    default=None,
+    config=None,
+    lock_config=True,
+    required=False,
+    accept_new_attributes=False,
+    use_sys_argv_override=False,
+):
   """Parses arguments simulating sys.argv or via sys_argv argument."""
 
   if config is not None and default is not None:
@@ -81,7 +84,9 @@ def _parse_flags(command,
         default=default,
         flag_values=values,
         lock_config=lock_config,
-        sys_argv=(argv if use_sys_argv_override else None))
+        accept_new_attributes=accept_new_attributes,
+        sys_argv=(argv if use_sys_argv_override else None),
+    )
   else:
     config_flags.DEFINE_config_dict(
         'test_config',
@@ -654,15 +659,12 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
   def testLiteral(self):
     """Test access to saved config file path."""
     values = _parse_flags(
-        # fmt: off
         './program'
         f' --test_config={_LITERAL_CONFIG_FILE}'
         ' --test_config.integer=123'
         ' --test_config.string="abc def"'
         ' --test_config.nested="{\'a\': [1, 2, 3]}"'
         ' --test_config.other_with_default_overitten=True'
-        # Change type
-        # fmt: on
     )
     cfg = values.test_config
     self.assertEqual(cfg.integer, 123)
@@ -670,6 +672,22 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
     self.assertEqual(cfg.nested, {'a': [1, 2, 3]})
     self.assertEqual(cfg.other_with_default, 123)
     self.assertEqual(cfg.other_with_default_overitten, True)
+
+  def testNewAttributes(self):
+    values = _parse_flags(
+        './program'
+        f' --test_config={_LITERAL_CONFIG_FILE}'
+        ' --test_config.integer=123'
+        ' --test_config.other_new_value="abc def"'
+        ' --test_config.new_value="{\'a\': [1, 2, 3]}"',
+        accept_new_attributes=True,
+        lock_config=False,
+    )
+    cfg = values.test_config
+    self.assertEqual(cfg.integer, 123)
+    self.assertIsNone(cfg.string)
+    self.assertEqual(cfg.other_new_value, 'abc def')
+    self.assertEqual(cfg.new_value, config_dict.ConfigDict({'a': [1, 2, 3]}))
 
 
 def _simple_config():

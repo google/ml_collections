@@ -260,7 +260,12 @@ def normalize_type(type_spec: type) -> type:  # pylint: disable=g-bare-generic d
   return type_spec
 
 
-def get_type(config_path: str, config: Any, normalize=True):
+def get_type(
+    config_path: str,
+    config: Any,
+    normalize=True,
+    default_type: Optional[type[Any]] = None,
+):
   """Gets type of field in config described by a config_path.
 
   Example usage:
@@ -270,8 +275,10 @@ def get_type(config_path: str, config: Any, normalize=True):
   Args:
     config_path: Any string that `split` can process.
     config: A nested datastructure
-    normalize: whether to normalize the type (in particular
-    strip Optional annotations on dataclass fields)
+    normalize: whether to normalize the type (in particular strip Optional
+      annotations on dataclass fields)
+    default_type: If the `config_path` is not found and `default_type` is set,
+      the `default_type` is returned.
 
   Returns:
     The type of last object when walking config with config_path.
@@ -286,6 +293,8 @@ def get_type(config_path: str, config: Any, normalize=True):
   # Check if config is a DM collection and hence has attribute get_type()
   if isinstance(holder,
                 (config_dict.ConfigDict, config_dict.FieldReference)):
+    if default_type is not None and field not in holder:
+      return default_type
     return holder.get_type(field)
   # For dataclasses we can just use the type annotation.
   elif dc.is_dataclass(holder):
@@ -302,7 +311,13 @@ def is_optional(config_path: str, config: Any) -> bool:
   return extract_type_from_optional(raw_type) is not None
 
 
-def set_value(config_path: str, config: Any, value: Any):
+def set_value(
+    config_path: str,
+    config: Any,
+    value: Any,
+    *,
+    accept_new_attributes: bool = False,
+):
   """Sets value of field described by config_path.
 
   Example usage:
@@ -314,6 +329,7 @@ def set_value(config_path: str, config: Any, value: Any):
     config_path: Any string that `split` can process.
     config: A nested datastructure
     value: A value to assign to final field.
+    accept_new_attributes: If `True`, the new config attributes can be added
 
   Raises:
     IndexError: Integer field not found in nested structure.
@@ -324,7 +340,9 @@ def set_value(config_path: str, config: Any, value: Any):
 
   if isinstance(field, int) and isinstance(holder, MutableSequence):
     holder[field] = value
-  elif hasattr(holder, '__setitem__') and field in holder:
+  elif hasattr(holder, '__setitem__') and (
+      field in holder or accept_new_attributes
+  ):
     holder[field] = value
   elif hasattr(holder, str(field)):
     setattr(holder, str(field), value)

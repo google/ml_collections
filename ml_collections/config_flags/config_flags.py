@@ -90,6 +90,7 @@ def DEFINE_config_file(  # pylint: disable=g-bad-name
     help_string: str = 'path to config file.',
     flag_values: flags.FlagValues = FLAGS,
     lock_config: bool = True,
+    accept_new_attributes: bool = False,
     sys_argv: Optional[List[str]] = None,
     **kwargs) -> flags.FlagHolder:
   r"""Defines flag for `ConfigDict` files compatible with absl flags.
@@ -185,12 +186,15 @@ def DEFINE_config_file(  # pylint: disable=g-bad-name
   Args:
     name: Flag name, optionally including extra config after a colon.
     default: Default value of the flag (default: None).
-    help_string: Help string to display when --helpfull is called.
-        (default: "path to config file.")
-    flag_values: FlagValues instance used for parsing.
-        (default: absl.flags.FLAGS)
+    help_string: Help string to display when --helpfull is called. (default:
+      "path to config file.")
+    flag_values: FlagValues instance used for parsing. (default:
+      absl.flags.FLAGS)
     lock_config: If set to True, loaded config will be locked through calling
-        .lock() method on its instance (if it exists). (default: True)
+      .lock() method on its instance (if it exists). (default: True)
+    accept_new_attributes: If `True`, accept to pass arbitrary attributes that
+      are not originally defined in the `get_config()` dict.
+      `accept_new_attributes` require `lock_config=False`
     sys_argv: If set, interprets this as the full list of args used in parsing.
       This is used to identify which overrides to define as flags. If not
       specified, uses the system sys.argv to figure it out.
@@ -199,6 +203,8 @@ def DEFINE_config_file(  # pylint: disable=g-bad-name
   Returns:
     a handle to defined flag.
   """
+  if accept_new_attributes and lock_config:
+    raise ValueError('`accept_new_attributes=True` requires lock_config=False')
   parser = ConfigFileFlagParser(name=name, lock_config=lock_config)
   serializer = flags.ArgumentSerializer()
   flag = _ConfigFlag(
@@ -208,6 +214,7 @@ def DEFINE_config_file(  # pylint: disable=g-bad-name
       default=default,
       help_string=help_string,
       flag_values=flag_values,
+      accept_new_attributes=accept_new_attributes,
       sys_argv=sys_argv,
       **kwargs)
 
@@ -657,10 +664,18 @@ class _InlineConfigParser(flags.ArgumentParser):
 class _ConfigFlag(flags.Flag):
   """Flag definition for command-line overridable configs."""
 
-  def __init__(self, flag_values=FLAGS, sys_argv=None, **kwargs):
+  def __init__(
+      self,
+      flag_values=FLAGS,
+      *,
+      accept_new_attributes: bool = False,
+      sys_argv=None,
+      **kwargs,
+  ):
     # Parent constructor can already call .Parse, thus additional fields
     # have to be set here.
     self.flag_values = flag_values
+    self._accept_new_attributes = accept_new_attributes
     # Note, we don't replace sys_argv with sys.argv here if it's None because
     # in some obscure multiprocessing use cases, sys.argv may not be populated
     # until later and we need to look it up at parse time.
@@ -736,8 +751,18 @@ class _ConfigFlag(flags.Flag):
     self._override_values = {}
     self._initialize_missing_parent_fields(config, overrides)
     self._validate_overrides(config, overrides)
+
+    if self._accept_new_attributes:
+      # If user provide a new attribute, fallback to `object` to accept all
+      # literal
+      default_type = object
+    else:
+      default_type = None
+
     for field_path in overrides:
-      field_type = config_path.get_type(field_path, config)
+      field_type = config_path.get_type(
+          field_path, config, default_type=default_type
+      )
       field_type_origin = config_path.get_origin(field_type)
       field_help = 'An override of {}\'s field {}'.format(self.name, field_path)
       field_name = '{}.{}'.format(self.name, field_path)
@@ -777,6 +802,7 @@ class _ConfigFlag(flags.Flag):
               serializer=flags.ArgumentSerializer(),
               name=field_name,
               default=default,
+              accept_new_attributes=self._accept_new_attributes,
               help_string=field_help,
           )
           flag.boolean = field_type is bool
@@ -943,6 +969,7 @@ class _ConfigFieldFlag(flags.Flag):
       help_string: str,
       short_name: Optional[str] = None,
       boolean: bool = False,
+      accept_new_attributes: bool = False,
   ):
     """Creates new flag with callback."""
     super().__init__(
@@ -956,11 +983,15 @@ class _ConfigFieldFlag(flags.Flag):
     self._path = path
     self._config = config
     self._override_values = override_values
+    self._accept_new_attributes = accept_new_attributes
 
   def parse(self, argument):
     super().parse(argument)
     # Callback to set value in ConfigDict.
-    config_path.set_value(self._path, self._config, self.value)
+    config_path.set_value(
+        self._path, self._config, self.value,
+        accept_new_attributes=self._accept_new_attributes,
+    )
     self._override_values[self._path] = self.value
 
 
