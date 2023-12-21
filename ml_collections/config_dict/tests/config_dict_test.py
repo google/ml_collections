@@ -734,6 +734,35 @@ class ConfigDictTest(parameterized.TestCase):
         cfg_best_effort.to_json_best_effort(sort_keys=True).strip(),
         _JSON_BEST_EFFORT_TEST_DICT.strip())
 
+  def testJSONConversionTopLevel(self):
+    """Tests JSON serialization."""
+
+    class JSONEncoder(config_dict.CustomJSONEncoder):
+      """JSON encoder for ConfigDict and FieldReference.
+
+      The encoder throws an exception for non-supported types.
+      """
+
+      def default(self, obj):
+        if isinstance(obj, config_dict.ConfigDict):
+          return {'__serialized__': True, **obj._fields}
+        return super().default(obj)
+
+    cfg = config_dict.ConfigDict({
+        'a': {'c': 123},
+        'b': 456,
+    })
+    # Both the top-level dict and inner dict have the additional
+    # `__serialized__` field.
+    self.assertEqual(
+        json.loads(cfg.to_json(json_encoder_cls=JSONEncoder)),
+        {
+            'a': {'c': 123, '__serialized__': True},
+            'b': 456,
+            '__serialized__': True,
+        },
+    )
+
   def testReprConversion(self):
     """Tests repr conversion."""
     cfg = _get_test_config_dict()

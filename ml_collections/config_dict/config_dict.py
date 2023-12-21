@@ -1071,7 +1071,7 @@ class ConfigDict:
       JSONDecodeError: If there is a problem with string encodings.
     """
     try:
-      return json.dumps(self._fields, **kwargs)
+      return json.dumps(self, **kwargs)
     except UnicodeDecodeError as error:
       # Re-raise exception with more informative error message.
       new_message = (
