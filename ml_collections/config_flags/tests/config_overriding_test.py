@@ -673,6 +673,22 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
     self.assertEqual(cfg.other_with_default, 123)
     self.assertEqual(cfg.other_with_default_overitten, True)
 
+  def testLiteralBool(self):
+    """Test access to saved config file path."""
+    values = _parse_flags(
+        './program'
+        f' --test_config={_LITERAL_CONFIG_FILE}'
+        ' --test_config.integer'
+        ' --test_config.nested=1'
+        ' --notest_config.string'
+        ' --test_config.other_with_default_overitten'
+    )
+    cfg = values.test_config
+    self.assertEqual(cfg.integer, True)
+    self.assertEqual(cfg.string, False)
+    self.assertEqual(cfg.nested, 1)
+    self.assertEqual(cfg.other_with_default_overitten, True)
+
   def testNewAttributes(self):
     values = _parse_flags(
         './program'

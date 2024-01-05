@@ -52,6 +52,10 @@ class _LiteralParser(flags.ArgumentParser):
     # bellow inside `_ConfigFlag._parse`.
     if not isinstance(argument, str):
       raise TypeError('argument should be a string')
+    # Absl hardcode bool values as lower-case: `--cfg.my_bool`, so convert
+    # them to Python built-in
+    if argument in ('true', 'false'):
+      argument = argument.capitalize()
     try:
       return ast.literal_eval(argument)
     except (SyntaxError, ValueError):
@@ -805,14 +809,17 @@ class _ConfigFlag(flags.Flag):
               accept_new_attributes=self._accept_new_attributes,
               help_string=field_help,
           )
-          flag.boolean = field_type is bool
+          # Literal values support the `--my_bool` / `--nomy_bool` syntax
+          flag.boolean = field_type is bool or isinstance(
+              parser, _LiteralParser
+          )
           flags.DEFINE_flag(flag=flag, flag_values=self.flag_values)
         elif field_name not in self.flag_values:
           # Overriding a tuple field. Define the flag only once -- it might
           # appear multiple times on the command-line (e.g.
-          # `--config.flag a --config.flag b`) but defining the same flag multiple
-          # times is an error. All arguments for the same flag are passed to a
-          # single call of _ConfigFieldMultiFlag.parse.
+          # `--config.flag a --config.flag b`) but defining the same flag
+          # multiple times is an error. All arguments for the same flag are
+          # passed to a single call of _ConfigFieldMultiFlag.parse.
           flag = _ConfigFieldMultiFlag(
               path=field_path,
               config=config,
