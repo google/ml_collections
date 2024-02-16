@@ -1468,6 +1468,13 @@ class ConfigDictUpdateTest(absltest.TestCase):
     self.assertEqual(2, cfg.a)
     self.assertEqual(3, cfg.b)
 
+  def testNoSortKey(self):
+    cfg = config_dict.ConfigDict({'z': 1, 'a': 2}, sort_keys=False)
+    self.assertEqual(list(cfg.keys()), ['z', 'a'])
+
+    cfg = config_dict.ConfigDict({'z': 1, 'a': 2})
+    self.assertEqual(list(cfg.keys()), ['a', 'z'])
+
   def testDotInKey(self):
     cfg = config_dict.ConfigDict(allow_dotted_keys=True)
     cfg['a.b.c'] = 123

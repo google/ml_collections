@@ -624,6 +624,7 @@ class ConfigDict:
 
   # For auto-complete
   _allow_dotted_keys: bool
+  _sort_keys: bool
 
   def __init__(
       self,
@@ -632,6 +633,7 @@ class ConfigDict:
       convert_dict: bool = True,
       *,
       allow_dotted_keys: bool = False,
+      sort_keys: bool = True,
   ):
     """Creates an instance of ConfigDict.
 
@@ -667,6 +669,7 @@ class ConfigDict:
       convert_dict: If set to True, all dict used as value in the ConfigDict
         will automatically be converted to ConfigDict (default: True).
       allow_dotted_keys: If set to True, keys can contain `.`.
+      sort_keys: If `True` (default), keys are sorted in alphabetical order.
     """
 
     if isinstance(initial_dictionary, FrozenConfigDict):
@@ -677,6 +680,7 @@ class ConfigDict:
     super(ConfigDict, self).__setattr__('_type_safe', type_safe)
     super(ConfigDict, self).__setattr__('_convert_dict', convert_dict)
     super(ConfigDict, self).__setattr__('_allow_dotted_keys', allow_dotted_keys)
+    super(ConfigDict, self).__setattr__('_sort_keys', sort_keys)
 
     if initial_dictionary is not None:
       _configdict_fill_seed(self, initial_dictionary)
@@ -801,7 +805,10 @@ class ConfigDict:
   @property
   def _ordered_fields(self):
     """Returns ordered dict shallow cast of _fields member."""
-    return collections.OrderedDict(sorted(self._fields.items()))
+    if self._sort_keys:
+      return collections.OrderedDict(sorted(self._fields.items()))
+    else:
+      return self._fields
 
   def iteritems(self, preserve_field_references=False):
     """Deterministically iterates over dictionary key, value pairs.
