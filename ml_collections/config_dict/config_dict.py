@@ -1,4 +1,4 @@
-# Copyright 2023 The ML Collections Authors.
+# Copyright 2024 The ML Collections Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -622,11 +622,16 @@ class ConfigDict:
   # Loosen the static type checking requirements.
   _HAS_DYNAMIC_ATTRIBUTES = True
 
+  # For auto-complete
+  _allow_dotted_keys: bool
+
   def __init__(
       self,
       initial_dictionary: Optional[Mapping[str, Any]] = None,
       type_safe: bool = True,
       convert_dict: bool = True,
+      *,
+      allow_dotted_keys: bool = False,
   ):
     """Creates an instance of ConfigDict.
 
@@ -647,25 +652,21 @@ class ConfigDict:
     that value is converted to ConfigDict.
 
     Args:
-      initial_dictionary: May be one of the following:
-
-        1) dict. In this case, all values of initial_dictionary that are
-        dictionaries are also be converted to ConfigDict. However,
-        dictionaries within values of non-dict type are untouched.
-
-        2) ConfigDict. In this case, all attributes are uncopied, and only the
-        top-level object (self) is re-addressed. This is the same behavior
-        as Python dict, list, and tuple.
-
-        3) FrozenConfigDict. In this case, initial_dictionary is converted to
-        a ConfigDict version of the initial dictionary for the
-        FrozenConfigDict (reversing any mutability changes FrozenConfigDict
-        made).
+      initial_dictionary: May be one of the following:  1) dict. In this case,
+        all values of initial_dictionary that are dictionaries are also be
+        converted to ConfigDict. However, dictionaries within values of non-dict
+        type are untouched.  2) ConfigDict. In this case, all attributes are
+        uncopied, and only the top-level object (self) is re-addressed. This is
+        the same behavior as Python dict, list, and tuple.  3) FrozenConfigDict.
+        In this case, initial_dictionary is converted to a ConfigDict version of
+        the initial dictionary for the FrozenConfigDict (reversing any
+        mutability changes FrozenConfigDict made).
       type_safe: If set to True, once an attribute value is assigned, its type
-          cannot be overridden without .ignore_type() context manager
-          (default: True).
+        cannot be overridden without .ignore_type() context manager (default:
+        True).
       convert_dict: If set to True, all dict used as value in the ConfigDict
-          will automatically be converted to ConfigDict (default: True).
+        will automatically be converted to ConfigDict (default: True).
+      allow_dotted_keys: If set to True, keys can contain `.`.
     """
 
     if isinstance(initial_dictionary, FrozenConfigDict):
@@ -675,6 +676,7 @@ class ConfigDict:
     super(ConfigDict, self).__setattr__('_locked', False)
     super(ConfigDict, self).__setattr__('_type_safe', type_safe)
     super(ConfigDict, self).__setattr__('_convert_dict', convert_dict)
+    super(ConfigDict, self).__setattr__('_allow_dotted_keys', allow_dotted_keys)
 
     if initial_dictionary is not None:
       _configdict_fill_seed(self, initial_dictionary)
@@ -842,9 +844,11 @@ class ConfigDict:
       raise AttributeError(e)
 
   def __setitem__(self, key, value):
-    if '.' in key:
-      raise ValueError('ConfigDict does not accept dots in field names, but '
-                       'the key {} contains one.'.format(key))
+    if not self._allow_dotted_keys and '.' in key:
+      raise ValueError(
+          'ConfigDict does not accept dots in field names (when'
+          f' `allow_dotted_keys=False`), but the key {key} contains one.'
+      )
 
     if self.is_locked and key not in self._fields:
       error_msg = ('Key "{}" does not exist and cannot be added since the '
@@ -894,7 +898,7 @@ class ConfigDict:
       raise KeyError('This ConfigDict is locked, you have to unlock it before '
                      'trying to delete a field.')
 
-    if '.' in key:
+    if not self._allow_dotted_keys and '.' in key:
       # As per the check in __setitem__ above, keys cannot contain dots.
       # Hence, we can use dots to do recursive calls.
       key, rest = key.split('.', 1)
@@ -907,7 +911,7 @@ class ConfigDict:
       raise KeyError(self._generate_did_you_mean_message(key, str(e)))
 
   def __getitem__(self, key: str):
-    if '.' in key:
+    if not self._allow_dotted_keys and '.' in key:
       # As per the check in __setitem__ above, keys cannot contain dots.
       # Hence, we can use dots to do recursive calls.
       key, rest = key.split('.', 1)

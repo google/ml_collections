@@ -1,4 +1,4 @@
-# Copyright 2023 The ML Collections Authors.
+# Copyright 2024 The ML Collections Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1467,6 +1467,19 @@ class ConfigDictUpdateTest(absltest.TestCase):
     cfg.b = 3
     self.assertEqual(2, cfg.a)
     self.assertEqual(3, cfg.b)
+
+  def testDotInKey(self):
+    cfg = config_dict.ConfigDict(allow_dotted_keys=True)
+    cfg['a.b.c'] = 123
+    self.assertEqual(cfg['a.b.c'], 123)
+
+    with self.assertRaises(AttributeError):
+      _ = cfg.a
+
+    self.assertEqual(cfg.to_dict(), {'a.b.c': 123})
+
+    del cfg['a.b.c']
+    self.assertEqual(cfg.to_dict(), {})
 
 
 class CreateTest(absltest.TestCase):
