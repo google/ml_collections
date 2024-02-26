@@ -255,6 +255,34 @@ except config_dict.MutabilityError as e:
   print(e)
 ```
 
+#### One-way references
+
+One gotcha with `get_ref` is that it creates a bi-directional dependency when no operations are performed on the value.
+
+```python
+from ml_collections import config_dict
+
+config = config_dict.ConfigDict()
+config.reference = 1
+config.reference_0 = config.get_ref('reference')
+config.reference_0 = 2
+print(config.reference)  # Prints 2.
+print(config.reference_0)  # Prints 2.
+```
+
+This can be avoided by using `get_oneway_ref` instead of `get_ref`.
+
+```python
+from ml_collections import config_dict
+
+config = config_dict.ConfigDict()
+config.reference = 1
+config.reference_0 = config.get_oneway_ref('reference')
+config.reference_0 = 2
+print(config.reference)  # Prints 1.
+print(config.reference_0)  # Prints 2.
+```
+
 ### Advanced usage
 
 Here are some more advanced examples showing lazy computation with different
