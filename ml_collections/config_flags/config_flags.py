@@ -324,14 +324,29 @@ class  _DataclassParser(flags.ArgumentParser, Generic[_T]):
     self.dataclass_type = dataclass_type
     self.parse_fn = parse_fn
 
+  def _get_parse_fn(self):
+    # NB: We are using lazy lookup in the parse function rather than
+    # constructor, to give client's code a chance to create their parsers
+    # and provide consistency with availability of parsers for nested fields
+    # (which are also looked up during parsing).
+    if self.parse_fn:
+      return self.parse_fn
+    if self.dataclass_type in _FIELD_TYPE_TO_PARSER:
+      return _FIELD_TYPE_TO_PARSER[self.dataclass_type].parse
+
   def parse(self, config: Any) -> _T:
     # It is important to use deepcopy here, so if parser returns constants
     # they are not modified during the flag parsing.
     if isinstance(config, self.dataclass_type):
       return copy.deepcopy(config)
-    if self.parse_fn:
-      return copy.deepcopy(self.parse_fn(config))
-    raise TypeError('Overriding {} is not allowed.'.format(self.name))
+    parse_fn = self._get_parse_fn()
+    if parse_fn:
+      return copy.deepcopy(parse_fn(config))
+    raise TypeError(
+        'Overriding {} is not allowed: it has neither '
+        'registered parser nor explicit parse_fn in the flag '
+        'definition'.format(self.name)
+    )
 
   def flag_type(self):
     return 'config_dataclass({})'.format(self.dataclass_type)
@@ -406,10 +421,12 @@ def DEFINE_config_dataclass(  # pylint: disable=invalid-name
     sys_argv: If set, interprets this as the full list of args used in parsing.
       This is used to identify which overrides to define as flags. If not
       specified, uses the system sys.argv to figure it out.
-    parse_fn: Function that can parse provided flag value, when assigned
-    via flag.value, or passed on command line. Default is to only allow
-    to assign instances of this class.
+    parse_fn: Function that can parse provided flag value, when assigned via
+      flag.value, or passed on command line. If not provided, but the class has
+      registered parser register_flag_parser_for_type, the latter will be used.
+      Otherwise only allows to assign instances of this class.
     **kwargs: Optional keyword arguments passed to Flag constructor.
+
   Returns:
     A handle to the defined flag.
   """
@@ -1076,8 +1093,8 @@ def register_flag_parser(*, parser: flags.ArgumentParser) -> Callable[[_T], _T]:
     return CustomConfig(i=int(value), j=int(value))
 
 
-  @dataclasses.dataclass
   @config_flags.register_flag_parser(parser=ParserForCustomConfig())
+  @dataclasses.dataclass
   class CustomConfig:
     i: int = None
     j: int = None

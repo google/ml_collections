@@ -315,6 +315,11 @@ class DataClassParseFnTest(absltest.TestCase):
     self.assertEqual(result.my_model.foo, 75)
     self.assertEqual(result.baseline_model.foo, 10)
 
+  def test_parse_custom_value_applied_no_explicit_parse_fn(self):
+    result = test_flags(CustomParserConfig(0), '=75', '.i=12')
+    self.assertEqual(result.i, 12)
+    self.assertEqual(result.j, 76)
+
   def test_parse_out_of_order(self):
     with self.assertRaises(config_flag_lib.FlagOrderError):
       _ = test_flags(

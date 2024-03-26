@@ -19,7 +19,7 @@ import dataclasses as dc
 import functools
 import types
 import typing
-from typing import Any, MutableSequence, Optional, Sequence, Tuple, Union
+from typing import Any, MutableSequence, Optional, Sequence, Tuple, Union, Type
 
 from ml_collections import config_dict
 
@@ -264,7 +264,7 @@ def get_type(
     config_path: str,
     config: Any,
     normalize=True,
-    default_type: Optional[type[Any]] = None,
+    default_type: Optional[Type[Any]] = None,
 ):
   """Gets type of field in config described by a config_path.
 
