@@ -24,6 +24,7 @@ import abc
 import collections
 from collections import abc as collections_abc
 import contextlib
+import dataclasses
 import difflib
 import functools
 import inspect
@@ -33,7 +34,6 @@ import re
 from typing import Any, Mapping, Optional, Tuple
 
 from absl import logging
-
 import contextlib2
 import six
 import yaml
@@ -1941,6 +1941,8 @@ class _BestEffortCustomJSONEncoder(CustomJSONEncoder):
         return sorted(list(obj))
       elif inspect.isfunction(obj):
         return 'function {}'.format(obj.__name__)
+      elif dataclasses.is_dataclass(obj):
+        return dataclasses.asdict(obj)
       elif (hasattr(obj, '__dict__') and
             obj.__dict__ and
             not inspect.isclass(obj)):  # Instantiated object's variables

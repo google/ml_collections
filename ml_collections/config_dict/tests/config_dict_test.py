@@ -16,6 +16,7 @@
 
 import abc
 from collections import abc as collections_abc
+import dataclasses
 import functools
 import json
 import pickle
@@ -23,7 +24,6 @@ import sys
 
 from absl.testing import absltest
 from absl.testing import parameterized
-
 from ml_collections import config_dict
 import mock
 import six
@@ -84,6 +84,21 @@ _TEST_DICT_CHANGE_FLOAT_NAME = {
 }
 
 
+@dataclasses.dataclass
+class _TestDataclass:
+  string_attribute: str
+  int_attribute: int
+
+
+_TEST_DICT_WITH_DATACLASS = dict(_TEST_DICT)
+_TEST_DICT_WITH_DATACLASS.update({
+    'dataclass': _TestDataclass(string_attribute='test_string', int_attribute=1)
+})
+_TEST_CONFIGDICT_WITH_DATACLASS = config_dict.ConfigDict(
+    _TEST_DICT_WITH_DATACLASS
+)
+
+
 def _get_test_dict():
   test_dict = dict(_TEST_DICT)
   field = config_dict.FieldReference(_TEST_FIELD)
@@ -115,6 +130,15 @@ _JSON_TEST_DICT = ('{"dict": {"float": -1.23, "int": 23},'
                    ' "ref": {"int": 0},'
                    ' "ref2": {"int": 0},'
                    ' "string": "tom"}')
+_JSON_TEST_CONFIGDICT_WITH_DATACLASS = (
+    '{"dataclass": {"int_attribute": 1, "string_attribute": "test_string"},'
+    ' "dict": {"float": -1.23, "int": 23},'
+    ' "float": 2.34,'
+    ' "int": 2,'
+    ' "list": [1, 2],'
+    ' "string": "tom"}'
+)
+
 
 if six.PY2:
   _DICT_TYPE = "!!python/name:__builtin__.dict ''"
@@ -733,6 +757,15 @@ class ConfigDictTest(parameterized.TestCase):
     self.assertEqual(
         cfg_best_effort.to_json_best_effort(sort_keys=True).strip(),
         _JSON_BEST_EFFORT_TEST_DICT.strip())
+
+  def testJSONConversionWithDataclass(self):
+    """Tests JSON serialization when the configdict contains a dataclass."""
+    self.assertEqual(
+        _TEST_CONFIGDICT_WITH_DATACLASS.to_json_best_effort(
+            sort_keys=True
+        ).strip(),
+        _JSON_TEST_CONFIGDICT_WITH_DATACLASS.strip(),
+    )
 
   def testJSONConversionTopLevel(self):
     """Tests JSON serialization."""
