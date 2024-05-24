@@ -142,6 +142,14 @@ class TypedConfigFlagsTest(absltest.TestCase):
     self.assertIsInstance(result.baseline_model.qux, int)
     self.assertIsNone(result.my_model.qux)
 
+  def test_flag_config_dataclass_repeated_arg_use_last(self):
+    result = test_flags(
+        _CONFIG, '.baseline_model.qux=10', '.baseline_model.qux=12'
+    )
+    self.assertEqual(result.baseline_model.qux, 12)
+    self.assertIsInstance(result.baseline_model.qux, int)
+    self.assertIsNone(result.my_model.qux)
+
   def test_custom_flag_parsing_shared_default(self):
     result = test_flags(_CONFIG, '.baseline_model.foo=324')
     result1 = test_flags(_CONFIG, '.baseline_model.foo=123')

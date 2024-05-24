@@ -705,7 +705,8 @@ class _ConfigFlag(flags.Flag):
 
   def _GetOverrides(self, argv):
     """Parses the command line arguments for the overrides."""
-    overrides = []
+    # We use a dict to keep the order of the overrides.
+    overrides = dict()
     config_index = self._FindConfigSpecified(argv)
     for i, arg in enumerate(argv):
       if re.match(r'-{{1,2}}(no)?{}\.'.format(self.name), arg):
@@ -713,8 +714,11 @@ class _ConfigFlag(flags.Flag):
           raise FlagOrderError('Found {} in argv before a value for --{} '
                                'was specified'.format(arg, self.name))
         arg_name = arg.split('=', 1)[0]
-        overrides.append(arg_name.split('.', 1)[1])
-    return overrides
+        override_name = arg_name.split('.', 1)[1]
+        # Reinsert override_name into overrides to keep the order of
+        # the "last" flag.
+        overrides[override_name] = overrides.pop(override_name, None)
+    return list(overrides)
 
   def _FindConfigSpecified(self, argv):
     """Finds element in argv specifying the value of the config flag.
