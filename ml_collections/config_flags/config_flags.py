@@ -20,11 +20,13 @@ import dataclasses
 import enum
 import errno
 import functools as ft
-import imp
 import os
 import re
 import sys
 import traceback
+import importlib.util
+import importlib.machinery
+
 from typing import Any, Callable, Dict, Generic, List, MutableMapping, Optional, Sequence, Tuple, Type, TypeVar
 
 from absl import flags
@@ -41,6 +43,15 @@ SetValue = config_path.set_value
 
 # Prevent this module being considered for `FLAGS.find_module_defining_flag`.
 flags._helpers.disclaim_module_ids.add(id(sys.modules[__name__]))  # pylint: disable=protected-access
+
+
+def load_source(modname, filename):
+  loader = importlib.machinery.SourceFileLoader(modname, filename)
+  spec = importlib.util.spec_from_file_location(modname, filename, loader=loader)
+  module = importlib.util.module_from_spec(spec)
+  # sys.modules[module.__name__] = module
+  loader.exec_module(module)
+  return module
 
 
 class _LiteralParser(flags.ArgumentParser):
@@ -560,7 +571,7 @@ def _LoadConfigModule(name: str, path: str):
 
   # Works for relative paths.
   with ignoring_errors.Attempt('Relative path', path):
-    config_module = imp.load_source(name, path)
+    config_module = load_source(name, path)
     return config_module
 
   # Nothing worked. Log the paths that were attempted.
