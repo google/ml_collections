@@ -37,7 +37,7 @@ setup(
     url='https://github.com/google/ml_collections',
     license='Apache 2.0',
     # Contained modules and scripts.
-    packages=find_namespace_packages(exclude=['*_test.py']),
+    packages=find_namespace_packages(exclude=['*_test.py', 'docs*']),
     install_requires=_parse_requirements('requirements.txt'),
     tests_require=_parse_requirements('requirements-test.txt'),
     python_requires='>=2.6',
