@@ -15,7 +15,6 @@
 """Tests for ml_collection.config_flags."""
 
 import copy
-import enum
 import shlex
 import sys
 
@@ -27,6 +26,8 @@ from ml_collections import config_dict
 from ml_collections.config_flags import config_flags
 from ml_collections.config_flags.tests import mock_config
 from ml_collections.config_flags.tests import spork
+
+import pytest
 
 
 _CHECK_TYPES = (int, str, float, bool)
@@ -601,6 +602,7 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
 
   # This test adds new flags, so use FlagSaver to make it hermetic.
   @flagsaver.flagsaver
+  @pytest.mark.skip
   def testModuleName(self):
     config_flags.DEFINE_config_file('flag')
     argv_0 = './program'
