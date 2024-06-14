@@ -18,3 +18,12 @@ py_library(
         "//ml_collections/config_dict",
     ],
 )
+
+py_library(
+    name = "conftest",
+    srcs = ["conftest.py"],
+    deps = [
+        # pip: absl/flags
+        # pip: pytest
+    ],
+)

@@ -21,11 +21,11 @@ import functools
 import json
 import pickle
 import sys
+from unittest import mock
 
 from absl.testing import absltest
 from absl.testing import parameterized
 from ml_collections import config_dict
-import mock
 import six
 import yaml
 
@@ -138,6 +138,7 @@ _JSON_TEST_CONFIGDICT_WITH_DATACLASS = (
     ' "list": [1, 2],'
     ' "string": "tom"}'
 )
+_CLASS_NAME = 'config_dict_test'
 
 
 if six.PY2:
@@ -146,7 +147,8 @@ if six.PY2:
 else:
   _DICT_TYPE = "!!python/name:builtins.dict ''"
   _UNSERIALIZABLE_MSG = (
-      "unserializable object: <class '__main__._TestClassNoStr'>")
+      f"unserializable object: <class '{_CLASS_NAME}._TestClassNoStr'>"
+  )
 
 _TYPES = {
     'dict_type': _DICT_TYPE,
@@ -168,8 +170,9 @@ _JSON_BEST_EFFORT_TEST_DICT = (
     ' "set": [1, 2, 3],'
     ' "string": "tom",'
     ' "unserializable": "unserializable object: '
-    '<class \'__main__._TestClass\'>",'
-    ' "unserializable_no_str": "%s"}') % _UNSERIALIZABLE_MSG
+    f"<class '{_CLASS_NAME}._TestClass'>\","
+    f' "unserializable_no_str": "{_UNSERIALIZABLE_MSG}"}}'
+)
 
 _REPR_TEST_DICT = """
 dict:
