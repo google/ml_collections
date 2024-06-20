@@ -1364,8 +1364,10 @@ class ConfigDict:
           #   # It is unclear what `this.b` should be when `this.a` is updated.
           #   this.a = 10
           #   # this.b?
-          raise TypeError('Cannot update a FieldReference from another '
-                          'FieldReference')
+          raise TypeError(
+              'Cannot update a FieldReference from another '
+              f'FieldReference: {key!r}'
+          )
         else:
           self[key] = value
 
