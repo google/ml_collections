@@ -1217,6 +1217,14 @@ class ConfigDictTest(parameterized.TestCase):
     with self.assertRaisesRegex(AttributeError, 'Did you.*integer.*'):
       cfg.get_type('integre')
 
+  def testFieldRefConvertDictFalse(self):
+    config = config_dict.ConfigDict(
+        initial_dictionary={'a': {}},
+        convert_dict=False,
+    )
+    config.b = config.get_ref('a')
+    self.assertIsInstance(config.b, dict)
+
 
 class ConfigDictUpdateTest(absltest.TestCase):
 

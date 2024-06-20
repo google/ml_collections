@@ -880,14 +880,15 @@ class ConfigDict:
         raise TypeError('Could not override field \'{}\' (reference). {}'
                         .format(key, str(e)))
 
-    if isinstance(value, dict) and self._convert_dict:
-      value = ConfigDict(value, self._type_safe)
-    elif isinstance(value, FieldReference):
-      # TODO(sergomez): We should consider using value.get_type().
-      ref_type = _NoneType if value.empty() else type(value.get())
-      if ref_type is dict or ref_type is FrozenConfigDict:
-        value_cd = ConfigDict(value.get(), self._type_safe)
-        value.set(value_cd, False)
+    if self._convert_dict:
+      if isinstance(value, dict):
+        value = ConfigDict(value, self._type_safe)
+      elif isinstance(value, FieldReference):
+        # TODO(sergomez): We should consider using value.get_type().
+        ref_type = _NoneType if value.empty() else type(value.get())
+        if ref_type is dict or ref_type is FrozenConfigDict:
+          value_cd = ConfigDict(value.get(), self._type_safe)
+          value.set(value_cd, False)
 
     self._fields[key] = value
 
