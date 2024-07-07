@@ -1925,6 +1925,8 @@ class CustomJSONEncoder(json.JSONEncoder):
       return obj.get()
     elif isinstance(obj, ConfigDict):
       return obj._fields
+    elif isinstance(obj, type):
+      return str(obj)
     else:
       raise TypeError('{} is not JSON serializable. Instead use '
                       'ConfigDict.to_json_best_effort()'.format(type(obj)))

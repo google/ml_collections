@@ -29,6 +29,13 @@ from ml_collections import config_dict
 import six
 import yaml
 
+
+@dataclasses.dataclass
+class _TestDataclass:
+  string_attribute: str
+  int_attribute: int
+
+
 _TEST_FIELD = {'int': 0}
 _TEST_DICT = {
     'float': 2.34,
@@ -39,6 +46,7 @@ _TEST_DICT = {
         'float': -1.23,
         'int': 23
     },
+    'type': _TestDataclass,
 }
 
 
@@ -81,13 +89,8 @@ _TEST_DICT_CHANGE_FLOAT_NAME = {
         'double': -1.23,
         'int': 23
     },
+    'type': _TestDataclass,
 }
-
-
-@dataclasses.dataclass
-class _TestDataclass:
-  string_attribute: str
-  int_attribute: int
 
 
 _TEST_DICT_WITH_DATACLASS = dict(_TEST_DICT)
@@ -123,22 +126,29 @@ def _get_test_config_dict_best_effort():
   return config_dict.ConfigDict(_get_test_dict_best_effort())
 
 
+_CLASS_NAME = 'config_dict_test'
+
 _JSON_TEST_DICT = ('{"dict": {"float": -1.23, "int": 23},'
                    ' "float": 2.34,'
                    ' "int": 2,'
                    ' "list": [1, 2],'
                    ' "ref": {"int": 0},'
                    ' "ref2": {"int": 0},'
-                   ' "string": "tom"}')
+                   ' "string": "tom",'
+                   ' "type": "'
+                   f"<class '{_CLASS_NAME}._TestDataclass'>"
+                   '"}')
 _JSON_TEST_CONFIGDICT_WITH_DATACLASS = (
     '{"dataclass": {"int_attribute": 1, "string_attribute": "test_string"},'
     ' "dict": {"float": -1.23, "int": 23},'
     ' "float": 2.34,'
     ' "int": 2,'
     ' "list": [1, 2],'
-    ' "string": "tom"}'
+    ' "string": "tom",'
+    ' "type": "'
+    f"<class '{_CLASS_NAME}._TestDataclass'>"
+    '"}'
 )
-_CLASS_NAME = 'config_dict_test'
 
 
 if six.PY2:
@@ -147,7 +157,7 @@ if six.PY2:
 else:
   _DICT_TYPE = "!!python/name:builtins.dict ''"
   _UNSERIALIZABLE_MSG = (
-      f"unserializable object: <class '{_CLASS_NAME}._TestClassNoStr'>"
+      f"<class '{_CLASS_NAME}._TestClassNoStr'>"
   )
 
 _TYPES = {
@@ -155,7 +165,8 @@ _TYPES = {
     'configdict_type': '!!python/object:ml_collections.config_dict.config_dict'
                        '.ConfigDict',
     'fieldreference_type': '!!python/object:ml_collections.config_dict'
-                           '.config_dict.FieldReference'
+                           '.config_dict.FieldReference',
+    'testdataclass_type': f"!!python/name:{_CLASS_NAME}._TestDataclass ''",
 }
 
 _JSON_BEST_EFFORT_TEST_DICT = (
@@ -169,7 +180,9 @@ _JSON_BEST_EFFORT_TEST_DICT = (
     ' "ref2": {"int": 0},'
     ' "set": [1, 2, 3],'
     ' "string": "tom",'
-    ' "unserializable": "unserializable object: '
+    ' "type": "'
+    f"<class '{_CLASS_NAME}._TestDataclass'>\","
+    ' "unserializable": "'
     f"<class '{_CLASS_NAME}._TestClass'>\","
     f' "unserializable_no_str": "{_UNSERIALIZABLE_MSG}"}}'
 )
@@ -191,6 +204,7 @@ ref: &id001 {fieldreference_type}
     int: 0
 ref2: *id001
 string: tom
+type: {testdataclass_type}
 """.format(**_TYPES)
 
 _STR_TEST_DICT = """
