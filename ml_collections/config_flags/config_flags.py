@@ -719,6 +719,12 @@ class _ConfigFlag(flags.Flag):
     self._sys_argv = sys_argv
     super(_ConfigFlag, self).__init__(**kwargs)
 
+  def _GetArgv(self):
+      """Lazily fetches sys.argv and expands any potential --flagfile=... arguments."""
+      argv = sys.argv if self._sys_argv is None else self._sys_argv
+      argv = flags.FLAGS.read_flags_from_files(argv, force_gnu=False)
+      return argv
+
   def _GetOverrides(self, argv):
     """Parses the command line arguments for the overrides."""
     # We use a dict to keep the order of the overrides.
@@ -755,8 +761,7 @@ class _ConfigFlag(flags.Flag):
     return self._FindConfigSpecified(argv) >= 0
 
   def _set_default(self, default):
-    if self._IsConfigSpecified(
-        sys.argv if self._sys_argv is None else self._sys_argv):
+    if self._IsConfigSpecified(self._GetArgv()):
       self.default = default
     else:
       super(_ConfigFlag, self)._set_default(default)  # pytype: disable=attribute-error
@@ -786,8 +791,7 @@ class _ConfigFlag(flags.Flag):
     config = super(_ConfigFlag, self)._parse(argument)
 
     # Get list or overrides
-    overrides = self._GetOverrides(
-        sys.argv if self._sys_argv is None else self._sys_argv)
+    overrides = self._GetOverrides(self._GetArgv())
     # Iterate over overridden fields and create valid parsers
     self._override_values = {}
     self._initialize_missing_parent_fields(config, overrides)
