@@ -668,7 +668,8 @@ class ConfigDict:
         True).
       convert_dict: If set to True, all dict used as value in the ConfigDict
         will automatically be converted to ConfigDict (default: True).
-      allow_dotted_keys: If set to True, keys can contain `.`.
+      allow_dotted_keys: If set to True, keys can contain `.`. Integer and float
+        keys are always allowed to have dots.
       sort_keys: If `True` (default), keys are sorted in alphabetical order.
     """
 
@@ -851,7 +852,11 @@ class ConfigDict:
       raise AttributeError(e)
 
   def __setitem__(self, key, value):
-    if not self._allow_dotted_keys and '.' in key:
+    if (
+        not self._allow_dotted_keys
+        and not isinstance(key, (int, float))
+        and '.' in key
+    ):
       raise ValueError(
           'ConfigDict does not accept dots in field names (when'
           f' `allow_dotted_keys=False`), but the key {key} contains one.'
@@ -862,7 +867,9 @@ class ConfigDict:
                    'config is locked. Other fields present: "{}"')
       raise KeyError(
           self._generate_did_you_mean_message(
-              key, error_msg.format(key, self._fields)))
+              key, error_msg.format(key, self._fields)
+          )
+      )
 
     if key in self._fields:
       field = self._fields[key]
@@ -893,6 +900,8 @@ class ConfigDict:
     self._fields[key] = value
 
   def _generate_did_you_mean_message(self, request, message=''):
+    if isinstance(request, (int, float)):
+      return message
     matches = difflib.get_close_matches(request, self.keys(), 1, 0.75)
     if matches:
       if message:
@@ -906,7 +915,11 @@ class ConfigDict:
       raise KeyError('This ConfigDict is locked, you have to unlock it before '
                      'trying to delete a field.')
 
-    if not self._allow_dotted_keys and '.' in key:
+    if (
+        not self._allow_dotted_keys
+        and not isinstance(key, (int, float))
+        and '.' in key
+    ):
       # As per the check in __setitem__ above, keys cannot contain dots.
       # Hence, we can use dots to do recursive calls.
       key, rest = key.split('.', 1)
@@ -919,7 +932,11 @@ class ConfigDict:
       raise KeyError(self._generate_did_you_mean_message(key, str(e)))
 
   def __getitem__(self, key: str):
-    if not self._allow_dotted_keys and '.' in key:
+    if (
+        not self._allow_dotted_keys
+        and not isinstance(key, (int, float))
+        and '.' in key
+    ):
       # As per the check in __setitem__ above, keys cannot contain dots.
       # Hence, we can use dots to do recursive calls.
       key, rest = key.split('.', 1)

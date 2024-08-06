@@ -1546,6 +1546,26 @@ class ConfigDictUpdateTest(absltest.TestCase):
     del cfg['a.b.c']
     self.assertEqual(cfg.to_dict(), {})
 
+  def testIntorFloatKey(self):
+    cfg = config_dict.ConfigDict({1: 1})
+    cfg[1] = 2
+    self.assertEqual(cfg[1], 2)
+    self.assertEqual(cfg.to_dict(), {1: 2})
+
+    del cfg[1]
+    self.assertEqual(cfg.to_dict(), {})
+
+    cfg = config_dict.ConfigDict({1.1: 1})
+    cfg[1.1] = 2
+    self.assertEqual(cfg[1.1], 2)
+
+    with self.assertRaises(KeyError):
+      _ = cfg[1]
+    self.assertEqual(cfg.to_dict(), {1.1: 2})
+
+    del cfg[1.1]
+    self.assertEqual(cfg.to_dict(), {})
+
 
 class CreateTest(absltest.TestCase):
 
