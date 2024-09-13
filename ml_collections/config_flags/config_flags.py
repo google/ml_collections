@@ -41,8 +41,9 @@ GetValue = config_path.get_value
 GetType = config_path.get_type
 SetValue = config_path.set_value
 
-# Prevent this module being considered for `FLAGS.find_module_defining_flag`.
-flags._helpers.disclaim_module_ids.add(id(sys.modules[__name__]))  # pylint: disable=protected-access
+# Any flags defined via any of the config_flags.DEFINE_config_*() functions
+# should be attributed to the caller of that function rather than this module.
+flags.disclaim_key_flags()
 
 
 def _load_source(module_name: str, module_path: str) -> types.ModuleType:
