@@ -34,7 +34,6 @@ import re
 from typing import Any, Mapping, Optional, Tuple
 
 from absl import logging
-import contextlib2
 import six
 import yaml
 from yaml import representer
@@ -1288,7 +1287,7 @@ class ConfigDict:
 
     super(ConfigDict, self).__setattr__('_type_safe', False)
     try:
-      with contextlib2.ExitStack() as stack:
+      with contextlib.ExitStack() as stack:
         for manager in managers:
           stack.enter_context(manager())
         yield self
