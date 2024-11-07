@@ -902,7 +902,9 @@ class ConfigDict:
   def _generate_did_you_mean_message(self, request, message=''):
     if isinstance(request, (int, float)):
       return message
-    matches = difflib.get_close_matches(request, self.keys(), 1, 0.75)
+    # Keys can be integers,... so normalizing them to strings.
+    keys = tuple(str(k) for k in self.keys())
+    matches = difflib.get_close_matches(request, keys, 1, 0.75)
     if matches:
       if message:
         message += '\n'

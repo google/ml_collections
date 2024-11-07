@@ -42,10 +42,7 @@ _TEST_DICT = {
     'string': 'tom',
     'int': 2,
     'list': [1, 2],
-    'dict': {
-        'float': -1.23,
-        'int': 23
-    },
+    'dict': {'float': -1.23, 'int': 23},
     'type': _TestDataclass,
 }
 
@@ -65,7 +62,7 @@ class _TestClass(six.with_metaclass(abc.ABCMeta, object)):
 _test_object = _TestClass()
 
 
-class _TestClassNoStr():
+class _TestClassNoStr:
   pass
 
 
@@ -75,7 +72,7 @@ _TEST_DICT_BEST_EFFORT.update({
     'unserializable_no_str': _TestClassNoStr,
     'function': _test_function,
     'object': _test_object,
-    'set': {1, 2, 3}
+    'set': {1, 2, 3},
 })
 
 # This is how we expect the _TEST_DICT to look after we change the name float to
@@ -85,10 +82,7 @@ _TEST_DICT_CHANGE_FLOAT_NAME = {
     'string': 'tom',
     'int': 2,
     'list': [1, 2],
-    'dict': {
-        'double': -1.23,
-        'int': 23
-    },
+    'dict': {'double': -1.23, 'int': 23},
     'type': _TestDataclass,
 }
 
@@ -128,16 +122,18 @@ def _get_test_config_dict_best_effort():
 
 _CLASS_NAME = 'config_dict_test'
 
-_JSON_TEST_DICT = ('{"dict": {"float": -1.23, "int": 23},'
-                   ' "float": 2.34,'
-                   ' "int": 2,'
-                   ' "list": [1, 2],'
-                   ' "ref": {"int": 0},'
-                   ' "ref2": {"int": 0},'
-                   ' "string": "tom",'
-                   ' "type": "'
-                   f"<class '{_CLASS_NAME}._TestDataclass'>"
-                   '"}')
+_JSON_TEST_DICT = (
+    '{"dict": {"float": -1.23, "int": 23},'
+    ' "float": 2.34,'
+    ' "int": 2,'
+    ' "list": [1, 2],'
+    ' "ref": {"int": 0},'
+    ' "ref2": {"int": 0},'
+    ' "string": "tom",'
+    ' "type": "'
+    f"<class '{_CLASS_NAME}._TestDataclass'>"
+    '"}'
+)
 _JSON_TEST_CONFIGDICT_WITH_DATACLASS = (
     '{"dataclass": {"int_attribute": 1, "string_attribute": "test_string"},'
     ' "dict": {"float": -1.23, "int": 23},'
@@ -156,16 +152,16 @@ if six.PY2:
   _UNSERIALIZABLE_MSG = "unserializable object of type: <type 'classobj'>"
 else:
   _DICT_TYPE = "!!python/name:builtins.dict ''"
-  _UNSERIALIZABLE_MSG = (
-      f"<class '{_CLASS_NAME}._TestClassNoStr'>"
-  )
+  _UNSERIALIZABLE_MSG = f"<class '{_CLASS_NAME}._TestClassNoStr'>"
 
 _TYPES = {
     'dict_type': _DICT_TYPE,
-    'configdict_type': '!!python/object:ml_collections.config_dict.config_dict'
-                       '.ConfigDict',
-    'fieldreference_type': '!!python/object:ml_collections.config_dict'
-                           '.config_dict.FieldReference',
+    'configdict_type': (
+        '!!python/object:ml_collections.config_dict.config_dict.ConfigDict'
+    ),
+    'fieldreference_type': (
+        '!!python/object:ml_collections.config_dict.config_dict.FieldReference'
+    ),
     'testdataclass_type': f"!!python/name:{_CLASS_NAME}._TestDataclass ''",
 }
 
@@ -300,12 +296,12 @@ class ConfigDictTest(parameterized.TestCase):
     self.assertEqual(cfg.float_field, 2.0)
     # Test that overriding with Unicode strings works.
     cfg.string_field = '42'
-    cfg.string_field = u'42'
+    cfg.string_field = '42'
     self.assertEqual(cfg.string_field, '42')
     # Test that overriding a Unicode field with a `str` type works.
-    cfg.unicode_string_field = u'42'
     cfg.unicode_string_field = '42'
-    self.assertEqual(cfg.unicode_string_field, u'42')
+    cfg.unicode_string_field = '42'
+    self.assertEqual(cfg.unicode_string_field, '42')
     # Test that overriding a list with a tuple works.
     cfg.tuple_field = [1, 2, 3]
     cfg.tuple_field = (1, 2)
@@ -378,17 +374,17 @@ class ConfigDictTest(parameterized.TestCase):
     """Tests type safe checking."""
     cfg = _get_test_config_dict()
 
-    with self.assertRaisesRegex(TypeError, 'field \'float\''):
+    with self.assertRaisesRegex(TypeError, "field 'float'"):
       cfg.float = 'tom'
 
     # Test that float cannot be assigned to int.
-    with self.assertRaisesRegex(TypeError, 'field \'int\''):
+    with self.assertRaisesRegex(TypeError, "field 'int'"):
       cfg.int = 12.8
 
-    with self.assertRaisesRegex(TypeError, 'field \'string\''):
+    with self.assertRaisesRegex(TypeError, "field 'string'"):
       cfg.string = -123
 
-    with self.assertRaisesRegex(TypeError, 'field \'float\''):
+    with self.assertRaisesRegex(TypeError, "field 'float'"):
       cfg.dict.float = 'string'
 
     # Ensure None is ignored by type safety
@@ -401,9 +397,7 @@ class ConfigDictTest(parameterized.TestCase):
         'float': 3.0,
         'list': [config_dict.ConfigDict({'float': 1.0})],
         'tuple': [config_dict.ConfigDict({'float': 1.0})],
-        'dict': {
-            'float': 1.0
-        }
+        'dict': {'float': 1.0},
     })
 
     with cfg.ignore_type():
@@ -425,8 +419,7 @@ class ConfigDictTest(parameterized.TestCase):
     cfg = config_dict.ConfigDict()
     cfg.field = 2
     cfg.dict_field = {'float': 1.23, 'integer': 3}
-    cfg.ref = config_dict.FieldReference(
-        config_dict.ConfigDict({'integer': 0}))
+    cfg.ref = config_dict.FieldReference(config_dict.ConfigDict({'integer': 0}))
     cfg.lock()
 
     cfg.field = -4
@@ -447,8 +440,7 @@ class ConfigDictTest(parameterized.TestCase):
     """Tests unlock mechanism."""
     cfg = config_dict.ConfigDict()
     cfg.dict_field = {'float': 1.23, 'integer': 3}
-    cfg.ref = config_dict.FieldReference(
-        config_dict.ConfigDict({'integer': 0}))
+    cfg.ref = config_dict.FieldReference(config_dict.ConfigDict({'integer': 0}))
     cfg.lock()
     with cfg.unlocked():
       cfg.new_field = 2
@@ -574,16 +566,24 @@ class ConfigDictTest(parameterized.TestCase):
       self.assertNotIsInstance(v, config_dict.FieldReference)
     self.assertIn(('x4', ref), cfg.items(preserve_field_references=True))
 
+  def testIntKeys(self):
+    """Tests items FieldReference resolution."""
+    data = {
+        0: 1,
+        1: 2,
+        2: 3,
+        'a': 4,
+    }
+    cfg = config_dict.ConfigDict(data, sort_keys=False)
+    self.assertEqual(cfg.to_dict(), data)
+
   def testEquals(self):
     """Tests __eq__ and __ne__ methods."""
     some_dict = {
         'float': 1.23,
         'integer': 3,
         'list': [1, 2],
-        'dict': {
-            'a': {},
-            'b': 'string'
-        }
+        'dict': {'a': {}, 'b': 'string'},
     }
     cfg = config_dict.ConfigDict(some_dict)
     cfg_other = config_dict.ConfigDict(some_dict)
@@ -660,17 +660,20 @@ class ConfigDictTest(parameterized.TestCase):
     cfg.learning_rate = 0.01
     cfg.lock()
 
-    with self.assertRaisesRegex(AttributeError,
-                                'Did you mean.*learning_rate.*'):
+    with self.assertRaisesRegex(
+        AttributeError, 'Did you mean.*learning_rate.*'
+    ):
       _ = cfg.laerning_rate
 
     with cfg.unlocked():
-      with self.assertRaisesRegex(AttributeError,
-                                  'Did you mean.*learning_rate.*'):
+      with self.assertRaisesRegex(
+          AttributeError, 'Did you mean.*learning_rate.*'
+      ):
         del cfg.laerning_rate
 
-    with self.assertRaisesRegex(AttributeError,
-                                'Did you mean.*learning_rate.*'):
+    with self.assertRaisesRegex(
+        AttributeError, 'Did you mean.*learning_rate.*'
+    ):
       cfg.laerning_rate = 0.02
 
     self.assertEqual(cfg.learning_rate, 0.01)
@@ -745,7 +748,8 @@ class ConfigDictTest(parameterized.TestCase):
     """Tests JSON serialization."""
     cfg = _get_test_config_dict()
     self.assertEqual(
-        cfg.to_json(sort_keys=True).strip(), _JSON_TEST_DICT.strip())
+        cfg.to_json(sort_keys=True).strip(), _JSON_TEST_DICT.strip()
+    )
 
     cfg = _get_test_config_dict_best_effort()
     with self.assertRaises(TypeError):
@@ -767,13 +771,14 @@ class ConfigDictTest(parameterized.TestCase):
     # Check that best effort option doesn't break default functionality
     cfg = _get_test_config_dict()
     self.assertEqual(
-        cfg.to_json_best_effort(sort_keys=True).strip(),
-        _JSON_TEST_DICT.strip())
+        cfg.to_json_best_effort(sort_keys=True).strip(), _JSON_TEST_DICT.strip()
+    )
 
     cfg_best_effort = _get_test_config_dict_best_effort()
     self.assertEqual(
         cfg_best_effort.to_json_best_effort(sort_keys=True).strip(),
-        _JSON_BEST_EFFORT_TEST_DICT.strip())
+        _JSON_BEST_EFFORT_TEST_DICT.strip(),
+    )
 
   def testJSONConversionWithDataclass(self):
     """Tests JSON serialization when the configdict contains a dataclass."""
@@ -873,7 +878,7 @@ class ConfigDictTest(parameterized.TestCase):
         'float': 2.3,
         'integer': 1,
         'field_ref1': field,
-        'field_ref2': field
+        'field_ref2': field,
     }
     cfg.ref = cfg.dict
     cfg.self_ref = cfg
@@ -888,27 +893,34 @@ class ConfigDictTest(parameterized.TestCase):
     self.assertEqual(type(pure_dict['dict']), dict)
 
     # Ensure FieldReferences are not preserved, by default.
-    self.assertNotIsInstance(pure_dict['dict']['field_ref1'],
-                             config_dict.FieldReference)
-    self.assertNotIsInstance(pure_dict['dict']['field_ref2'],
-                             config_dict.FieldReference)
+    self.assertNotIsInstance(
+        pure_dict['dict']['field_ref1'], config_dict.FieldReference
+    )
+    self.assertNotIsInstance(
+        pure_dict['dict']['field_ref2'], config_dict.FieldReference
+    )
     self.assertEqual(pure_dict['dict']['field_ref1'], field.get())
     self.assertEqual(pure_dict['dict']['field_ref2'], field.get())
 
     pure_dict_with_refs = cfg.to_dict(preserve_field_references=True)
     self.assertEqual(type(pure_dict_with_refs), dict)
     self.assertEqual(type(pure_dict_with_refs['dict']), dict)
-    self.assertIsInstance(pure_dict_with_refs['dict']['field_ref1'],
-                          config_dict.FieldReference)
-    self.assertIsInstance(pure_dict_with_refs['dict']['field_ref2'],
-                          config_dict.FieldReference)
-    self.assertIs(pure_dict_with_refs['dict']['field_ref1'],
-                  pure_dict_with_refs['dict']['field_ref2'])
+    self.assertIsInstance(
+        pure_dict_with_refs['dict']['field_ref1'], config_dict.FieldReference
+    )
+    self.assertIsInstance(
+        pure_dict_with_refs['dict']['field_ref2'], config_dict.FieldReference
+    )
+    self.assertIs(
+        pure_dict_with_refs['dict']['field_ref1'],
+        pure_dict_with_refs['dict']['field_ref2'],
+    )
 
     # Ensure FieldReferences in the dict are not the same as the FieldReferences
     # in the original ConfigDict.
-    self.assertIsNot(pure_dict_with_refs['dict']['field_ref1'],
-                     cfg.dict['field_ref1'])
+    self.assertIsNot(
+        pure_dict_with_refs['dict']['field_ref1'], cfg.dict['field_ref1']
+    )
 
   def testToDictTypeUnsafe(self):
     """Tests interaction between ignore_type() and to_dict()."""
@@ -933,20 +945,22 @@ class ConfigDictTest(parameterized.TestCase):
         'field_ref_int1': int_field,
         'field_ref_int2': int_field + 5,
         'placeholder': config_dict.placeholder(str),
-        'cfg': config_dict.ConfigDict({
-            'integer': 1,
-            'int_field': int_field
-        })
+        'cfg': config_dict.ConfigDict({'integer': 1, 'int_field': int_field}),
     }
 
     cfg.ref = cfg.dict
     cfg.self_ref = cfg
 
     cfg_resolved = cfg.copy_and_resolve_references()
-    for field, value in [('float', 2.3), ('integer', 1),
-                         ('field_ref1', 'a string'), ('field_ref2', 'a string'),
-                         ('field_ref_int1', 5), ('field_ref_int2', 10),
-                         ('placeholder', None)]:
+    for field, value in [
+        ('float', 2.3),
+        ('integer', 1),
+        ('field_ref1', 'a string'),
+        ('field_ref2', 'a string'),
+        ('field_ref_int1', 5),
+        ('field_ref_int2', 10),
+        ('placeholder', None),
+    ]:
       self.assertEqual(getattr(cfg_resolved.dict, field), value)
     for field, value in [('integer', 1), ('int_field', 5)]:
       self.assertEqual(getattr(cfg_resolved.dict.cfg, field), value)
@@ -979,7 +993,9 @@ class ConfigDictTest(parameterized.TestCase):
     self.assertFalse(cfg_locked_resolved.is_type_safe)
 
     for resolved in [
-        cfg_type_safe_locked_resolved, cfg_resolved, cfg_locked_resolved
+        cfg_type_safe_locked_resolved,
+        cfg_resolved,
+        cfg_locked_resolved,
     ]:
       self.assertEqual(resolved.field_ref1, 5)
       self.assertEqual(resolved.field_ref2, 10)
@@ -1017,7 +1033,7 @@ class ConfigDictTest(parameterized.TestCase):
         'float': 2.34,
         'test_dict_1': _TEST_DICT,
         'test_dict_2': _TEST_DICT,
-        'list': x
+        'list': x,
     }
     self_ref_dict['self'] = self_ref_dict
     self_ref_dict['self_fr'] = config_dict.FieldReference(self_ref_dict)
@@ -1169,12 +1185,9 @@ class ConfigDictTest(parameterized.TestCase):
   def testPlaceholder(self):
     """Tests whether FieldReference works correctly as a placeholder."""
     cfg_element = config_dict.FieldReference(0)
-    cfg = config_dict.ConfigDict({
-        'element': cfg_element,
-        'nested': {
-            'element': cfg_element
-        }
-    })
+    cfg = config_dict.ConfigDict(
+        {'element': cfg_element, 'nested': {'element': cfg_element}}
+    )
 
     # Type mismatch.
     with self.assertRaises(TypeError):
@@ -1304,8 +1317,9 @@ class ConfigDictUpdateTest(absltest.TestCase):
     cfg = config_dict.ConfigDict()
     cfg.x = 5
     cfg.y = 9
-    with self.assertRaisesRegex(TypeError,
-                                'update expected at most 1 arguments, got 2'):
+    with self.assertRaisesRegex(
+        TypeError, 'update expected at most 1 arguments, got 2'
+    ):
       cfg.update({'x': 4}, {'z': 2})
 
   def testUpdateNested(self):
@@ -1341,11 +1355,9 @@ class ConfigDictUpdateTest(absltest.TestCase):
     # from FieldReference.
     error_message = 'Cannot update a FieldReference from another FieldReference'
     with self.assertRaisesRegex(TypeError, error_message):
-      cfg.update(
-          config_dict.ConfigDict(dict(a=config_dict.FieldReference(2))))
+      cfg.update(config_dict.ConfigDict(dict(a=config_dict.FieldReference(2))))
     with self.assertRaisesRegex(TypeError, error_message):
-      cfg.update(
-          config_dict.ConfigDict(dict(b=config_dict.FieldReference(2))))
+      cfg.update(config_dict.ConfigDict(dict(b=config_dict.FieldReference(2))))
 
     # Updating empty ConfigDict with FieldReferences.
     ref = config_dict.FieldReference(1)
@@ -1382,14 +1394,16 @@ class ConfigDictUpdateTest(absltest.TestCase):
     cfg = config_dict.ConfigDict({'a': 1, 'b': {'c': {'d': 2}}})
     updates = {'a': 2, 'b.d.e': 3}
     with self.assertRaisesRegex(
-        KeyError, 'Key "b.d.e" cannot be set as "b.d" was not found.'):
+        KeyError, 'Key "b.d.e" cannot be set as "b.d" was not found.'
+    ):
       cfg.update_from_flattened_dict(updates)
 
   def testUpdateFromFlattenedWrongType(self):
     cfg = config_dict.ConfigDict({'a': 1, 'b': {'c': {'d': 2}}})
     updates = {'a.b.c': 2}
     with self.assertRaisesRegex(
-        KeyError, 'Key "a.b.c" cannot be updated as "a" is not a ConfigDict.'):
+        KeyError, 'Key "a.b.c" cannot be updated as "a" is not a ConfigDict.'
+    ):
       cfg.update_from_flattened_dict(updates)
 
   def testUpdateFromFlattenedTupleListConversion(self):
@@ -1399,7 +1413,7 @@ class ConfigDictUpdateTest(absltest.TestCase):
             'c': {
                 'd': (1, 2, 3, 4, 5),
             }
-        }
+        },
     })
     updates = {
         'b.c.d': [2, 4, 6, 8],
@@ -1425,7 +1439,7 @@ class ConfigDictUpdateTest(absltest.TestCase):
                     'g': 7,
                 }),
             ],
-        }
+        },
     })
     updates = {
         'b.c.d[2]': 9,
@@ -1440,7 +1454,7 @@ class ConfigDictUpdateTest(absltest.TestCase):
     # ConfigDict containing two strings with incompatible encodings.
     cfg = config_dict.ConfigDict({
         'dill': pickle.dumps(_test_function, protocol=pickle.HIGHEST_PROTOCOL),
-        'unicode': u'unicode string'
+        'unicode': 'unicode string',
     })
 
     expected_error = config_dict.JSONDecodeError if six.PY2 else TypeError
@@ -1577,7 +1591,8 @@ class CreateTest(absltest.TestCase):
   def testNested(self):
     config = config_dict.create(
         data=config_dict.create(game='freeway'),
-        model=config_dict.create(num_hidden=1000))
+        model=config_dict.create(num_hidden=1000),
+    )
 
     dct = {'data': {'game': 'freeway'}, 'model': {'num_hidden': 1000}}
     self.assertEqual(config.to_dict(), dct)
@@ -1624,7 +1639,8 @@ class PlaceholderTest(absltest.TestCase):
     test_dict = {'field': 10}
     config = config_dict.create(
         a=config_dict.required_placeholder(dict),
-        b=config_dict.FieldReference(test_dict.copy()))
+        b=config_dict.FieldReference(test_dict.copy()),
+    )
     # ConfigDict initialization converts dict to ConfigDict.
     self.assertEqual(test_dict, config.b.to_dict())
     config.a = test_dict
