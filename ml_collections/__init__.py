@@ -19,3 +19,7 @@ from ml_collections.config_dict import FieldReference
 from ml_collections.config_dict import FrozenConfigDict
 
 __all__ = ("ConfigDict", "FieldReference", "FrozenConfigDict")
+
+# A new PyPI release will be pushed every time `__version__` is increased.
+# When changing this, also update the CHANGELOG.md.
+__version__ = "0.1.1"

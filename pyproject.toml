@@ -1,0 +1,69 @@
+[project]
+# Project metadata. Available keys are documented at:
+# https://packaging.python.org/en/latest/specifications/declaring-project-metadata
+name = "ml_collections"
+description = "ML Collections is a library of Python collections designed for ML usecases."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [{name = "ML Collections Authors", email="ml-collections@google.com"}]
+classifiers = [  # List of https://pypi.org/classifiers/
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+keywords = []
+
+# pip dependencies of the project
+# Installed locally with `pip install -e .`
+dependencies = [
+    "absl-py",
+    "six",  # Could be removed
+    "PyYAML",  # Could make this optional ?
+]
+
+# `version` is automatically set by flit to use `ml_collections.__version__`
+dynamic = ["version"]
+
+[project.urls]
+homepage = "https://github.com/google/ml_collections"
+repository = "https://github.com/google/ml_collections"
+documentation = "https://ml-collections.readthedocs.io"
+
+[project.optional-dependencies]
+# Development deps (unittest, linting, formating,...)
+# Installed through `pip install -e .[dev]`
+dev = [
+    "pytest",
+    "pytest-xdist",
+    "pylint>=2.6.0",
+    "pyink",
+]
+
+[tool.pyink]
+# Formatting configuration to follow Google style-guide
+line-length = 80
+unstable = true
+pyink-indentation = 2
+pyink-use-majority-quotes = true
+
+[build-system]
+# Build system specify which backend is used to build/install the project (flit,
+# poetry, setuptools,...). All backends are supported by `pip install`
+requires = ["flit_core >=3.8,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.flit.sdist]
+# Flit specific options (files to exclude from the PyPI package).
+# If using another build backend (setuptools, poetry), you can remove this
+# section.
+exclude = [
+  # Do not release tests files on PyPI
+  "**/*_test.py",
+]
