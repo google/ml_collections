@@ -17,6 +17,7 @@
 import copy
 import shlex
 import sys
+import tempfile
 
 from absl import flags
 from absl.testing import absltest
@@ -831,6 +832,19 @@ class ConfigDictFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
       self.assertEqual(values.test_config.type_tuple,
                        serialize_parse('test_config.type_tuple',
                                        values.test_config.type_tuple))
+
+  def testFlagfile(self):
+    config = config_dict.ConfigDict()
+    config.foo = 3
+    config.bar = 4
+
+    with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+      f.write('--test_config.foo=7\n')
+      f.flush()
+      f.close()
+      values = _parse_flags(f'./program --flagfile={f.name}', config=config)
+      self.assertEqual(values.test_config.foo, 7)
+      self.assertEqual(values.test_config.bar, 4)
 
 
 def main():
