@@ -41,10 +41,10 @@ jobs:
   publish-job:
     # Only try to publish if:
     # * Repo is self (prevents running from forks)
-    # * Branch is `main`
+    # * Branch is `master`
     if: |
       github.repository == 'google/ml_collections'
-      && github.ref == 'refs/heads/main'
+      && github.ref == 'refs/heads/master'
     needs: pytest-job  # Only publish after tests are successful
     runs-on: ubuntu-latest
     permissions:
@@ -57,4 +57,3 @@ jobs:
       with:
         pypi-token: ${{ secrets.PYPI_API_TOKEN }}
         gh-token: ${{ secrets.GITHUB_TOKEN }}
-        parse-changelog: true
