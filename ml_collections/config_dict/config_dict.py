@@ -34,7 +34,6 @@ import re
 from typing import Any, Mapping, Optional, Tuple
 
 from absl import logging
-import six
 import yaml
 from yaml import representer
 
@@ -124,7 +123,7 @@ def _safe_cast(value, field_type, type_safe=False):
     return float(value)
 
   # The unicode/string to string exception.
-  if isinstance(value, six.string_types) and field_type in (str, six.text_type):
+  if isinstance(value, str) and field_type is str:
     return field_type(value)
 
   # tuple<->list conversion. JSON serialization converts lists to tuples, so
@@ -135,14 +134,8 @@ def _safe_cast(value, field_type, type_safe=False):
   if isinstance(value, list) and field_type is tuple:
     return tuple(value)
 
-  if isinstance(value, six.integer_types) and field_type in six.integer_types:
-    if six.PY2 and (isinstance(value, long) or field_type is long):
-      # Overriding an int with a long and viceversa should be possible.
-      # https://www.python.org/dev/peps/pep-0237/
-      return long(value)
-    else:
-      # In Python 3, there is only the `int` type.
-      return value
+  if isinstance(value, int) and field_type is int:
+    return value
 
   if type_safe and _is_type_safety_violation(value, field_type):
     raise TypeError(
@@ -160,7 +153,7 @@ def _get_computed_value(value_or_fieldreference):
 def _parse_key(key: str) -> Tuple[str, Optional[int]]:
   """Parse a ConfigDict key into to it's initial part and index (if any)."""
   key = key.split('.')[0]
-  index_match = re.match("(.*)\[([0-9]+)\]", key)
+  index_match = re.match(r"(.*)\[([0-9]+)\]", key)
   if index_match:
     key = index_match.group(1)
     index = int(index_match.group(2))
@@ -539,7 +532,7 @@ def _configdict_fill_seed(seed, initial_dictionary, visit_map=None):
   if isinstance(initial_dictionary, ConfigDict):
     iteritems = initial_dictionary.iteritems(preserve_field_references=True)
   else:
-    iteritems = six.iteritems(initial_dictionary)
+    iteritems = initial_dictionary.items()
 
   for key, value in iteritems:
     if id(value) in visit_map:
@@ -735,7 +728,7 @@ class ConfigDict:
       self
     """
     super(ConfigDict, self).__setattr__('_locked', False)
-    for element in six.itervalues(self._fields):
+    for element in self._fields.values():
       element = _get_computed_value(element)
 
       if isinstance(element, ConfigDict) and element.is_locked:
@@ -798,7 +791,7 @@ class ConfigDict:
       The key, value pairs in the config, sorted by key.
     """
     if preserve_field_references:
-      return six.iteritems(self._ordered_fields)
+      return self._ordered_fields.items()
     else:
       return [(k, self[k]) for k in self._ordered_fields]
 
@@ -978,7 +971,7 @@ class ConfigDict:
 
   def iterkeys(self):
     """Deterministically iterates over dictionary keys, in sorted order."""
-    return six.iterkeys(self._ordered_fields)
+    return self._ordered_fields.keys()
 
   def values(self, preserve_field_references=False):
     """Returns the list of all values in a config, sorted by their keys.
@@ -1238,7 +1231,7 @@ class ConfigDict:
                                                     self.convert_dict)
     visit_map[id(self)] = config_dict_copy
 
-    for key, value in six.iteritems(self._fields):
+    for key, value in self._fields.items():
       if isinstance(value, FieldReference):
         value = value.get()
 
@@ -1290,7 +1283,7 @@ class ConfigDict:
 
     managers = []
     visited = set()
-    fields = list(six.iteritems(self._fields))
+    fields = list(self._fields.items())
     while fields:
       field = fields.pop()
       if id(field) in visited:
@@ -1301,7 +1294,7 @@ class ConfigDict:
         managers.append(field.ignore_type)
       # Recursively add elements in nested collections.
       elif isinstance(field, collections_abc.Mapping):
-        fields.extend(six.iteritems(field))
+        fields.extend(field.items())
       elif isinstance(field, (collections_abc.Sequence, collections_abc.Set)):
         fields.extend(field)
 
@@ -1356,7 +1349,7 @@ class ConfigDict:
       if isinstance(other, ConfigDict):
         iteritems_kwargs['preserve_field_references'] = True
 
-      for key, value in six.iteritems(other, **iteritems_kwargs):  # pytype: disable=wrong-keyword-args
+      for key, value in other.items(**iteritems_kwargs):  # pytype: disable=wrong-keyword-args
         if key not in self:
           self[key] = value
         elif isinstance(self._fields[key], ConfigDict):
@@ -1468,7 +1461,7 @@ class ConfigDict:
     if strip_prefix:
       interesting_items = {
           key: value
-          for key, value in six.iteritems(flattened_dict)
+          for key, value in flattened_dict.items()
           if key.startswith(strip_prefix)
       }
     else:
@@ -1478,7 +1471,7 @@ class ConfigDict:
     # recurse into each one only once.
     children_to_update = {}
 
-    for full_key, value in six.iteritems(interesting_items):
+    for full_key, value in interesting_items.items():
       key = full_key[len(strip_prefix):] if strip_prefix else full_key
 
       # If the path is hierarchical, we'll need to tell the first component
@@ -1697,7 +1690,7 @@ def _frozenconfigdict_fill_seed(seed, initial_configdict, visit_map=None):
   visit_map = visit_map or {}
   visit_map[id(initial_configdict)] = seed
 
-  for key, value in six.iteritems(initial_configdict):
+  for key, value in initial_configdict.items():
     # This should never be raised due to elimination of references by
     # ConfigDict's iteritems
     if isinstance(value, FieldReference):
@@ -1894,7 +1887,7 @@ class FrozenConfigDict(ConfigDict):
                           '{}'.format(type(value)))
 
     fields_hash = 0
-    for key, value in six.iteritems(self._fields):
+    for key, value in self._fields.items():
       if isinstance(value, FrozenConfigDict):
         fields_hash += hash((hash(key), hash(value)))
       else:
