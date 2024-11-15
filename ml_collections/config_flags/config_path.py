@@ -66,7 +66,7 @@ def split(config_path: str) -> Tuple[Any]:
   try:
     node = ast.parse(config_path, mode='eval')
   except SyntaxError as e:
-    raise ValueError(e)
+    raise ValueError(f'Could not parse {config_path!r}: {e!r}') from None
   if isinstance(node, ast.Expression):
     result = _split_node(node.body)
     if isinstance(result, tuple):
