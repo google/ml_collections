@@ -26,7 +26,6 @@ from unittest import mock
 from absl.testing import absltest
 from absl.testing import parameterized
 from ml_collections import config_dict
-import six
 import yaml
 
 
@@ -52,7 +51,7 @@ def _test_function():
 
 
 # Having ABCMeta as a metaclass shouldn't break yaml serialization.
-class _TestClass(six.with_metaclass(abc.ABCMeta, object)):
+class _TestClass(metaclass=abc.ABCMeta):
 
   def __init__(self):
     self.variable_1 = 1
@@ -147,12 +146,8 @@ _JSON_TEST_CONFIGDICT_WITH_DATACLASS = (
 )
 
 
-if six.PY2:
-  _DICT_TYPE = "!!python/name:__builtin__.dict ''"
-  _UNSERIALIZABLE_MSG = "unserializable object of type: <type 'classobj'>"
-else:
-  _DICT_TYPE = "!!python/name:builtins.dict ''"
-  _UNSERIALIZABLE_MSG = f"<class '{_CLASS_NAME}._TestClassNoStr'>"
+_DICT_TYPE = "!!python/name:builtins.dict ''"
+_UNSERIALIZABLE_MSG = f"<class '{_CLASS_NAME}._TestClassNoStr'>"
 
 _TYPES = {
     'dict_type': _DICT_TYPE,
@@ -317,15 +312,11 @@ class ConfigDictTest(parameterized.TestCase):
     cfg.int_field = int_value
     cfg.int_field = long_value
     self.assertEqual(cfg.int_field, long_value)
-    if sys.version_info.major == 2:
-      expected = long
-    else:
-      expected = int
-    self.assertIsInstance(cfg.int_field, expected)
+    self.assertIsInstance(cfg.int_field, int)
     cfg.long_field = long_value
     cfg.long_field = int_value
     self.assertEqual(cfg.long_field, int_value)
-    self.assertIsInstance(cfg.long_field, expected)
+    self.assertIsInstance(cfg.long_field, int)
 
   def testOverrideCallable(self):
     """Test that overriding a callable with a callable works."""
@@ -492,9 +483,9 @@ class ConfigDictTest(parameterized.TestCase):
     """Tests iterkeys method."""
     some_dict = {'x1': 32, 'x2': 5.2, 'x3': 'str'}
     cfg = config_dict.ConfigDict(some_dict)
-    self.assertEqual(set(six.iterkeys(some_dict)), set(six.iterkeys(cfg)))
+    self.assertEqual(set(some_dict.keys()), set(cfg.keys()))
     # Test that keys are sorted
-    for k_ref, k in zip(sorted(six.iterkeys(cfg)), six.iterkeys(cfg)):
+    for k_ref, k in zip(sorted(cfg.keys()), cfg.keys()):
       self.assertEqual(k_ref, k)
 
   def testKeysMethod(self):
@@ -516,9 +507,9 @@ class ConfigDictTest(parameterized.TestCase):
     """Tests itervalues method."""
     some_dict = {'x1': 32, 'x2': 5.2, 'x3': 'str'}
     cfg = config_dict.ConfigDict(some_dict)
-    self.assertEqual(set(six.itervalues(some_dict)), set(six.itervalues(cfg)))
+    self.assertEqual(set(some_dict.values()), set(cfg.values()))
     # Test that items are sorted
-    for k_ref, v in zip(sorted(six.iterkeys(cfg)), six.itervalues(cfg)):
+    for k_ref, v in zip(sorted(cfg.keys()), cfg.values()):
       self.assertEqual(cfg[k_ref], v)
 
   def testValuesMethod(self):
@@ -1457,8 +1448,7 @@ class ConfigDictUpdateTest(absltest.TestCase):
         'unicode': 'unicode string',
     })
 
-    expected_error = config_dict.JSONDecodeError if six.PY2 else TypeError
-    with self.assertRaises(expected_error):
+    with self.assertRaises(TypeError):
       cfg.to_json()
 
   def testConvertDict(self):
