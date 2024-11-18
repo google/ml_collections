@@ -24,7 +24,6 @@ keywords = []
 # Installed locally with `pip install -e .`
 dependencies = [
     "absl-py",
-    "six",  # Could be removed
     "PyYAML",  # Could make this optional ?
 ]
 
