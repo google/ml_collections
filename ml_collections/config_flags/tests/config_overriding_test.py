@@ -493,6 +493,21 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
     self.assertFalse(values.test_config.is_locked)
     self.assertFalse(values.test_config.nested_configdict.is_locked)
 
+  def testOverridingNestedConfigDict(self):
+    """Tests overriding of ConfigDict fields."""
+
+    config_flag = f'--test_config={_CONFIGDICT_CONFIG_FILE}'
+    values = _parse_flags(
+        f'./program {config_flag}'
+        ' --test_config.nested_configdict="{\\"a\\": True, \\"b\\": 123}"'
+    )
+    self.assertEqual(values.test_config.nested_configdict.a, True)
+    self.assertEqual(values.test_config.nested_configdict.b, 123)
+    self.assertEqual(
+        dict(values.test_config.nested_configdict.items()),
+        {'a': True, 'b': 123},
+    )
+
   @parameterized.named_parameters(
       ('WithTwoDashesAndEqual', '--test_config={}'.format(_TEST_DIRECTORY)),
       ('WithTwoDashes', '--test_config {}'.format(_TEST_DIRECTORY)),

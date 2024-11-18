@@ -83,12 +83,32 @@ class _LiteralParser(flags.ArgumentParser):
     return 'config_literal'
 
 
+class _ConfigDictParser(flags.ArgumentParser):
+  """Parser for ConfigDict values."""
+
+  def parse(self, argument: str) -> config_dict.ConfigDict:
+    try:
+      value = ast.literal_eval(argument)
+    except (SyntaxError, ValueError) as e:
+      raise ValueError(
+          f'Failed to parse {argument!r} as a ConfigDict: {e!r}'
+      ) from None
+
+    if not isinstance(value, dict):
+      raise ValueError(
+          f'Failed to parse {argument!r} as a ConfigDict: `{value!r}` is not a'
+          ' dict.'
+      )
+    return config_dict.ConfigDict(value)
+
+
 _FIELD_TYPE_TO_PARSER = {
     float: flags.FloatParser(),
     bool: flags.BooleanParser(),
     tuple: tuple_parser.TupleParser(),
     int: flags.IntegerParser(),
     str: flags.ArgumentParser(),
+    config_dict.ConfigDict: _ConfigDictParser(),
     object: _LiteralParser(),
 }
 
@@ -816,6 +836,11 @@ class _ConfigFlag(flags.Flag):
       parser = None
       if field_type in _FIELD_TYPE_TO_PARSER:
         parser = _FIELD_TYPE_TO_PARSER[field_type]
+      elif isinstance(field_type, type) and issubclass(
+          field_type, config_dict.ConfigDict
+      ):
+        # Supports ConfigDict sub-classes.
+        parser = _FIELD_TYPE_TO_PARSER[config_dict.ConfigDict]
       elif field_type_origin and field_type_origin in _FIELD_TYPE_TO_PARSER:
         parser = _FIELD_TYPE_TO_PARSER[field_type_origin]
       elif issubclass(field_type, enum.Enum):
@@ -830,7 +855,7 @@ class _ConfigFlag(flags.Flag):
 
       if parser:
         if not isinstance(parser, tuple_parser.TupleParser):
-          if isinstance(parser, _LiteralParser):
+          if isinstance(parser, (_LiteralParser, _ConfigDictParser)):
             # We do not pass the default to `_ConfigFieldFlag`, otherwise
             # `_LiteralParser.parse(default)` is called with `default`,
             # which would try to parse string.
