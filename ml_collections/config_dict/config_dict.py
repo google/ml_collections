@@ -564,7 +564,7 @@ def _configdict_fill_seed(seed, initial_dictionary, visit_map=None):
     seed.__setattr__(key, value)
 
 
-class ConfigDict(collections_abc.Mapping):
+class ConfigDict(collections_abc.MutableMapping):
   # pylint: disable=line-too-long
   """Base class for configuration objects used in DeepMind.
 
