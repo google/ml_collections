@@ -235,7 +235,7 @@ def DEFINE_config_file(  # pylint: disable=g-bad-name
       .lock() method on its instance (if it exists). (default: True)
     accept_new_attributes: If `True`, accept to pass arbitrary attributes that
       are not originally defined in the `get_config()` dict.
-      `accept_new_attributes` require `lock_config=False`
+      `accept_new_attributes` requires `lock_config=False`.
     sys_argv: If set, interprets this as the full list of args used in parsing.
       This is used to identify which overrides to define as flags. If not
       specified, uses the system sys.argv to figure it out.
@@ -268,6 +268,7 @@ def DEFINE_config_dict(  # pylint: disable=g-bad-name
     help_string: str = 'ConfigDict instance.',
     flag_values: flags.FlagValues = FLAGS,
     lock_config: bool = True,
+    accept_new_attributes: bool = False,
     sys_argv: Optional[List[str]] = None,
     **kwargs) -> flags.FlagHolder:
   """Defines flag for inline `ConfigDict's` compatible with absl flags.
@@ -319,6 +320,9 @@ def DEFINE_config_dict(  # pylint: disable=g-bad-name
         (default: absl.flags.FLAGS)
     lock_config: If set to True, loaded config will be locked through calling
         .lock() method on its instance (if it exists). (default: True)
+    accept_new_attributes: If `True`, accept to pass arbitrary attributes that
+      are not originally defined in the `config` argument.
+      `accept_new_attributes` requires `lock_config=False`.
     sys_argv: If set, interprets this as the full list of args used in parsing.
       This is used to identify which overrides to define as flags. If not
       specified, uses the system sys.argv to figure it out.
@@ -329,6 +333,8 @@ def DEFINE_config_dict(  # pylint: disable=g-bad-name
   """
   if not isinstance(config, config_dict.ConfigDict):
     raise TypeError('config should be a ConfigDict')
+  if accept_new_attributes and lock_config:
+    raise ValueError('`accept_new_attributes=True` requires lock_config=False')
   parser = _InlineConfigParser(name=name, lock_config=lock_config)
   flag = _ConfigFlag(
       parser=parser,
@@ -337,6 +343,7 @@ def DEFINE_config_dict(  # pylint: disable=g-bad-name
       default=config,
       help_string=help_string,
       flag_values=flag_values,
+      accept_new_attributes=accept_new_attributes,
       sys_argv=sys_argv,
       **kwargs)
 
