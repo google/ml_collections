@@ -1526,6 +1526,10 @@ class ConfigDict:
       )
 
 
+collections_abc.MutableMapping.register(ConfigDict)
+collections_abc.Mapping.register(ConfigDict)
+
+
 def _frozenconfigdict_valid_input(obj, ancestor_list=None):
   """Raises error if obj is NOT a valid input for FrozenConfigDict.
 
@@ -1930,6 +1934,9 @@ class FrozenConfigDict(ConfigDict):
 
   def as_configdict(self):
     return self._configdict
+
+
+collections_abc.Mapping.register(FrozenConfigDict)
 
 
 class CustomJSONEncoder(json.JSONEncoder):
