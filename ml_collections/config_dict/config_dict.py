@@ -30,12 +30,14 @@ import functools
 import inspect
 import json
 import operator
+import optree
 import re
 from typing import Any, Mapping, Optional, Tuple
 
 from absl import logging
 import yaml
 from yaml import representer
+
 
 
 # Workaround for https://github.com/yaml/pyyaml/issues/36. Classes that have
@@ -151,7 +153,7 @@ def _get_computed_value(value_or_fieldreference):
 
 
 def _parse_key(key: str) -> Tuple[str, Optional[int]]:
-  """Parse a ConfigDict key into to it's initial part and index (if any)."""
+  """Parse a ConfigDict key into to its initial part and index (if any)."""
   key = key.split('.')[0]
   index_match = re.match(r'(.*)\[([0-9]+)\]', key)
   if index_match:
@@ -937,11 +939,10 @@ class ConfigDict:
       return self[key][rest]
 
     try:
-      field = self._fields[key]
-      if isinstance(field, FieldReference):
-        return field.get()
-      else:
-        return field
+      return optree.tree_map(
+          lambda x: x.get() if isinstance(x, FieldReference) else x,
+          self._fields[key])
+
     except KeyError as e:
       raise KeyError(self._generate_did_you_mean_message(key, str(e)))
 
