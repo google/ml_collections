@@ -549,17 +549,23 @@ def _configdict_fill_seed(seed, initial_dictionary, visit_map=None):
       elif id(value.get()) in visit_map:
         value.set(visit_map[id(value.get())], False)
       else:
-        value_cd = ConfigDict(type_safe=seed.is_type_safe)
+        value_cd = ConfigDict(
+            type_safe=seed.is_type_safe,
+            allow_dotted_keys=seed.allow_dotted_keys,
+        )
         _configdict_fill_seed(value_cd, value.get(), visit_map)
         value.set(value_cd, False)
 
     elif isinstance(value, dict) and seed.convert_dict:
-      value_cd = ConfigDict(type_safe=seed.is_type_safe)
+      value_cd = ConfigDict(
+          type_safe=seed.is_type_safe,
+          allow_dotted_keys=seed.allow_dotted_keys,
+      )
       _configdict_fill_seed(value_cd, value, visit_map)
       value = value_cd
 
     elif isinstance(value, FrozenConfigDict):
-      value = ConfigDict(value)
+      value = ConfigDict(value, allow_dotted_keys=seed.allow_dotted_keys)
 
     seed.__setattr__(key, value)
 
@@ -688,6 +694,11 @@ class ConfigDict:
   def is_type_safe(self) -> bool:
     """Returns True if config dict is type safe."""
     return self._type_safe
+
+  @property
+  def allow_dotted_keys(self) -> bool:
+    """Returns True if keys can contain `.`."""
+    return self._allow_dotted_keys
 
   @property
   def convert_dict(self):

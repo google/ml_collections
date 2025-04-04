@@ -858,6 +858,24 @@ class ConfigDictTest(parameterized.TestCase):
     with self.assertRaises(ValueError):
       cfg['invalid.name'] = 2.3
 
+  def testDotInFieldAllowedNested(self):
+    """Tests trying to create a dot containing field."""
+    sub_dict = {'x': 0, 'y.z': 7}
+    some_dict = {'a': 3, 'subcfg': sub_dict, 'b.c': 2}
+    cfg = config_dict.ConfigDict(some_dict, allow_dotted_keys=True)
+    self.assertTrue(cfg.allow_dotted_keys)
+    self.assertTrue(cfg.subcfg.allow_dotted_keys)
+    self.assertEqual(cfg.a, 3)
+    self.assertEqual(cfg.subcfg.x, 0)
+    self.assertEqual(cfg.subcfg['y.z'], 7)
+    self.assertEqual(cfg['b.c'], 2)
+
+    with self.assertRaises(AttributeError):
+      cfg.subcfg.y.z = 5
+
+    with self.assertRaises(AttributeError):
+      cfg.b.c = 6
+
   def testToDictConversion(self):
     """Tests whether references are correctly handled when calling to_dict."""
     cfg = config_dict.ConfigDict()
