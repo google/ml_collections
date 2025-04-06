@@ -1240,6 +1240,9 @@ class ConfigDict:
     config_dict_copy = self.__class__()
     super(ConfigDict, config_dict_copy).__setattr__('_convert_dict',
                                                     self.convert_dict)
+    super(ConfigDict, config_dict_copy).__setattr__('_allow_dotted_keys',
+                                                    self.allow_dotted_keys)
+
     visit_map[id(self)] = config_dict_copy
 
     for key, value in self._fields.items():
