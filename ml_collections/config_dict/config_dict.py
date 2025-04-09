@@ -877,18 +877,19 @@ class ConfigDict:
     if key in self._fields:
       field = self._fields[key]
       try:
+        # Updating a FieldReference will update all it's copy.
         if isinstance(field, FieldReference):
           field.set(value, self._type_safe)
           return
-        # Skip type checking if the value is a FieldReference of the same type.
-        if (not isinstance(value, FieldReference) or
-            value.get_type() is not type(field)):
+
+        if not _should_skip_type_check(field, value):
           if isinstance(value, dict) and self._convert_dict:
-            value = type(self)(value, self._type_safe)
+            value = type(self)(value, type_safe=self._type_safe)
           value = _safe_cast(value, type(field), self._type_safe)
       except TypeError as e:
-        raise TypeError('Could not override field \'{}\' (reference). {}'
-                        .format(key, str(e)))
+        raise TypeError(
+            f"Could not override field '{key}' (reference). {e}"
+        ) from None
 
     if self._convert_dict:
       if isinstance(value, dict):
@@ -1531,6 +1532,19 @@ class ConfigDict:
       child_value.update_from_flattened_dict(
           interesting_items, child_strip_prefix
       )
+
+
+def _should_skip_type_check(old_value, new_value) -> bool:
+  """Returns True if the type check should be skipped."""
+
+  if not isinstance(new_value, FieldReference):
+    return False
+  # Skip type checking if value is a FieldReference of the same type, or
+  # FieldReference is generic type.
+  if new_value.get_type() in (type(old_value), object):
+    return True
+  else:
+    return False
 
 
 def _frozenconfigdict_valid_input(obj, ancestor_list=None):
