@@ -637,11 +637,11 @@ class _ErrorConfig:
   def __delitem__(self, key):
     self._ReportError()
 
-  def _ReportError(self):
-    raise IOError('Configuration is not available because of an earlier '
-                  'failure to load: ' +
-                  # 'message' is not available in Python 3.
-                  getattr(self._error, 'message', str(self._error)))
+  def _ReportError(self):  # pylint: disable=invalid-name
+    raise IOError(
+        'Configuration is not available because of an earlier failure to load:'
+        f' {self._error}'
+    ) from self._error
 
 
 def _LockConfig(config):
