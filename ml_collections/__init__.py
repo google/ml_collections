@@ -21,4 +21,4 @@ from ml_collections.config_dict import FrozenConfigDict
 __all__ = ("ConfigDict", "FieldReference", "FrozenConfigDict")
 
 # A new PyPI release will be pushed every time `__version__` is increased.
-__version__ = "1.0.0"
+__version__ = "1.1.0"
