@@ -38,6 +38,7 @@ class MyModelConfig:
   qux: Optional[int] = None
   bax: float = 1
   boj: Tuple[int, ...] = ()
+  zorp: Tuple[bool, ...] = (True, False)
 
 
 class ParserForCustomConfig(flags.ArgumentParser):
@@ -82,7 +83,8 @@ _CONFIG = MyConfig(
         foo=3,
         bar=['a', 'b'],
         baz={'foo.b': 'bar'},
-        buz={(0, 0): 'ZeroZero', (0, 1): 'ZeroOne'}
+        buz={(0, 0): 'ZeroZero', (0, 1): 'ZeroOne'},
+        zorp=(False, True),
     ),
     baseline_model=MyModelConfig(
         foo=55,
@@ -319,6 +321,14 @@ class TypedConfigFlagsTest(absltest.TestCase):
   def test_flag_config_dataclass_typed_tuple(self):
     result = _test_flags(_CONFIG, '.my_model.boj=(0, 1)')
     self.assertEqual(result.my_model.boj, (0, 1))
+
+  def test_flag_config_dataclass_typed_tuple_bool_json(self):
+    result = _test_flags(_CONFIG, '.my_model.zorp=(true, false)')
+    self.assertEqual(result.my_model.zorp, (True, False))
+
+  def test_flag_config_dataclass_typed_tuple_bool(self):
+    result = _test_flags(_CONFIG, '.my_model.zorp=(True, False)')
+    self.assertEqual(result.my_model.zorp, (True, False))
 
 
 class DataClassParseFnTest(absltest.TestCase):
