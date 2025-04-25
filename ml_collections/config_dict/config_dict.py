@@ -1273,6 +1273,9 @@ class ConfigDict:
     super(ConfigDict, self).__setattr__('_type_safe', state['_type_safe'])
     super(ConfigDict, self).__setattr__('_convert_dict',
                                         state.get('_convert_dict', True))
+    super(ConfigDict, self).__setattr__(
+        '_allow_dotted_keys', state.get('_allow_dotted_keys', False)
+    )
     for field in state['_fields']:
       self[field] = state['_fields'][field]
     if state['_locked']:
