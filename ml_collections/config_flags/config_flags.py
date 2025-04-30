@@ -21,6 +21,7 @@ import enum
 import errno
 import functools as ft
 import importlib.machinery
+import json
 import os
 import re
 import sys
@@ -88,11 +89,14 @@ class _ConfigDictParser(flags.ArgumentParser):
 
   def parse(self, argument: str) -> config_dict.ConfigDict:
     try:
-      value = ast.literal_eval(argument)
-    except (SyntaxError, ValueError) as e:
-      raise ValueError(
-          f'Failed to parse {argument!r} as a ConfigDict: {e!r}'
-      ) from None
+      value = json.loads(argument)
+    except json.JSONDecodeError:
+      try:
+        value = ast.literal_eval(argument)
+      except (SyntaxError, ValueError) as e:
+        raise ValueError(
+            f'Failed to parse {argument!r} as a ConfigDict: {e!r}'
+        ) from None
 
     if not isinstance(value, dict):
       raise ValueError(

@@ -713,7 +713,8 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
         f' --test_config={_LITERAL_CONFIG_FILE}'
         ' --test_config.integer=123'
         ' --test_config.other_new_value="abc def"'
-        ' --test_config.new_value="{\'a\': [1, 2, 3]}"',
+        ' --test_config.new_value="{\'a\': [1, 2, 3]}"'
+        ' --test_config.new_bool_value=true',
         accept_new_attributes=True,
         lock_config=False,
     )
@@ -722,6 +723,7 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
     self.assertIsNone(cfg.string)
     self.assertEqual(cfg.other_new_value, 'abc def')
     self.assertEqual(cfg.new_value, config_dict.ConfigDict({'a': [1, 2, 3]}))
+    self.assertEqual(cfg.new_bool_value, True)
 
 
 def _simple_config():
