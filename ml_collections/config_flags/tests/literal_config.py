@@ -1,4 +1,4 @@
-# Copyright 2024 The ML Collections Authors.
+# Copyright 2025 The ML Collections Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,4 +26,5 @@ def get_config():
   cfg.other_with_default = 123
   cfg.other_with_default_overitten = config_dict.placeholder(object)
   cfg.other_with_default_overitten = 123
+  cfg.list = [(0.0, 1.0, 1.0)]
   return cfg

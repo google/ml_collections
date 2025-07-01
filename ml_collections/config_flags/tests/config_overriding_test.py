@@ -1,4 +1,4 @@
-# Copyright 2024 The ML Collections Authors.
+# Copyright 2025 The ML Collections Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -394,14 +394,6 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
       _parse_flags('./program {} '
                    '--test_config.readonly_field=1 '.format(config_flag))
 
-  @parameterized.named_parameters(*_DASH_PARAMETERS)
-  def testNotSupportedOperation(self, config_flag):
-    """Tests setting value to not supported type."""
-
-    with self.assertRaises(config_flags.UnsupportedOperationError):
-      _parse_flags('./program {} '
-                   '--test_config.list=[1]'.format(config_flag))
-
   def testParserWrapping(self):
     """Tests callback based Parser wrapping."""
 
@@ -584,6 +576,15 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
     with self.assertRaisesRegex(AttributeError, 'Did you.*reference.*'):
       override_flags = _get_override_flags(overrides, '--test_config.{}={}')
       _parse_flags('./program {} {}'.format(config_flag, override_flags))
+
+  def testList(self):
+    """Tests overriding boolean config values from command line."""
+    values = _parse_flags(
+        './program'
+        f' --test_config={_LITERAL_CONFIG_FILE}'
+        ' --test_config.list="[[1, 2, 3]]"'
+    )
+    self.assertEqual(values.test_config.list, [[1, 2, 3]])
 
   @parameterized.parameters(
       {'overrides': ('2,',), 'expected_tuple': (2,)},
