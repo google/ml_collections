@@ -795,7 +795,7 @@ class ConfigDictFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
         ' --test_config.type_int=10'
         ' --test_config.type_str=str_commandline'
         ' --test_config.type_tuple="(\'tuple_str\', 10)"'
-        )
+    )
     command_line += ' --test_config.type_ustr=ustr_commandline'
     values = _parse_flags(command_line, config=copy.copy(all_types_config))
 

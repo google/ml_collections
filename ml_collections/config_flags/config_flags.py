@@ -116,6 +116,10 @@ _FIELD_TYPE_TO_PARSER = {
     config_dict.ConfigDict: _ConfigDictParser(),
     object: _LiteralParser(),
 }
+# To serialize a new type, add a serializer to this dict.
+# By default flags.ArgumentSerializer will be used.
+_FIELD_TYPE_TO_SERIALIZER = {
+}
 
 
 class UnsupportedOperationError(flags.Error):
@@ -865,6 +869,12 @@ class _ConfigFlag(flags.Flag):
             parse_fn=ft.partial(_MakeDefaultOrNone, field_type,
                                 allow_none=is_optional, field_path=field_path))
 
+      serializer = flags.ArgumentSerializer()
+      if field_type in _FIELD_TYPE_TO_SERIALIZER:
+        serializer = _FIELD_TYPE_TO_SERIALIZER[field_type]
+      if field_type_origin in _FIELD_TYPE_TO_SERIALIZER:
+        serializer = _FIELD_TYPE_TO_SERIALIZER[field_type_origin]
+
       if parser:
         if not isinstance(parser, tuple_parser.TupleParser):
           if isinstance(parser, (_LiteralParser, _ConfigDictParser)):
@@ -882,7 +892,7 @@ class _ConfigFlag(flags.Flag):
               config=config,
               override_values=self._override_values,
               parser=parser,
-              serializer=flags.ArgumentSerializer(),
+              serializer=serializer,
               name=field_name,
               default=default,
               accept_new_attributes=self._accept_new_attributes,
@@ -904,7 +914,7 @@ class _ConfigFlag(flags.Flag):
               config=config,
               override_values=self._override_values,
               parser=parser,
-              serializer=flags.ArgumentSerializer(),
+              serializer=serializer,
               name=field_name,
               default=config_path.get_value(field_path, config),
               help_string=field_help,
@@ -1126,7 +1136,10 @@ class _ConfigFieldMultiFlag(flags.MultiFlag):
 
 
 def register_flag_parser_for_type(
-    field_type: _T, parser: flags.ArgumentParser) -> _T:
+    field_type: _T,
+    parser: flags.ArgumentParser,
+    serializer: flags.ArgumentSerializer = flags.ArgumentSerializer(),
+) -> _T:
   """Registers parser for a given type.
 
   See documentation for `register_flag_parser` for usage example.
@@ -1134,15 +1147,21 @@ def register_flag_parser_for_type(
   Args:
     field_type: field type to register
     parser: parser to use
+    serializer: serializer to use
 
   Returns:
     field_type unmodified.
   """
   _FIELD_TYPE_TO_PARSER[field_type] = parser
+  _FIELD_TYPE_TO_SERIALIZER[field_type] = serializer
   return field_type
 
 
-def register_flag_parser(*, parser: flags.ArgumentParser) -> Callable[[_T], _T]:
+def register_flag_parser(
+    *,
+    parser: flags.ArgumentParser,
+    serializer: flags.ArgumentSerializer = flags.ArgumentSerializer(),
+) -> Callable[[_T], _T]:
   """Creates a decorator to register parser on types.
 
   For example:
@@ -1174,8 +1193,11 @@ def register_flag_parser(*, parser: flags.ArgumentParser) -> Callable[[_T], _T]:
 
   Args:
     parser: parser to use.
+    serializer: serializer to use.
 
   Returns:
     Decorator to apply to types.
   """
-  return ft.partial(register_flag_parser_for_type, parser=parser)
+  return ft.partial(
+      register_flag_parser_for_type, parser=parser, serializer=serializer
+  )
