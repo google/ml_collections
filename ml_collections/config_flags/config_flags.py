@@ -27,6 +27,7 @@ import re
 import sys
 import traceback
 import types
+import typing
 from typing import Any, Callable, Dict, Generic, List, MutableMapping, Optional, Sequence, Tuple, Type, TypeVar
 
 from absl import flags
@@ -859,7 +860,10 @@ class _ConfigFlag(flags.Flag):
         parser = _FIELD_TYPE_TO_PARSER[config_dict.ConfigDict]
       elif field_type_origin and field_type_origin in _FIELD_TYPE_TO_PARSER:
         parser = _FIELD_TYPE_TO_PARSER[field_type_origin]
-      elif issubclass(field_type, enum.Enum):
+      elif field_type_origin is typing.Literal:
+        # Literal types like Literal["a", "b"] should be treated as string-like.
+        parser = _LiteralParser()
+      elif isinstance(field_type, type) and issubclass(field_type, enum.Enum):
         parser = flags.EnumClassParser(field_type, case_sensitive=False)
       elif dataclasses.is_dataclass(field_type):
         # For dataclasses-valued fields allow default instance creation.

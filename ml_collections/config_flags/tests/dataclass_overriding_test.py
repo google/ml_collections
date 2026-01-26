@@ -18,7 +18,7 @@ import copy
 import dataclasses
 import functools
 import sys
-from typing import Mapping, Optional, Sequence, Tuple, Union
+from typing import Literal, Mapping, Optional, Sequence, Tuple, Union
 import unittest
 
 from absl import flags
@@ -178,6 +178,17 @@ class TypedConfigFlagsTest(absltest.TestCase):
 
     result = _test_flags(PipeConfig(), '.foo=32')
     self.assertEqual(result.foo, 32)
+
+  def test_literal_type_field(self):
+    @dataclasses.dataclass
+    class ConfigWithLiteral:
+      optimizer: Literal['adam', 'sgd', 'rmsprop'] = 'adam'
+
+    result = _test_flags(ConfigWithLiteral())
+    self.assertEqual(result.optimizer, 'adam')
+
+    result = _test_flags(ConfigWithLiteral(), '.optimizer=sgd')
+    self.assertEqual(result.optimizer, 'sgd')
 
   def test_custom_flag_parsing_override_work(self):
     # Overrides still work.
