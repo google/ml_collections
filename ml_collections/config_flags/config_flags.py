@@ -1,4 +1,4 @@
-# Copyright 2025 The ML Collections Authors.
+# Copyright 2026 The ML Collections Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -63,7 +63,10 @@ def _load_source(module_name: str, module_path: str) -> types.ModuleType:
 
 
 class _LiteralParser(flags.ArgumentParser):
-  """Parse arbitrary built-in (`--cfg.val=1`, `--cfg.val="[1, 2, {}]"`,...)."""
+  """Parse arbitrary built-in (`--cfg.val=1`, `--cfg.val="[1, 2, {}]"`,...).
+
+  Note: This accepts both JSON and Python literals for broader compatibility.
+  """
 
   def parse(self, argument: str) -> Any:
     # _LiteralParser cannot know in advance what is the expected type.
@@ -73,13 +76,14 @@ class _LiteralParser(flags.ArgumentParser):
       raise TypeError('argument should be a string')
     # Absl hardcode bool values as lower-case: `--cfg.my_bool`, so convert
     # them to Python built-in
-    if argument in ('true', 'false'):
-      argument = argument.capitalize()
     try:
-      return ast.literal_eval(argument)
-    except (SyntaxError, ValueError):
-      # Otherwise, the flag is a string: `--cfg.value="my_string"`
-      return argument
+      return json.loads(argument)
+    except json.JSONDecodeError:
+      try:
+        return ast.literal_eval(argument)
+      except (SyntaxError, ValueError):
+        # Otherwise, the flag is a string: `--cfg.value="my_string"`
+        return argument
 
   def flag_type(self):
     return 'config_literal'
