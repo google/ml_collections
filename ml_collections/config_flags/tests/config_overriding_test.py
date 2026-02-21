@@ -60,8 +60,7 @@ def _parse_flags(
     config=None,
     lock_config=True,
     required=False,
-    accept_new_attributes=None,
-    override_mode=None,
+    accept_new_attributes=False,
     use_sys_argv_override=False,
 ):
   """Parses arguments simulating sys.argv or via sys_argv argument."""
@@ -88,7 +87,6 @@ def _parse_flags(
         flag_values=values,
         lock_config=lock_config,
         accept_new_attributes=accept_new_attributes,
-        override_mode=override_mode,
         sys_argv=(argv if use_sys_argv_override else None),
     )
   else:
@@ -97,10 +95,7 @@ def _parse_flags(
         config=config,
         flag_values=values,
         lock_config=lock_config,
-        accept_new_attributes=accept_new_attributes,
-        override_mode=override_mode,
-        sys_argv=(argv if use_sys_argv_override else None),
-    )
+        sys_argv=(argv if use_sys_argv_override else None))
 
   if required:
     flags.mark_flag_as_required('test_config', flag_values=values)
@@ -730,63 +725,6 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
     self.assertEqual(cfg.other_new_value, 'abc def')
     self.assertEqual(cfg.new_value, config_dict.ConfigDict({'a': [1, 2, 3]}))
     self.assertEqual(cfg.new_bool_value, True)
-
-  def testUseLiteralParser(self):
-    config = config_dict.ConfigDict({
-        'integer': 1,
-        'float': 2.0,
-        'string': 'hello',
-        'nested': {
-            'value': 10,
-        }
-    })
-    values = _parse_flags(
-        './program'
-        ' --test_config.integer="hello"'
-        ' --test_config.float=3'
-        ' --test_config.string="world"'
-        ' --test_config.nested.value=99'
-        ' --test_config.new_value="new"',
-        config=config,
-        lock_config=False,
-        override_mode=config_flags.OverrideMode.ALWAYS,
-    )
-    cfg = values.test_config
-    self.assertEqual(cfg.integer, 'hello')
-    self.assertEqual(cfg.float, 3)
-    self.assertEqual(cfg.string, 'world')
-    self.assertEqual(cfg.nested.value, 99)
-    self.assertEqual(cfg.new_value, 'new')
-
-  def testOverrideModeNewAttributes(self):
-    values = _parse_flags(
-        './program'
-        f' --test_config={_LITERAL_CONFIG_FILE}'
-        ' --test_config.integer=123'
-        ' --test_config.other_new_value="abc def"'
-        ' --test_config.new_value="{\'a\': [1, 2, 3]}"'
-        ' --test_config.new_bool_value=true',
-        override_mode=config_flags.OverrideMode.NEW_ONLY,
-        lock_config=False,
-    )
-    cfg = values.test_config
-    self.assertEqual(cfg.integer, 123)
-    self.assertIsNone(cfg.string)
-    self.assertEqual(cfg.other_new_value, 'abc def')
-    self.assertEqual(cfg.new_value, config_dict.ConfigDict({'a': [1, 2, 3]}))
-    self.assertEqual(cfg.new_bool_value, True)
-
-  def testOverrideModeBothParametersRaisesError(self):
-    with self.assertRaisesRegex(
-        ValueError,
-        'Cannot specify both `accept_new_attributes` and `override_mode`.',
-    ):
-      _parse_flags(
-          f'./program --test_config={_LITERAL_CONFIG_FILE}',
-          accept_new_attributes=True,
-          override_mode=config_flags.OverrideMode.NEW_ONLY,
-          lock_config=False,
-      )
 
 
 def _simple_config():

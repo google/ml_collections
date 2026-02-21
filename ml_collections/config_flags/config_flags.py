@@ -15,7 +15,6 @@
 """Configuration commmand line parser."""
 
 import ast
-import contextlib
 import copy
 import dataclasses
 import enum
@@ -47,41 +46,6 @@ SetValue = config_path.set_value
 # Any flags defined via any of the config_flags.DEFINE_config_*() functions
 # should be attributed to the caller of that function rather than this module.
 flags.disclaim_key_flags()
-
-
-class OverrideMode(enum.Enum):
-  """Behavior to overwrite config parameters types.
-
-  Attributes:
-    ALWAYS: All `--cfg.xxx` flags are parsed using `_LiteralParser`.
-    NEW_ONLY: `--cfg.xxx` is only parsed using `_LiteralParser`, if `cfg.xxx`
-      does not exist yet.
-    NEVER: (default) All `--cfg.xxx` flags are parsed using type-specific
-      parsers (i.e. it is not possible to have flag supporting both int and
-      str).
-  """
-
-  ALWAYS = enum.auto()
-  NEW_ONLY = enum.auto()
-  NEVER = enum.auto()
-
-
-def _normalize_accept_new_attributes(
-    accept_new_attributes: bool | None = None,
-    override_mode: OverrideMode | None = None,
-) -> OverrideMode:
-  """Normalizes override_mode."""
-  if accept_new_attributes is not None and override_mode is not None:
-    raise ValueError(
-        'Cannot specify both `accept_new_attributes` and `override_mode`.'
-    )
-  if override_mode is not None:
-    return override_mode
-  if accept_new_attributes is None:
-    return OverrideMode.NEVER
-  if accept_new_attributes:
-    return OverrideMode.NEW_ONLY
-  return OverrideMode.NEVER
 
 
 def _load_source(module_name: str, module_path: str) -> types.ModuleType:
@@ -181,11 +145,9 @@ def DEFINE_config_file(  # pylint: disable=g-bad-name
     help_string: str = 'path to config file.',
     flag_values: flags.FlagValues = FLAGS,
     lock_config: bool = True,
-    accept_new_attributes: bool | None = None,
-    override_mode: OverrideMode | None = None,
+    accept_new_attributes: bool = False,
     sys_argv: Optional[List[str]] = None,
-    **kwargs,
-) -> flags.FlagHolder:
+    **kwargs) -> flags.FlagHolder:
   r"""Defines flag for `ConfigDict` files compatible with absl flags.
 
   The flag's value should be a path to a valid python file which contains a
@@ -285,10 +247,9 @@ def DEFINE_config_file(  # pylint: disable=g-bad-name
       absl.flags.FLAGS)
     lock_config: If set to True, loaded config will be locked through calling
       .lock() method on its instance (if it exists). (default: True)
-    accept_new_attributes: Deprecated, use `override_mode` instead. `False`:
-      only existing attributes can be overridden. `True`: new attributes are
-      accepted. Requires `lock_config=False`.
-    override_mode: Controls how override flags are parsed.
+    accept_new_attributes: If `True`, accept to pass arbitrary attributes that
+      are not originally defined in the `get_config()` dict.
+      `accept_new_attributes` requires `lock_config=False`.
     sys_argv: If set, interprets this as the full list of args used in parsing.
       This is used to identify which overrides to define as flags. If not
       specified, uses the system sys.argv to figure it out.
@@ -297,12 +258,8 @@ def DEFINE_config_file(  # pylint: disable=g-bad-name
   Returns:
     a handle to defined flag.
   """
-
-  override_mode = _normalize_accept_new_attributes(
-      accept_new_attributes, override_mode
-  )
-  if override_mode != OverrideMode.NEVER and lock_config:
-    raise ValueError('`override_mode` requires `lock_config=False`')
+  if accept_new_attributes and lock_config:
+    raise ValueError('`accept_new_attributes=True` requires lock_config=False')
   parser = ConfigFileFlagParser(name=name, lock_config=lock_config)
   serializer = flags.ArgumentSerializer()
   flag = _ConfigFlag(
@@ -312,10 +269,9 @@ def DEFINE_config_file(  # pylint: disable=g-bad-name
       default=default,
       help_string=help_string,
       flag_values=flag_values,
-      override_mode=override_mode,
+      accept_new_attributes=accept_new_attributes,
       sys_argv=sys_argv,
-      **kwargs,
-  )
+      **kwargs)
 
   return flags.DEFINE_flag(flag, flag_values)
 
@@ -326,11 +282,9 @@ def DEFINE_config_dict(  # pylint: disable=g-bad-name
     help_string: str = 'ConfigDict instance.',
     flag_values: flags.FlagValues = FLAGS,
     lock_config: bool = True,
-    accept_new_attributes: bool | None = None,
-    override_mode: OverrideMode | None = None,
+    accept_new_attributes: bool = False,
     sys_argv: Optional[List[str]] = None,
-    **kwargs,
-) -> flags.FlagHolder:
+    **kwargs) -> flags.FlagHolder:
   """Defines flag for inline `ConfigDict's` compatible with absl flags.
 
   Similar to `DEFINE_config_file` except the flag's value should be a
@@ -374,16 +328,15 @@ def DEFINE_config_dict(  # pylint: disable=g-bad-name
   Args:
     name: Flag name.
     config: `ConfigDict` object.
-    help_string: Help string to display when --helpfull is called. (default:
-      "ConfigDict instance.")
-    flag_values: FlagValues instance used for parsing. (default:
-      absl.flags.FLAGS)
+    help_string: Help string to display when --helpfull is called.
+        (default: "ConfigDict instance.")
+    flag_values: FlagValues instance used for parsing.
+        (default: absl.flags.FLAGS)
     lock_config: If set to True, loaded config will be locked through calling
-      .lock() method on its instance (if it exists). (default: True)
-    accept_new_attributes: Deprecated, use `override_mode` instead. `False`:
-      only existing attributes can be overridden. `True`: new attributes are
-      accepted. Requires `lock_config=False`.
-    override_mode: Controls how override flags are parsed.
+        .lock() method on its instance (if it exists). (default: True)
+    accept_new_attributes: If `True`, accept to pass arbitrary attributes that
+      are not originally defined in the `config` argument.
+      `accept_new_attributes` requires `lock_config=False`.
     sys_argv: If set, interprets this as the full list of args used in parsing.
       This is used to identify which overrides to define as flags. If not
       specified, uses the system sys.argv to figure it out.
@@ -394,11 +347,8 @@ def DEFINE_config_dict(  # pylint: disable=g-bad-name
   """
   if not isinstance(config, config_dict.ConfigDict):
     raise TypeError('config should be a ConfigDict')
-  override_mode = _normalize_accept_new_attributes(
-      accept_new_attributes, override_mode
-  )
-  if override_mode != OverrideMode.NEVER and lock_config:
-    raise ValueError('`override_mode` requires `lock_config=False`')
+  if accept_new_attributes and lock_config:
+    raise ValueError('`accept_new_attributes=True` requires lock_config=False')
   parser = _InlineConfigParser(name=name, lock_config=lock_config)
   flag = _ConfigFlag(
       parser=parser,
@@ -407,10 +357,9 @@ def DEFINE_config_dict(  # pylint: disable=g-bad-name
       default=config,
       help_string=help_string,
       flag_values=flag_values,
-      override_mode=override_mode,
+      accept_new_attributes=accept_new_attributes,
       sys_argv=sys_argv,
-      **kwargs,
-  )
+      **kwargs)
 
   # Get the module name for the frame at depth 1 in the call stack.
   module_name = sys._getframe(1).f_globals.get('__name__', None)  # pylint: disable=protected-access
@@ -798,14 +747,14 @@ class _ConfigFlag(flags.Flag):
       self,
       flag_values=FLAGS,
       *,
-      override_mode: OverrideMode = OverrideMode.NEVER,
+      accept_new_attributes: bool = False,
       sys_argv=None,
       **kwargs,
   ):
     # Parent constructor can already call .Parse, thus additional fields
     # have to be set here.
     self.flag_values = flag_values
-    self._override_mode = override_mode
+    self._accept_new_attributes = accept_new_attributes
     # Note, we don't replace sys_argv with sys.argv here if it's None because
     # in some obscure multiprocessing use cases, sys.argv may not be populated
     # until later and we need to look it up at parse time.
@@ -890,7 +839,7 @@ class _ConfigFlag(flags.Flag):
     self._initialize_missing_parent_fields(config, overrides)
     self._validate_overrides(config, overrides)
 
-    if self._override_mode != OverrideMode.NEVER:
+    if self._accept_new_attributes:
       # If user provide a new attribute, fallback to `object` to accept all
       # literal
       default_type = object
@@ -906,9 +855,7 @@ class _ConfigFlag(flags.Flag):
       field_name = '{}.{}'.format(self.name, field_path)
 
       parser = None
-      if self._override_mode == OverrideMode.ALWAYS:
-        parser = _LiteralParser()
-      elif field_type in _FIELD_TYPE_TO_PARSER:
+      if field_type in _FIELD_TYPE_TO_PARSER:
         parser = _FIELD_TYPE_TO_PARSER[field_type]
       elif isinstance(field_type, type) and issubclass(
           field_type, config_dict.ConfigDict
@@ -956,7 +903,7 @@ class _ConfigFlag(flags.Flag):
               serializer=serializer,
               name=field_name,
               default=default,
-              override_mode=self._override_mode,
+              accept_new_attributes=self._accept_new_attributes,
               help_string=field_help,
           )
           # Literal values support the `--my_bool` / `--nomy_bool` syntax
@@ -1126,7 +1073,7 @@ class _ConfigFieldFlag(flags.Flag):
       help_string: str,
       short_name: Optional[str] = None,
       boolean: bool = False,
-      override_mode: OverrideMode = OverrideMode.NEVER,
+      accept_new_attributes: bool = False,
   ):
     """Creates new flag with callback."""
     super().__init__(
@@ -1140,23 +1087,15 @@ class _ConfigFieldFlag(flags.Flag):
     self._path = path
     self._config = config
     self._override_values = override_values
-    self._override_mode = override_mode
+    self._accept_new_attributes = accept_new_attributes
 
   def parse(self, argument):
     super().parse(argument)
     # Callback to set value in ConfigDict.
-    ctx = (
-        self._config.ignore_type()
-        if self._override_mode == OverrideMode.ALWAYS
-        else contextlib.nullcontext()
+    config_path.set_value(
+        self._path, self._config, self.value,
+        accept_new_attributes=self._accept_new_attributes,
     )
-    with ctx:
-      config_path.set_value(
-          self._path,
-          self._config,
-          self.value,
-          accept_new_attributes=self._override_mode != OverrideMode.NEVER,
-      )
     self._override_values[self._path] = self.value
 
 
