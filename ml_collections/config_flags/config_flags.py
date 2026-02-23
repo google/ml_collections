@@ -798,14 +798,17 @@ class _ConfigFlag(flags.Flag):
       self,
       flag_values=FLAGS,
       *,
-      override_mode: OverrideMode = OverrideMode.NEVER,
+      accept_new_attributes: bool | None = None,
+      override_mode: OverrideMode | None = None,
       sys_argv=None,
       **kwargs,
   ):
     # Parent constructor can already call .Parse, thus additional fields
     # have to be set here.
     self.flag_values = flag_values
-    self._override_mode = override_mode
+    self._override_mode = _normalize_accept_new_attributes(
+        accept_new_attributes, override_mode
+    )
     # Note, we don't replace sys_argv with sys.argv here if it's None because
     # in some obscure multiprocessing use cases, sys.argv may not be populated
     # until later and we need to look it up at parse time.
@@ -1126,7 +1129,8 @@ class _ConfigFieldFlag(flags.Flag):
       help_string: str,
       short_name: Optional[str] = None,
       boolean: bool = False,
-      override_mode: OverrideMode = OverrideMode.NEVER,
+      accept_new_attributes: bool | None = None,
+      override_mode: OverrideMode | None = None,
   ):
     """Creates new flag with callback."""
     super().__init__(
@@ -1136,11 +1140,14 @@ class _ConfigFieldFlag(flags.Flag):
         default=default,
         help_string=help_string,
         short_name=short_name,
-        boolean=boolean)
+        boolean=boolean,
+    )
     self._path = path
     self._config = config
     self._override_values = override_values
-    self._override_mode = override_mode
+    self._override_mode = _normalize_accept_new_attributes(
+        accept_new_attributes, override_mode
+    )
 
   def parse(self, argument):
     super().parse(argument)
