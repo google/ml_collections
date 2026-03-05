@@ -669,6 +669,21 @@ class ConfigDictTest(parameterized.TestCase):
     with self.assertRaises(AttributeError):
       _ = self.laerning_rate
 
+  def testGetitemFieldRefKeyErrorNotWrapped(self):
+    cfg = config_dict.ConfigDict()
+    ref = config_dict.FieldReference(42)
+    cfg['valid_key'] = ref
+
+    self.assertEqual(cfg['valid_key'], 42)
+
+    with mock.patch.object(ref, 'get', side_effect=KeyError('unrelated_key')):
+      with self.assertRaises(KeyError) as cm:
+        _ = cfg['valid_key']
+      error_msg = str(cm.exception)
+      self.assertIn('unrelated_key', error_msg)
+      self.assertNotIn('Did you mean', error_msg)
+      self.assertNotIn('valid_key', error_msg)
+
   def testReferences(self):
     """Tests assigning references in the dict."""
     cfg = _get_test_config_dict()

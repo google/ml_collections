@@ -950,12 +950,11 @@ class ConfigDict:
 
     try:
       field = self._fields[key]
-      if isinstance(field, FieldReference):
-        return field.get()
-      else:
-        return field
     except KeyError as e:
       raise KeyError(self._generate_did_you_mean_message(key, str(e)))
+    if isinstance(field, FieldReference):
+      return field.get()
+    return field
 
   def __contains__(self, key: str):
     return key in self._fields
