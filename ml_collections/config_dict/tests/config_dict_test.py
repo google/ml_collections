@@ -1680,5 +1680,104 @@ class CycleTest(absltest.TestCase):
       config.a = config.get_ref('b')
 
 
+class RequiredValueErrorPathTest(parameterized.TestCase):
+
+  def testDirectAccess(self):
+    """Direct attribute access shows only the leaf field name."""
+    config = config_dict.ConfigDict(
+        {'a': config_dict.required_placeholder(int)}
+    )
+    with self.assertRaisesRegex(
+        config_dict.RequiredValueError, r'\(config path: a\)'
+    ):
+      _ = config.a
+
+    # Nested direct access shows only the leaf.
+    config = config_dict.ConfigDict(
+        {'a': {'b': config_dict.required_placeholder(int)}}
+    )
+    with self.assertRaisesRegex(
+        config_dict.RequiredValueError, r'\(config path: b\)'
+    ):
+      _ = config.a.b
+
+  @parameterized.named_parameters(
+      dict(
+          testcase_name='flat_lock',
+          initial={'a': config_dict.required_placeholder(int)},
+          operation=lambda c: c.lock(),
+          expected_path='a',
+      ),
+      dict(
+          testcase_name='nested_dotted_access',
+          initial={'a': {'b': config_dict.required_placeholder(int)}},
+          operation=lambda c: c['a.b'],
+          expected_path='a.b',
+      ),
+      dict(
+          testcase_name='nested_lock',
+          initial={'a': {'b': config_dict.required_placeholder(int)}},
+          operation=lambda c: c.lock(),
+          expected_path='a.b',
+      ),
+      dict(
+          testcase_name='nested_to_dict',
+          initial={'a': {'b': config_dict.required_placeholder(int)}},
+          operation=lambda c: c.to_dict(),
+          expected_path='a.b',
+      ),
+      dict(
+          testcase_name='nested_to_dict_preserve_refs',
+          initial={'a': {'b': config_dict.required_placeholder(int)}},
+          operation=lambda c: c.to_dict(preserve_field_references=True),
+          expected_path='a.b',
+      ),
+      dict(
+          testcase_name='nested_copy_and_resolve',
+          initial={'a': {'b': config_dict.required_placeholder(int)}},
+          operation=lambda c: c.copy_and_resolve_references(),
+          expected_path='a.b',
+      ),
+      dict(
+          testcase_name='deep_dotted_access',
+          initial={'a': {'b': {'c': config_dict.required_placeholder(int)}}},
+          operation=lambda c: c['a.b.c'],
+          expected_path='a.b.c',
+      ),
+      dict(
+          testcase_name='deep_lock',
+          initial={'a': {'b': {'c': config_dict.required_placeholder(int)}}},
+          operation=lambda c: c.lock(),
+          expected_path='a.b.c',
+      ),
+      dict(
+          testcase_name='deep_to_dict',
+          initial={'a': {'b': {'c': config_dict.required_placeholder(int)}}},
+          operation=lambda c: c.to_dict(),
+          expected_path='a.b.c',
+      ),
+      dict(
+          testcase_name='deep_copy_and_resolve',
+          initial={'a': {'b': {'c': config_dict.required_placeholder(int)}}},
+          operation=lambda c: c.copy_and_resolve_references(),
+          expected_path='a.b.c',
+      ),
+  )
+  def testPathInError(self, initial, operation, expected_path):
+    config = config_dict.ConfigDict(initial)
+    with self.assertRaises(config_dict.RequiredValueError) as ctx:
+      operation(config)
+    self.assertEqual(ctx.exception.field_path, expected_path)
+    self.assertIn(f'(config path: {expected_path})', str(ctx.exception))
+
+  def testStrWithoutPath(self):
+    e = config_dict.RequiredValueError('some message')
+    self.assertEqual(str(e), 'some message')
+
+  def testStrWithPath(self):
+    e = config_dict.RequiredValueError('some message', field_path='x.y')
+    self.assertEqual(str(e), 'some message (config path: x.y)')
+
+
 if __name__ == '__main__':
   absltest.main()

@@ -49,7 +49,21 @@ representer.Representer.add_representer(
 
 
 class RequiredValueError(Exception):
-  pass
+
+  def __init__(self, message, field_path=None):
+    super().__init__(message)
+    self.field_path = field_path
+
+  def __str__(self):
+    return (
+        f'{super().__str__()} (config path: {self.field_path})'
+        if self.field_path
+        else super().__str__()
+    )
+
+
+def _update_required_value_error_path(e, key):
+  e.field_path = f'{key}.{e.field_path}' if e.field_path else str(key)
 
 
 class MutabilityError(Exception):
@@ -717,11 +731,13 @@ class ConfigDict:
 
     super(ConfigDict, self).__setattr__('_locked', True)
     for field in self._fields:
-      element = self._fields[field]
-      element = _get_computed_value(element)
-
-      if isinstance(element, ConfigDict):
-        element.lock()
+      try:
+        element = _get_computed_value(self._fields[field])
+        if isinstance(element, ConfigDict):
+          element.lock()
+      except RequiredValueError as e:
+        _update_required_value_error_path(e, field)
+        raise
     return self
 
   @property
@@ -946,14 +962,22 @@ class ConfigDict:
       # As per the check in __setitem__ above, keys cannot contain dots.
       # Hence, we can use dots to do recursive calls.
       key, rest = key.split('.', 1)
-      return self[key][rest]
+      try:
+        return self[key][rest]
+      except RequiredValueError as e:
+        _update_required_value_error_path(e, key)
+        raise
 
     try:
       field = self._fields[key]
     except KeyError as e:
       raise KeyError(self._generate_did_you_mean_message(key, str(e)))
     if isinstance(field, FieldReference):
-      return field.get()
+      try:
+        return field.get()
+      except RequiredValueError as e:
+        _update_required_value_error_path(e, key)
+        raise
     return field
 
   def __contains__(self, key: str):
@@ -1179,40 +1203,44 @@ class ConfigDict:
     visit_map[id(self)] = dict_self
 
     for key in self:
-      if (isinstance(self._fields[key], FieldReference)
-          and preserve_field_references):
-        reference = self._fields[key]
-        value = reference.get()
-      else:
-        value = self[key]
-        reference = value
-
-      if id(reference) in visit_map:
-        dict_self[key] = visit_map[id(reference)]
-      elif isinstance(value, ConfigDict):
-        if isinstance(reference, FieldReference):
-          # Create a new reference of type dict instead of ConfigDict.
-          old_reference = reference
-          reference = FieldReference({}, dict)
-          visit_map[id(old_reference)] = reference
-          reference.set(value.to_dict(visit_map, preserve_field_references))
+      try:
+        field = self._fields[key]
+        if isinstance(field, FieldReference) and preserve_field_references:
+          value = field.get()
+          reference = field
         else:
-          reference = value.to_dict(visit_map, preserve_field_references)
-        dict_self[key] = reference
-      else:
-        if isinstance(reference, FieldReference):
-          # Create a new reference to put in the new dict, which will be
-          # reused whenever we find the same original reference.
-          # Notice that ops are lost in the copy, but they are applied when
-          # we do old_reference.get().
-          old_reference = reference
-          # Disable type safety since value in the field reference might have
-          # been previously set with type safety disabled (e.g. ignore_type
-          # context, as in b/119393923).
-          reference = FieldReference(None, old_reference.get_type())
-          reference.set(old_reference.get(), type_safe=False)
-          visit_map[id(old_reference)] = reference
-        dict_self[key] = reference
+          value = _get_computed_value(field)
+          reference = value
+
+        if id(reference) in visit_map:
+          dict_self[key] = visit_map[id(reference)]
+        elif isinstance(value, ConfigDict):
+          if isinstance(reference, FieldReference):
+            # Create a new reference of type dict instead of ConfigDict.
+            old_reference = reference
+            reference = FieldReference({}, dict)
+            visit_map[id(old_reference)] = reference
+            reference.set(value.to_dict(visit_map, preserve_field_references))
+          else:
+            reference = value.to_dict(visit_map, preserve_field_references)
+          dict_self[key] = reference
+        else:
+          if isinstance(reference, FieldReference):
+            # Create a new reference to put in the new dict, which will be
+            # reused whenever we find the same original reference.
+            # Notice that ops are lost in the copy, but they are applied when
+            # we do old_reference.get().
+            old_reference = reference
+            # Disable type safety since value in the field reference might have
+            # been previously set with type safety disabled (e.g. ignore_type
+            # context, as in b/119393923).
+            reference = FieldReference(None, old_reference.get_type())
+            reference.set(old_reference.get(), type_safe=False)
+            visit_map[id(old_reference)] = reference
+          dict_self[key] = reference
+      except RequiredValueError as e:
+        _update_required_value_error_path(e, key)
+        raise
 
     return dict_self
 
@@ -1246,19 +1274,24 @@ class ConfigDict:
     visit_map[id(self)] = config_dict_copy
 
     for key, value in self._fields.items():
-      if isinstance(value, FieldReference):
-        value = value.get()
+      try:
+        if isinstance(value, FieldReference):
+          value = value.get()
 
-      if id(value) in visit_map:
-        value = visit_map[id(value)]
-      elif isinstance(value, ConfigDict):
-        value = value.copy_and_resolve_references(visit_map)
+        if id(value) in visit_map:
+          value = visit_map[id(value)]
+        elif isinstance(value, ConfigDict):
+          value = value.copy_and_resolve_references(visit_map)
 
-      if isinstance(self, FrozenConfigDict):
-        config_dict_copy._frozen_setattr(  # pylint:disable=protected-access
-            key, value)
-      else:
-        config_dict_copy[key] = value
+        if isinstance(self, FrozenConfigDict):
+          config_dict_copy._frozen_setattr(  # pylint:disable=protected-access
+              key, value
+          )
+        else:
+          config_dict_copy[key] = value
+      except RequiredValueError as e:
+        _update_required_value_error_path(e, key)
+        raise
 
     super(ConfigDict, config_dict_copy).__setattr__(
         '_locked', self.is_locked)
