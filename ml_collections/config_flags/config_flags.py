@@ -621,6 +621,8 @@ class _IgnoreFileNotFoundAndCollectErrors:
       # Returning a true value suppresses exceptions:
       # https://docs.python.org/2/reference/datamodel.html#object.__exit__
       return True
+    if exc_type is not None:
+      raise IOError(f'Failed loading config file: {exc_value}') from exc_value
 
   def DescribeAttempts(self):
     return '\n'.join(
