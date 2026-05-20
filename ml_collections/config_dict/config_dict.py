@@ -140,13 +140,14 @@ def _safe_cast(value, field_type, type_safe=False):
   if isinstance(value, str) and field_type is str:
     return field_type(value)
 
-  # tuple<->list conversion. JSON serialization converts lists to tuples, so
-  # we need this to avoid errors when overriding a list field with its
-  # deserialized version. See b/34805906 for more details.
-  if isinstance(value, tuple) and field_type is list:
-    return list(value)
-  if isinstance(value, list) and field_type is tuple:
-    return tuple(value)
+  # Handle empty tuple/list conversion safely.
+  # Empty sequences need explicit type check to avoid ordering-dependent
+  # behavior in FrozenConfigDict (see issue #61).
+  if isinstance(value, (list, tuple)) and field_type in (list, tuple):
+      if field_type is list:
+          return list(value)
+      else:
+          return tuple(value)
 
   if isinstance(value, int) and field_type is int:
     return value
@@ -1647,6 +1648,12 @@ def _tuple_to_immutable(value, visit_map):
            should have been caught in valid_input at initialization.
     ValueError: id(value) is in visit_map.
   """
+  # Empty tuples are singletons in Python, so their id() will collide
+  # across multiple fields. Safe to return immediately since there are
+  # no elements to process.
+  if not value:
+    return value, True, visit_map
+  
   # Ensure there are no cycles
   assert id(value) not in visit_map
 
