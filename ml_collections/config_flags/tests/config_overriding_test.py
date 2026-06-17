@@ -45,6 +45,7 @@ _DASH_PARAMETERS = (
 
 _CONFIGDICT_CONFIG_FILE = '{}/configdict_config.py'.format(_TEST_DIRECTORY)
 _IOERROR_CONFIG_FILE = '{}/ioerror_config.py'.format(_TEST_DIRECTORY)
+_IMPORTERROR_CONFIG_FILE = '{}/importerror_config.py'.format(_TEST_DIRECTORY)
 _VALUEERROR_CONFIG_FILE = '{}/valueerror_config.py'.format(_TEST_DIRECTORY)
 _TYPEERROR_CONFIG_FILE = '{}/typeerror_config.py'.format(_TEST_DIRECTORY)
 _FIELDREFERENCE_CONFIG_FILE = '{}/fieldreference_config.py'.format(
@@ -229,6 +230,18 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
                           .format(_IOERROR_CONFIG_FILE))
     with self.assertRaisesRegex(IOError, 'This is an IOError'):
       _ = values.test_config.a
+
+  def testImportError(self):
+    """Tests that ImportErrors raised inside config files preserve traceback."""
+    values = _parse_flags(
+        './program --test_config={}'.format(_IMPORTERROR_CONFIG_FILE)
+    )
+    with self.assertRaises(IOError) as ctx:
+      _ = values.test_config.a
+    self.assertIn('This is an ImportError', str(ctx.exception))
+    cause = ctx.exception.__cause__
+    self.assertIsInstance(cause, IOError)
+    self.assertIsInstance(cause.__cause__, ImportError)
 
   def testValueError(self):
     """Tests that ValueErrors raised when parsing config files are passed up."""
