@@ -558,7 +558,7 @@ def DEFINE_config_dataclass(  # pylint: disable=invalid-name
   return flags.DEFINE_flag(flag, flag_values)
 
 
-def get_config_filename(config_flag) -> str:  # pylint: disable=g-bad-name
+def get_config_filename(config_flag: flags.Flag) -> str:  # pylint: disable=g-bad-name
   """Returns the path to the config file given the config flag.
 
   Args:
@@ -567,12 +567,12 @@ def get_config_filename(config_flag) -> str:  # pylint: disable=g-bad-name
   Returns:
     the path to the config file.
   """
-  if not is_config_flag(config_flag):
+  if not isinstance(config_flag, _ConfigFlag):
     raise TypeError('expect a config flag, found {}'.format(type(config_flag)))
   return config_flag.config_filename
 
 
-def get_override_values(config_flag) -> Dict[str, Any]:  # pylint: disable=g-bad-name
+def get_override_values(config_flag: flags.Flag) -> Dict[str, Any]:  # pylint: disable=g-bad-name
   """Returns a flat dict containing overridden values from the config flag.
 
   Args:
@@ -581,7 +581,7 @@ def get_override_values(config_flag) -> Dict[str, Any]:  # pylint: disable=g-bad
   Returns:
     a flat dict containing overridden values from the config flag.
   """
-  if not is_config_flag(config_flag):
+  if not isinstance(config_flag, _ConfigFlag):
     raise TypeError('expect a config flag, found {}'.format(type(config_flag)))
   return config_flag.override_values
 
@@ -1098,7 +1098,7 @@ class _ConfigFlag(flags.Flag):
     return self._override_values
 
 
-def is_config_flag(flag):  # pylint: disable=g-bad-name
+def is_config_flag(flag: flags.Flag) -> bool:  # pylint: disable=g-bad-name
   """Returns True iff `flag` is an instance of `_ConfigFlag`.
 
   External users of the library may need to check if a flag is of this type
