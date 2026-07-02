@@ -296,7 +296,7 @@ class TypedConfigFlagsTest(absltest.TestCase):
     class Config:
       field: int = 3
     cfg = Config()
-    cfg.extra = 'test'
+    cfg.extra = 'test'  # pyrefly: ignore[missing-attribute]
 
     self.assertRaises(
         KeyError, functools.partial(_test_flags, cfg, '.extra=hi')

@@ -216,7 +216,7 @@ def get_args(type_spec: type) -> Union[NoneType, Tuple[type, ...]]:  # pylint: d
   """Call typing.get_args, with fallback for Python 3.7 and below."""
   if hasattr(typing, 'get_args'):
     return typing.get_args(type_spec)
-  return getattr(type_spec, '__args__', NoneType)
+  return getattr(type_spec, '__args__', NoneType)  # pyrefly: ignore[bad-return]
 
 
 def _is_union_type(type_spec: type) -> bool:  # pylint: disable=g-bare-generic drop when 3.7 support is not needed
@@ -230,7 +230,7 @@ def extract_type_from_optional(type_spec: type) -> Optional[type]:  # pylint: di
   """If type_spec is of type Optional[T], returns T object, otherwise None"""
   if not _is_union_type(type_spec):
     return None
-  non_none = [t for t in get_args(type_spec) if t is not NoneType]
+  non_none = [t for t in get_args(type_spec) if t is not NoneType]  # pyrefly: ignore[not-iterable]
   if len(non_none) != 1:
     return None
   return non_none[0]
@@ -293,15 +293,15 @@ def get_type(
   # Check if config is a DM collection and hence has attribute get_type()
   if isinstance(holder,
                 (config_dict.ConfigDict, config_dict.FieldReference)):
-    if default_type is not None and field not in holder:
+    if default_type is not None and field not in holder:  # pyrefly: ignore[not-iterable]
       return default_type
-    return holder.get_type(field)
+    return holder.get_type(field)  # pyrefly: ignore[bad-argument-count]
   # For dataclasses we can just use the type annotation.
   elif dc.is_dataclass(holder):
     matches = [f.type for f in dc.fields(holder) if f.name == field]
     if not matches:
       raise KeyError(f'Field {field} not found on dataclass {type(holder)}')
-    return normalize_type(matches[0]) if normalize else matches[0]
+    return normalize_type(matches[0]) if normalize else matches[0]  # pyrefly: ignore[bad-argument-type]
   else:
     return type(_get_item_or_attribute(holder, field, config_path))
 

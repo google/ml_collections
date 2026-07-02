@@ -579,7 +579,7 @@ def _configdict_fill_seed(seed, initial_dictionary, visit_map=None):
       value = value_cd
 
     elif isinstance(value, FrozenConfigDict):
-      value = ConfigDict(value, allow_dotted_keys=seed.allow_dotted_keys)
+      value = ConfigDict(value, allow_dotted_keys=seed.allow_dotted_keys)  # pyrefly: ignore[bad-argument-type]
 
     seed.__setattr__(key, value)
 
@@ -1078,7 +1078,7 @@ class ConfigDict:
       same: `True` if `self == other` after conversion to `ConfigDict`.
     """
     if isinstance(other, ConfigDict):
-      return ConfigDict(self) == ConfigDict(other)
+      return ConfigDict(self) == ConfigDict(other)  # pyrefly: ignore[bad-argument-type]
     else:
       return False
 
@@ -1980,7 +1980,7 @@ class FrozenConfigDict(ConfigDict):
       same: Boolean self == other.
     """
     if isinstance(other, FrozenConfigDict):
-      return ConfigDict(self) == ConfigDict(other)
+      return ConfigDict(self) == ConfigDict(other)  # pyrefly: ignore[bad-argument-type]
     else:
       return False
 

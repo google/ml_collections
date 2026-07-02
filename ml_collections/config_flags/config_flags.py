@@ -955,7 +955,7 @@ class _ConfigFlag(flags.Flag):
             default = config_path.get_value(field_path, config)
           flag = _ConfigFieldFlag(
               path=field_path,
-              config=config,
+              config=config,  # pyrefly: ignore[bad-argument-type]
               override_values=self._override_values,
               parser=parser,
               serializer=serializer,
@@ -977,7 +977,7 @@ class _ConfigFlag(flags.Flag):
           # passed to a single call of _ConfigFieldMultiFlag.parse.
           flag = _ConfigFieldMultiFlag(
               path=field_path,
-              config=config,
+              config=config,  # pyrefly: ignore[bad-argument-type]
               override_values=self._override_values,
               parser=parser,
               serializer=serializer,
@@ -1202,15 +1202,15 @@ class _ConfigFieldMultiFlag(flags.MultiFlag):
   def parse(self, arguments):
     super().parse(arguments)
     # Callback to set value in ConfigDict.
-    config_path.set_value(self._path, self._config, tuple(self.value))
-    self._override_values[self._path] = tuple(self.value)
+    config_path.set_value(self._path, self._config, tuple(self.value))  # pyrefly: ignore[bad-argument-type]
+    self._override_values[self._path] = tuple(self.value)  # pyrefly: ignore[bad-argument-type]
 
   def _parse(self, arguments):
     # MultiFlag passes each argument one-at-a-time to the parser.parse. Just
     # call Flag._parse (grandparent class) directly so all arguments are passed
     # to parser.parse in a single call.
     result = flags.Flag._parse(self, arguments)  # pylint: disable=protected-access
-    return list(result)
+    return list(result)  # pyrefly: ignore[bad-argument-type]
 
 
 def register_flag_parser_for_type(
@@ -1230,8 +1230,8 @@ def register_flag_parser_for_type(
   Returns:
     field_type unmodified.
   """
-  _FIELD_TYPE_TO_PARSER[field_type] = parser
-  _FIELD_TYPE_TO_SERIALIZER[field_type] = serializer
+  _FIELD_TYPE_TO_PARSER[field_type] = parser  # pyrefly: ignore[unsupported-operation]
+  _FIELD_TYPE_TO_SERIALIZER[field_type] = serializer  # pyrefly: ignore[unsupported-operation]
   return field_type
 
 
