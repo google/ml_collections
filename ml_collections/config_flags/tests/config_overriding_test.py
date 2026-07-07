@@ -119,6 +119,28 @@ def _get_override_flags(overrides, override_format):
                    for path, value in overrides.items()])
 
 
+def _parse_flags_with_holder(command: str) -> flags.FlagHolder:
+  """Parses arguments simulating sys.argv and returns the config FlagHolder.
+
+  Like _parse_flags, but returns the FlagHolder from DEFINE_config_file.
+
+  Args:
+    command: Command-line string, e.g. './program --test_config=config.py'.
+
+  Returns:
+    The FlagHolder for the 'test_config' flag.
+  """
+  argv = shlex.split(command)
+  old_argv = list(sys.argv)
+  sys.argv = argv
+  flag_values = flags.FlagValues()
+  holder = config_flags.DEFINE_config_file(
+      'test_config', flag_values=flag_values)
+  flag_values(argv)
+  sys.argv = old_argv
+  return holder
+
+
 class _ConfigFlagTestCase(object):
   """Base class for tests with additional asserts for comparing configs."""
 
@@ -624,16 +646,21 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
     values = _parse_flags('./program {} {}'.format(config_flag, override_flags))
     self.assertEqual(values.test_config.tuple, expected_tuple)
 
-  # This test adds new flags, so use FlagSaver to make it hermetic.
-  @flagsaver.flagsaver
-  def testIsConfigFile(self):
-    config_flags.DEFINE_config_file('is_a_config_flag')
-    flags.DEFINE_integer('not_a_config_flag', -1, '')
+  def testIsConfigFlag(self):
+    fv = flags.FlagValues()
+    config_holder = config_flags.DEFINE_config_file(
+        'is_a_config_flag', flag_values=fv)
+    non_config_holder = flags.DEFINE_integer(
+        'not_a_config_flag', -1, '', flag_values=fv)
+    config_flag = config_flags._resolve_flag(config_holder)
+    non_config_flag = config_flags._resolve_flag(non_config_holder)
 
-    self.assertTrue(
-        config_flags.is_config_flag(flags.FLAGS['is_a_config_flag']))
-    self.assertFalse(
-        config_flags.is_config_flag(flags.FLAGS['not_a_config_flag']))
+    with self.subTest('config_holder'):
+      self.assertTrue(config_flags.is_config_flag(config_holder))
+      self.assertFalse(config_flags.is_config_flag(non_config_holder))
+    with self.subTest('config_flag'):
+      self.assertTrue(config_flags.is_config_flag(config_flag))
+      self.assertFalse(config_flags.is_config_flag(non_config_flag))
 
   # This test adds new flags, so use FlagSaver to make it hermetic.
   @flagsaver.flagsaver
@@ -671,13 +698,17 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
     })
     integer_override = 0
     dictfloat_override = 1.1
-    values = _parse_flags('./program --test_config={} --test_config.integer={} '
-                          '--test_config.dict.float={}'.format(
-                              _TEST_CONFIG_FILE, integer_override,
-                              dictfloat_override))
+    holder = _parse_flags_with_holder(
+        './program --test_config={} --test_config.integer={} '
+        '--test_config.dict.float={}'.format(
+            _TEST_CONFIG_FILE, integer_override, dictfloat_override))
+    flag = config_flags._resolve_flag(holder)
 
+    self.assertEqual(
+        config_flags.get_override_values(flag),
+        config_flags.get_override_values(holder))
     config.update_from_flattened_dict(
-        config_flags.get_override_values(values['test_config']))
+        config_flags.get_override_values(holder))
     self.assertEqual(config['integer'], integer_override)
     self.assertEqual(config['float'], original_float)
     self.assertEqual(config['dict']['float'], dictfloat_override)
@@ -686,12 +717,15 @@ class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
       ('ConfigFile1', _TEST_CONFIG_FILE),
       ('ConfigFile2', _CONFIGDICT_CONFIG_FILE),
       ('ParameterisedConfigFile', _PARAMETERISED_CONFIG_FILE + ':type_a'),
-      )
+  )
   def testConfigPath(self, config_file):
-    """Test access to saved config file path."""
-    values = _parse_flags('./program --test_config={}'.format(config_file))
-    self.assertEqual(config_flags.get_config_filename(values['test_config']),
-                     config_file)
+    """Test access to saved config file path via Flag or FlagHolder."""
+    holder = _parse_flags_with_holder(
+        './program --test_config={}'.format(config_file))
+    flag = config_flags._resolve_flag(holder)
+
+    self.assertEqual(config_flags.get_config_filename(flag), config_file)
+    self.assertEqual(config_flags.get_config_filename(holder), config_file)
 
   def testLiteral(self):
     """Test access to saved config file path."""

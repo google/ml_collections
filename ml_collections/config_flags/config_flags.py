@@ -558,30 +558,58 @@ def DEFINE_config_dataclass(  # pylint: disable=invalid-name
   return flags.DEFINE_flag(flag, flag_values)
 
 
-def get_config_filename(config_flag) -> str:  # pylint: disable=g-bad-name
+def _resolve_flag(
+    flag: flags.Flag | flags.FlagHolder,
+) -> flags.Flag:
+  """Extracts the underlying flags.Flag from a Flag or FlagHolder.
+
+  Args:
+    flag: A flags.Flag instance or a flags.FlagHolder wrapping one.
+
+  Returns:
+    The underlying flags.Flag instance.
+
+  Raises:
+    TypeError: If flag is neither a flags.Flag nor a flags.FlagHolder.
+  """
+  if isinstance(flag, flags.FlagHolder):
+    return flag._flagvalues[flag.name]  # pylint: disable=protected-access
+  if isinstance(flag, flags.Flag):
+    return flag
+  raise TypeError(
+      'Expected a flags.Flag or flags.FlagHolder instance, '
+      'found {}'.format(type(flag))
+  )
+
+
+def get_config_filename(config_flag: flags.Flag | flags.FlagHolder) -> str:  # pylint: disable=g-bad-name
   """Returns the path to the config file given the config flag.
 
   Args:
-    config_flag: The flag instance obtained from FLAGS, e.g. FLAGS['config'].
+    config_flag: The flag instance obtained from FLAGS, e.g. FLAGS['config'],
+      or the FlagHolder returned by DEFINE_config_file.
 
   Returns:
     the path to the config file.
   """
-  if not is_config_flag(config_flag):
+  config_flag = _resolve_flag(config_flag)
+  if not isinstance(config_flag, _ConfigFlag):
     raise TypeError('expect a config flag, found {}'.format(type(config_flag)))
   return config_flag.config_filename
 
 
-def get_override_values(config_flag) -> Dict[str, Any]:  # pylint: disable=g-bad-name
+def get_override_values(config_flag: flags.Flag | flags.FlagHolder) -> Dict[str, Any]:  # pylint: disable=g-bad-name
   """Returns a flat dict containing overridden values from the config flag.
 
   Args:
-    config_flag: The flag instance obtained from FLAGS, e.g. FLAGS['config'].
+    config_flag: The flag instance obtained from FLAGS, e.g. FLAGS['config'],
+      or the FlagHolder returned by DEFINE_config_file.
 
   Returns:
     a flat dict containing overridden values from the config flag.
   """
-  if not is_config_flag(config_flag):
+  config_flag = _resolve_flag(config_flag)
+  if not isinstance(config_flag, _ConfigFlag):
     raise TypeError('expect a config flag, found {}'.format(type(config_flag)))
   return config_flag.override_values
 
@@ -1098,7 +1126,7 @@ class _ConfigFlag(flags.Flag):
     return self._override_values
 
 
-def is_config_flag(flag):  # pylint: disable=g-bad-name
+def is_config_flag(flag: flags.Flag | flags.FlagHolder) -> bool:  # pylint: disable=g-bad-name
   """Returns True iff `flag` is an instance of `_ConfigFlag`.
 
   External users of the library may need to check if a flag is of this type
@@ -1107,11 +1135,12 @@ def is_config_flag(flag):  # pylint: disable=g-bad-name
   class public.
 
   Args:
-    flag: Flag object.
+    flag: Flag or FlagHolder object.
 
   Returns:
-    True iff `isinstance(flag, _ConfigFlag)` is true.
+    True iff the underlying flag is a `_ConfigFlag`.
   """
+  flag = _resolve_flag(flag)
   return isinstance(flag, _ConfigFlag)
 
 
