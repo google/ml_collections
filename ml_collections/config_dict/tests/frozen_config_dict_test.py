@@ -25,17 +25,21 @@ _TEST_DICT = {
     'int': 2,
     'list': [1, 2],
     'nested_list': [[1, [2]]],
+    'empty_list': [],
     'set': {1, 2},
     'tuple': (1, 2),
+    'empty_tuple': (),
     'frozenset': frozenset({1, 2}),
     'dict': {
         'float': -1.23,
         'list': [1, 2],
+        'empty_list': [],
         'dict': {},
+        'empty_tuple': (),
         'tuple_containing_list': (1, 2, (3, [4, 5], (6, 7))),
         'list_containing_tuple': [1, 2, [3, 4], (5, 6)],
     },
-    'ref': config_dict.FieldReference({'int': 0})
+    'ref': config_dict.FieldReference({'int': 0}),
 }
 
 
