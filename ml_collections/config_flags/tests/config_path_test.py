@@ -23,6 +23,23 @@ from ml_collections.config_flags.tests import mock_config
 
 class ConfigPathTest(parameterized.TestCase):
 
+  @parameterized.parameters(
+      ('data[1:3]', [8, 9], [0, 8, 9, 3]),
+      ('data[:]', [8], [8]),
+      ('data[::2]', [8, 9], [8, 1, 9, 3]),
+      ('data[-2:]', [], [0, 1]),
+  )
+  def test_set_list_slice(self, path, replacement, expected):
+    config = {'data': [0, 1, 2, 3]}
+    config_path.set_value(path, config, replacement)
+    self.assertEqual(config['data'], expected)
+
+  def test_set_extended_slice_rejects_wrong_length(self):
+    config = {'data': [0, 1, 2, 3]}
+    with self.assertRaises(ValueError):
+      config_path.set_value('data[::2]', config, [8])
+    self.assertEqual(config['data'], [0, 1, 2, 3])
+
   def test_list_extra_index(self):
     """Tries to index a non-indexable list element."""
 

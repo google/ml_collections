@@ -338,7 +338,7 @@ def set_value(
   """
   holder, field = _get_holder_field(config_path, config)
 
-  if isinstance(field, int) and isinstance(holder, MutableSequence):
+  if isinstance(field, (int, slice)) and isinstance(holder, MutableSequence):
     holder[field] = value
   elif hasattr(holder, '__setitem__') and (
       field in holder or accept_new_attributes
