@@ -15,6 +15,7 @@
 """Tests for ml_collection.config_flags."""
 
 import copy
+import os
 import shlex
 import sys
 import tempfile
@@ -965,11 +966,12 @@ class ConfigDictFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
     config.foo = 3
     config.bar = 4
 
-    with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
-      f.write('--test_config.foo=7\n')
-      f.flush()
-      f.close()
-      values = _parse_flags(f'./program --flagfile={f.name}', config=config)
+    with tempfile.TemporaryDirectory(prefix='flag file ') as temp_dir:
+      filename = os.path.join(temp_dir, 'flags.txt')
+      with open(filename, 'w') as f:
+        f.write('--test_config.foo=7\n')
+      values = _parse_flags(
+          f'./program --flagfile={shlex.quote(filename)}', config=config)
       self.assertEqual(values.test_config.foo, 7)
       self.assertEqual(values.test_config.bar, 4)
 
