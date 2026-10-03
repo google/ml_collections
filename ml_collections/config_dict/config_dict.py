@@ -2017,7 +2017,10 @@ class _BestEffortCustomJSONEncoder(CustomJSONEncoder):
       return super(_BestEffortCustomJSONEncoder, self).default(obj)
     except TypeError:
       if isinstance(obj, set):
-        return sorted(list(obj))
+        try:
+          return sorted(list(obj))
+        except TypeError:
+          return sorted(obj, key=repr)
       elif inspect.isfunction(obj):
         return 'function {}'.format(obj.__name__)
       elif dataclasses.is_dataclass(obj):

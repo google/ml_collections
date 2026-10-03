@@ -784,6 +784,25 @@ class ConfigDictTest(parameterized.TestCase):
         _JSON_BEST_EFFORT_TEST_DICT.strip(),
     )
 
+  @parameterized.named_parameters(
+      ('IntAndString', {1, 'one'}),
+      ('NoneAndInt', {None, 3}),
+  )
+  def testJSONConversionBestEffortMixedSet(self, values):
+    cfg = config_dict.ConfigDict({'values': values})
+    serialized = json.loads(cfg.to_json_best_effort())
+    self.assertCountEqual(serialized['values'], values)
+
+  def testJSONConversionBestEffortNestedMixedSet(self):
+    cfg = config_dict.ConfigDict({'nested': {'values': [{1, 'one'}]}})
+    serialized = json.loads(cfg.to_json_best_effort())
+    self.assertCountEqual(serialized['nested']['values'][0], {1, 'one'})
+
+  def testJSONConversionBestEffortSetSorting(self):
+    cfg = config_dict.ConfigDict({'values': {10, 2, 1}})
+    serialized = json.loads(cfg.to_json_best_effort())
+    self.assertEqual(serialized['values'], [1, 2, 10])
+
   def testJSONConversionWithDataclass(self):
     """Tests JSON serialization when the configdict contains a dataclass."""
     self.assertEqual(
