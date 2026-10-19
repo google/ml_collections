@@ -953,6 +953,45 @@ class ConfigDictTest(parameterized.TestCase):
       cfg.string = 1
     self.assertEqual(1, cfg.to_dict(preserve_field_references=True)['string'])
 
+  @parameterized.parameters(True, False)
+  def testCopyAndResolveReferencesKeyOrder(self, sort_keys):
+    cfg = config_dict.ConfigDict(
+        {'z': config_dict.FieldReference(1), 'a': 2}, sort_keys=sort_keys
+    )
+    copied_cfg = cfg.copy_and_resolve_references()
+
+    self.assertEqual(list(copied_cfg), list(cfg))
+    self.assertEqual(list(copied_cfg.to_dict()), list(cfg.to_dict()))
+    self.assertEqual(copied_cfg.z, 1)
+    self.assertNotIsInstance(
+        copied_cfg._fields['z'], config_dict.FieldReference
+    )
+    copied_cfg['b'] = 3
+    expected_keys = ['a', 'b', 'z'] if sort_keys else ['z', 'a', 'b']
+    self.assertEqual(list(copied_cfg), expected_keys)
+    self.assertNotIn('b', cfg)
+
+  def testCopyAndResolveReferencesMixedKeys(self):
+    data = {1: config_dict.FieldReference(3), 'a': 4, 2.5: 5}
+    cfg = config_dict.ConfigDict(data, sort_keys=False)
+    copied_cfg = cfg.copy_and_resolve_references()
+
+    self.assertEqual(list(copied_cfg), [1, 'a', 2.5])
+    self.assertEqual(copied_cfg.to_dict(), {1: 3, 'a': 4, 2.5: 5})
+
+  @parameterized.parameters(True, False)
+  def testCopyAndResolveReferencesNestedKeyOrder(self, sort_keys):
+    nested_cfg = config_dict.ConfigDict({'z': 1, 'a': 2}, sort_keys=sort_keys)
+    cfg = config_dict.ConfigDict(sort_keys=not sort_keys)
+    cfg.z = nested_cfg
+    cfg.a = nested_cfg
+    copied_cfg = cfg.copy_and_resolve_references()
+
+    self.assertEqual(list(copied_cfg), list(cfg))
+    self.assertEqual(list(copied_cfg.z), list(nested_cfg))
+    self.assertIs(copied_cfg.z, copied_cfg.a)
+    self.assertIsNot(copied_cfg.z, nested_cfg)
+
   def testCopyAndResolveReferences(self):
     """Tests the .copy_and_resolve_references() method."""
     cfg = config_dict.ConfigDict()

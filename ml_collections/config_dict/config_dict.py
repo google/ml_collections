@@ -1270,6 +1270,9 @@ class ConfigDict:
                                                     self.convert_dict)
     super(ConfigDict, config_dict_copy).__setattr__('_allow_dotted_keys',
                                                     self.allow_dotted_keys)
+    super(ConfigDict, config_dict_copy).__setattr__(
+        '_sort_keys', self._sort_keys
+    )
 
     visit_map[id(self)] = config_dict_copy
 
