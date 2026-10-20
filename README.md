@@ -602,8 +602,9 @@ def get_config(config_string):
 ```
 
 The value of `config_string` will be anything that is to the right of the first
-colon in the config file path, if one exists. If no colon exists, no value is
-passed to `get_config` (producing a TypeError if `get_config` expects a value).
+colon after any Windows drive prefix in the config file path, if one exists.
+If no such colon exists, no value is passed to `get_config` (producing a
+TypeError if `get_config` expects a value).
 
 The above example can be run like:
 

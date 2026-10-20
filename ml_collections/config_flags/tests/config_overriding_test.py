@@ -15,6 +15,7 @@
 """Tests for ml_collection.config_flags."""
 
 import copy
+import os
 import shlex
 import sys
 import tempfile
@@ -177,6 +178,39 @@ class _ConfigFlagTestCase(object):
 
 class ConfigFileFlagTest(_ConfigFlagTestCase, parameterized.TestCase):
   """Tests config flags library."""
+
+  @parameterized.product(
+      absolute=[False, True],
+      forward_slashes=[False, True],
+      config_parameter=['', ':model:small'],
+  )
+  def testLoadingConfigPath(self, absolute, forward_slashes, config_parameter):
+    # Keep relative paths on the same drive as the working directory.
+    with tempfile.TemporaryDirectory(
+        dir='.', prefix='config path '
+    ) as temp_dir:
+      path = os.path.join(temp_dir, 'config.py')
+      with open(path, 'w', encoding='utf-8') as config_file:
+        config_file.write(
+            'from ml_collections import ConfigDict\n'
+            'def get_config(value="default"):\n'
+            '  return ConfigDict({"value": value})\n'
+        )
+      if absolute:
+        path = os.path.abspath(path)
+      else:
+        path = os.path.relpath(path)
+      if forward_slashes:
+        path = path.replace(os.sep, '/')
+      argv = ['program', '--test_config=' + path + config_parameter]
+      values = flags.FlagValues()
+      holder = config_flags.DEFINE_config_file(
+          'test_config', flag_values=values, sys_argv=argv
+      )
+
+      values(argv)
+
+      self.assertEqual(holder.value.value, config_parameter[1:] or 'default')
 
   @parameterized.named_parameters(*_DASH_PARAMETERS)
   def testLoading(self, config_flag):

@@ -759,10 +759,10 @@ class ConfigFileFlagParser(flags.ArgumentParser):
   def parse(self, path):
     """Loads a config module from `path` and returns the `get_config()` result.
 
-    If a colon is present in `path`, everything to the right of the first colon
-    is passed to `get_config` as an argument. This allows the structure of what
-    is returned to be modified, which is useful when performing complex
-    hyperparameter sweeps.
+    The first colon in `path` after any Windows drive prefix separates the
+    config file from an argument passed to `get_config`. This allows the
+    structure of what is returned to be modified, which is useful when
+    performing complex hyperparameter sweeps.
 
     Args:
       path: string, path pointing to the config file to execute. May also
@@ -772,7 +772,9 @@ class ConfigFileFlagParser(flags.ArgumentParser):
       Result of calling `get_config` in the specified module.
     """
     # This will be a 2 element list iff extra configuration args are present.
-    split_path = path.split(':', 1)
+    drive, config_path = os.path.splitdrive(path)
+    split_path = config_path.split(':', 1)
+    split_path[0] = drive + split_path[0]
     try:
       config_module = _LoadConfigModule('{}_config'.format(self.name),
                                         split_path[0])
