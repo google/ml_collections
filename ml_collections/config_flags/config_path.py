@@ -260,6 +260,23 @@ def normalize_type(type_spec: type) -> type:  # pylint: disable=g-bare-generic d
   return type_spec
 
 
+@functools.lru_cache(maxsize=None)
+def _resolved_dataclass_hints(cls: type) -> dict[str, Any]:  # pylint: disable=g-bare-generic
+  """Returns the field annotations of `cls` with string annotations evaluated.
+
+  Annotations are evaluated in the namespace of the module that defines `cls`.
+  If they cannot be evaluated (for example a name that only exists inside a
+  function), an empty dict is returned and callers keep the raw annotation.
+
+  Args:
+    cls: A dataclass type.
+  """
+  try:
+    return typing.get_type_hints(cls, include_extras=True)
+  except (NameError, TypeError, SyntaxError):
+    return {}
+
+
 def get_type(
     config_path: str,
     config: Any,
@@ -301,7 +318,13 @@ def get_type(
     matches = [f.type for f in dc.fields(holder) if f.name == field]
     if not matches:
       raise KeyError(f'Field {field} not found on dataclass {type(holder)}')
-    return normalize_type(matches[0]) if normalize else matches[0]  # pyrefly: ignore[bad-argument-type]
+    field_type = matches[0]
+    if isinstance(field_type, str):
+      # Postponed annotation (e.g. `from __future__ import annotations`).
+      field_type = _resolved_dataclass_hints(
+          holder if isinstance(holder, type) else type(holder)
+      ).get(field, field_type)
+    return normalize_type(field_type) if normalize else field_type  # pyrefly: ignore[bad-argument-type]
   else:
     return type(_get_item_or_attribute(holder, field, config_path))
 

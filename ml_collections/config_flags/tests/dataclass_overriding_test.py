@@ -25,6 +25,7 @@ from absl import flags
 from absl.testing import absltest
 from ml_collections import config_flags
 from ml_collections.config_flags import config_flags as config_flag_lib
+from ml_collections.config_flags.tests import postponed_annotations_config
 
 
 #####
@@ -384,6 +385,52 @@ class DataClassParseFnTest(absltest.TestCase):
         _CONFIG, '=34', '.my_model.foo=10', parse_fn=parse_config_flag
     )
     self.assertEqual(result.my_model.foo, 10)
+
+class PostponedAnnotationsTest(absltest.TestCase):
+  """Configs defined in a module with `from __future__ import annotations`."""
+
+  def test_annotations_are_strings(self):
+    # Guard: this suite only means something if the annotations are postponed.
+    field = dataclasses.fields(postponed_annotations_config.Config)[0]
+    self.assertEqual(field.type, 'int')
+
+  def test_scalar_override(self):
+    result = _test_flags(postponed_annotations_config.Config(), '.value=2')
+    self.assertEqual(result.value, 2)
+    self.assertIsInstance(result.value, int)
+
+  def test_nested_scalar_overrides(self):
+    result = _test_flags(
+        postponed_annotations_config.Config(),
+        '.model.foo=3',
+        '.model.rate=0.5',
+        '.model.name=other',
+        '.model.mode=b',
+        '.model.sizes=(1, 2)',
+        '.model.qux=7',
+    )
+    self.assertEqual(result.model.foo, 3)
+    self.assertEqual(result.model.rate, 0.5)
+    self.assertEqual(result.model.name, 'other')
+    self.assertEqual(result.model.mode, 'b')
+    self.assertEqual(result.model.sizes, (1, 2))
+    self.assertEqual(result.model.qux, 7)
+
+  def test_optional_nested_dataclass_build(self):
+    result = _test_flags(
+        postponed_annotations_config.Config(), '.sub=build',
+        '.sub.model.foo=12')
+    self.assertEqual(result.sub.model.foo, 12)
+
+  def test_unresolvable_annotation_keeps_previous_error(self):
+
+    @dataclasses.dataclass
+    class LocalConfig:
+      value: 'NotDefinedAnywhere' = None  # pytype: disable=name-error  # pyrefly: ignore
+
+    with self.assertRaises(config_flag_lib.UnsupportedOperationError):
+      _test_flags(LocalConfig(), '.value=1')
+
 
 if __name__ == '__main__':
   absltest.main()

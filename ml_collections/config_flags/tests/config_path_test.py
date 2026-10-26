@@ -14,11 +14,14 @@
 
 """Tests for config_path."""
 
+from typing import Tuple
+
 from absl.testing import absltest
 from absl.testing import parameterized
 from ml_collections.config_flags import config_path
 from ml_collections.config_flags.tests import fieldreference_config
 from ml_collections.config_flags.tests import mock_config
+from ml_collections.config_flags.tests import postponed_annotations_config
 
 
 class ConfigPathTest(parameterized.TestCase):
@@ -112,6 +115,26 @@ class ConfigPathTest(parameterized.TestCase):
     """Tests whether various types of objects are valid."""
     test_config = mock_config.get_config()
     self.assertEqual(path_type, config_path.get_type(path, test_config))
+
+  @parameterized.parameters(
+      ('value', int),
+      ('sub', postponed_annotations_config.SubConfig),
+      ('model.foo', int),
+      ('model.rate', float),
+      ('model.sizes', Tuple[int, ...]),
+      ('model.qux', int),
+  )
+  def test_postponed_annotation_types(self, path, path_type):
+    """String annotations from `from __future__ import annotations` resolve."""
+    test_config = postponed_annotations_config.Config(
+        sub=postponed_annotations_config.SubConfig())
+    self.assertEqual(path_type, config_path.get_type(path, test_config))
+
+  def test_postponed_optional_detected(self):
+    test_config = postponed_annotations_config.Config()
+    self.assertTrue(config_path.is_optional('sub', test_config))
+    self.assertTrue(config_path.is_optional('model.qux', test_config))
+    self.assertFalse(config_path.is_optional('value', test_config))
 
 if __name__ == '__main__':
   absltest.main()
