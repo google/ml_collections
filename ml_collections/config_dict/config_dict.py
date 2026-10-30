@@ -314,9 +314,6 @@ class FieldReference:
           type.
       MutabilityError: If a cycle is found in the reference graph.
     """
-    # Disable ops.
-    self._ops = []
-
     if value is None:
       self._value = None
     elif isinstance(value, FieldReference):
@@ -324,13 +321,19 @@ class FieldReference:
         raise TypeError('Reference is of type {} but should be of type {}'
                         .format(value.get_type(), self.get_type()))
       old_value = getattr(self, '_value', None)
+      old_ops = getattr(self, '_ops', [])
+      self._ops = []
       self._value = value
       if self.has_cycle():
         self._value = old_value
+        self._ops = old_ops
         raise MutabilityError('Found cycle in reference graph.')
     else:
       # TODO(sergomez): Update reference type.
       self._value = _safe_cast(value, self._field_type, type_safe)
+
+    # Disable ops only after a successful overwrite.
+    self._ops = []
 
   def empty(self):
     """Returns True if the reference points to a None value."""
