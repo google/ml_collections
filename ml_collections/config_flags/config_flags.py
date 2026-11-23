@@ -22,6 +22,7 @@ import enum
 import errno
 import functools as ft
 import importlib.machinery
+import importlib.util
 import json
 import os
 import re
@@ -93,9 +94,28 @@ def _load_source(module_name: str, module_path: str) -> types.ModuleType:
 
   Returns:
     The loaded Python module.
+
+  Raises:
+    ImportError: If a module spec cannot be created for the source file.
   """
   loader = importlib.machinery.SourceFileLoader(module_name, module_path)
-  return loader.load_module()
+  spec = importlib.util.spec_from_loader(module_name, loader)
+  if spec is None:
+    raise ImportError(
+        f'Could not create module spec for {module_name!r} from {module_path!r}'
+    )
+  module = importlib.util.module_from_spec(spec)
+  previous_module = sys.modules.get(module_name)
+  sys.modules[module_name] = module
+  try:
+    loader.exec_module(module)
+  except BaseException:
+    if previous_module is None:
+      sys.modules.pop(module_name, None)
+    else:
+      sys.modules[module_name] = previous_module
+    raise
+  return module
 
 
 class _LiteralParser(flags.ArgumentParser):
